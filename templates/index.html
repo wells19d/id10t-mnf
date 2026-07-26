@@ -1,0 +1,37 @@
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ID10T: Memory Not Found</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <main>
+      <h1>ID10T: Memory Not Found</h1>
+      <div class="terminal">
+        <div id="game-output" class="terminal-top"></div>
+        <div class="terminal-bottom">
+          <form id="command-form" class="terminal-form">
+            <span class="terminal-prompt">Ready:</span>
+
+            <input
+              type="text"
+              id="command-input"
+              autocomplete="off"
+              class="terminal-input"
+            />
+
+            <button type="submit" class="terminal-button">Enter</button>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='game.js') }}"></script>
+  </body>
+</html>
