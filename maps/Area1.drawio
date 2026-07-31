@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="Page-1" id="uKoOLuuzWsK7gHThIZLT">
-    <mxGraphModel dx="515" dy="409" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="751" dy="597" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -197,7 +197,7 @@
         <mxCell id="UhfrwS38R-82xFNWDrH4-180" edge="1" parent="1" style="endArrow=none;html=1;rounded=0;startArrow=baseDash;startFill=0;" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
             <mxPoint x="1000" y="480" as="sourcePoint" />
-            <mxPoint x="1680" y="480" as="targetPoint" />
+            <mxPoint x="1110" y="480" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="UhfrwS38R-82xFNWDrH4-181" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Road" vertex="1">
@@ -260,7 +260,19 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="UhfrwS38R-82xFNWDrH4-222" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Area 2" vertex="1">
-          <mxGeometry height="120" width="480" x="720" y="40" as="geometry" />
+          <mxGeometry height="120" width="240" x="840" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="UhfrwS38R-82xFNWDrH4-226" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;dashed=1;" value="" vertex="1">
+          <mxGeometry height="1060" width="520" x="1160" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="UhfrwS38R-82xFNWDrH4-228" edge="1" parent="1" style="endArrow=none;html=1;rounded=0;" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="1110" y="480" as="sourcePoint" />
+            <mxPoint x="1110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="UhfrwS38R-82xFNWDrH4-229" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Houses Map" vertex="1">
+          <mxGeometry height="40" width="420" x="1220" y="40" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
