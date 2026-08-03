@@ -23,7 +23,15 @@ def parse_command(player_command):
 
             if not new_area_state["visited"]:
                 new_area_state["visited"] = True
-                return new_area["intro"]
+
+                intro = new_area.get("intro", [])
+
+                has_intro_text = any(
+                    message.get("text", "").strip() for message in intro
+                )
+
+                if has_intro_text:
+                    return intro
 
             return new_area["description"]
 
