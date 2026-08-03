@@ -44,13 +44,14 @@ main {
 
 .tb-row {
   display: grid;
-  grid-template-columns: 90px 1fr;
+  grid-template-columns: clamp(90px, 12vw, 120px) minmax(0, 1000px);
   gap: 10px;
-  margin: 10px 5px 10px 5px;
+  margin: 10px 15px 10px 5px;
 }
 
 .tl {
   text-align: right;
+  white-space: nowrap;
 }
 
 .tr {
@@ -84,4 +85,37 @@ main {
 
 .terminal-button {
   display: none;
+}
+
+.narrator-title {
+  color: #81dd81;
+  font-size: 16px;
+}
+
+.narrator-response {
+  color: #ffffff;
+  font-size: 16px;
+}
+
+.voice-title {
+  font-weight: bold;
+  color: #76dbe2;
+  font-size: 14px;
+}
+
+.voice-response {
+  color: #ffffff;
+  font-style: italic;
+  font-size: 14px;
+}
+
+.user-title {
+  font-weight: bold;
+  color: #eb7878;
+  font-size: 14px;
+}
+
+.user-response {
+  color: #ffffff;
+  font-size: 14px;
 }

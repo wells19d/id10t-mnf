@@ -1,4 +1,7 @@
 # This file is to just provide a fast way to run the app with a short command.
+import sys
+
+sys.dont_write_bytecode = True
 
 import threading
 import webbrowser
@@ -13,3 +16,6 @@ def open_browser():
 if __name__ == "__main__":
     threading.Timer(1, open_browser).start()
     app.run(debug=True, use_reloader=False)
+
+# Mac .venv/bin/python start.py
+# Windows .\.venv\Scripts\python.exe .\start.py

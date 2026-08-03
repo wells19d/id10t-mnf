@@ -2,6 +2,43 @@ const commandForm = document.getElementById('command-form');
 const commandInput = document.getElementById('command-input');
 const gameOutput = document.getElementById('game-output');
 
+function displayMessage(speaker, text) {
+  const responseText = document.createElement('div');
+
+  responseText.innerHTML = `
+    <div class="tb-row">
+      <div class="tl ${speaker}-title">
+        ${speaker === 'voice' ? 'Inner Voice:' : 'Narrator:'}
+      </div>
+
+      <div class="tr ${speaker}-response">
+        ${text}
+      </div>
+    </div>
+  `;
+
+  gameOutput.appendChild(responseText);
+}
+
+function scrollToBottom() {
+  gameOutput.scrollTop = gameOutput.scrollHeight;
+}
+
+window.addEventListener('resize', () => {
+  requestAnimationFrame(scrollToBottom);
+});
+
+window.addEventListener('load', async () => {
+  const response = await fetch('/start');
+  const data = await response.json();
+
+  data.messages.forEach((message) => {
+    displayMessage(message.speaker, message.text);
+  });
+
+  scrollToBottom();
+});
+
 commandForm.addEventListener('submit', async (event) => {
   event.preventDefault();
 
@@ -11,17 +48,10 @@ commandForm.addEventListener('submit', async (event) => {
     return;
   }
 
-  const commandText = document.createElement('div');
+  displayMessage('user', command);
+  scrollToBottom();
 
-  commandText.innerHTML = `
-  <div class="tb-row">
-    <div class="tl user-command">User:</div>
-    <div class="tr user-command">${command}</div>
-  </div>
-`;
-
-  gameOutput.appendChild(commandText);
-  gameOutput.scrollTop = gameOutput.scrollHeight;
+  commandInput.value = '';
 
   const response = await fetch('/command', {
     method: 'POST',
@@ -35,16 +65,13 @@ commandForm.addEventListener('submit', async (event) => {
 
   const data = await response.json();
 
-  const responseText = document.createElement('div');
+  if (Array.isArray(data.response)) {
+    data.response.forEach((message) => {
+      displayMessage(message.speaker, message.text);
+    });
+  } else {
+    displayMessage('narrator', data.response);
+  }
 
-  responseText.innerHTML = `
-  <div class="tb-row">
-    <div class="tl">Narrator:</div>
-    <div class="tr narrator-response">${data.response}</div>
-  </div>
-`;
-
-  gameOutput.appendChild(responseText);
-
-  commandInput.value = '';
+  scrollToBottom();
 });
