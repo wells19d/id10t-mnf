@@ -1,6 +1,6 @@
 # ID10T: Memory Not Found
 
-A browser-based, text adventure built with Python and Flask.
+Project ID10T: A Memory Not Found — A browser-based, text adventure built with Python and Flask.
 
 This project serves as a self-directed final project for learning and applying the fundamentals of Python through a larger, complete application.
 
