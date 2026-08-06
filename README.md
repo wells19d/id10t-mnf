@@ -1,4 +1,4 @@
-# ID10T: Memory Not Found
+# Project ID10T: A Memory Not Found
 
 Project ID10T: A Memory Not Found — A browser-based, text adventure built with Python and Flask.
 
