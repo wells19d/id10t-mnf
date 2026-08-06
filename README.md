@@ -279,3 +279,11 @@ On systems that use `python3`:
     python3 start.py
 
 If Flask is not installed, the launcher installs it automatically and then starts the game.
+
+## Screenshots
+
+## Screenshots
+
+![Screenshot 1](ss/ss1.png)
+
+![Screenshot 2](ss/ss2.png)
