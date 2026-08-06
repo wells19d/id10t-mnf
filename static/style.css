@@ -9,6 +9,7 @@ body {
 
 body {
   margin: 10px;
+  overflow: hidden;
 }
 
 main {
@@ -36,6 +37,13 @@ main {
   min-height: 0;
   overflow-y: auto;
   margin-bottom: 10px;
+
+  /* scrollbar-width: none; */
+  -ms-overflow-style: none;
+}
+
+.terminal-top::-webkit-scrollbar {
+  display: none;
 }
 
 .terminal-bottom {

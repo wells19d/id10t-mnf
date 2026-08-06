@@ -5,10 +5,20 @@ const gameOutput = document.getElementById('game-output');
 function displayMessage(speaker, text) {
   const responseText = document.createElement('div');
 
+  let speakerLabel = 'Narrator:';
+
+  if (speaker === 'voice') {
+    speakerLabel = 'Inner Voice:';
+  }
+
+  if (speaker === 'user') {
+    speakerLabel = 'Player:';
+  }
+
   responseText.innerHTML = `
     <div class="tb-row">
       <div class="tl ${speaker}-title">
-        ${speaker === 'voice' ? 'Inner Voice:' : 'Narrator:'}
+        ${speakerLabel}
       </div>
 
       <div class="tr ${speaker}-response">

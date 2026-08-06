@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, jsonify, render_template, request
 
 from areas.clearing import clearing
 from game.commandParser import parse_command
@@ -16,6 +16,7 @@ def home():
 def start_game():
     if not gameState["player"]["introComplete"]:
         gameState["player"]["introComplete"] = True
+        gameState["areas"]["area1"]["locations"]["clearing"]["visited"] = True
 
         return jsonify({"messages": clearing["intro"]})
 
