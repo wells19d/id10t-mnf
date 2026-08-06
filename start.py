@@ -1,21 +1,58 @@
-# This file is to just provide a fast way to run the app with a short command.
+# start.py
+
+import subprocess
 import sys
-
-sys.dont_write_bytecode = True
-
 import threading
 import webbrowser
 
-from app import app
+
+def install_flask():
+    print("Flask is not installed. Installing Flask...")
+
+    subprocess.check_call(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "Flask",
+        ]
+    )
+
+
+def load_app():
+    try:
+        from app import app
+
+        return app
+
+    except ModuleNotFoundError as error:
+        if error.name != "flask":
+            raise
+
+        install_flask()
+
+        from app import app
+
+        return app
 
 
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000")
 
 
-if __name__ == "__main__":
-    threading.Timer(1, open_browser).start()
-    app.run(debug=True, use_reloader=False)
+def run_game():
+    sys.dont_write_bytecode = True
 
-# Mac .venv/bin/python start.py
-# Windows .\.venv\Scripts\python.exe .\start.py
+    app = load_app()
+
+    threading.Timer(1, open_browser).start()
+
+    app.run(
+        debug=True,
+        use_reloader=False,
+    )
+
+
+if __name__ == "__main__":
+    run_game()
