@@ -1,4 +1,5 @@
 from game.handlers.common import (
+    find_scenery,
     get_current_area_state,
     get_current_location_state,
     get_item_name,
@@ -11,13 +12,23 @@ def handle_use(command, current_area, game_state):
     values = command["values"]
     target = command["target"]
 
+    # Handle special scenery interactions, such as entering
+    # a combination into a safe.
     if values and target:
+        scenery_id, scenery_data = find_scenery(
+            target,
+            current_area,
+        )
+
+        if not scenery_data:
+            return f"I don't see a {target} here."
+
         interactions = current_area.get(
             "interactions",
             {},
         )
 
-        interaction = interactions.get(target)
+        interaction = interactions.get(scenery_id)
 
         if interaction and interaction.get("type") == "combination":
             correct_combination = interaction.get(
@@ -27,7 +38,6 @@ def handle_use(command, current_area, game_state):
 
             if values == correct_combination:
                 location_state = get_current_location_state(game_state)
-
                 location_state["safeOpened"] = True
 
                 return interaction["onSuccess"]
@@ -58,13 +68,23 @@ def handle_use(command, current_area, game_state):
     if not target:
         return f"I don't know what I want to use " f"the {display_name} on."
 
+    # Resolve the player's target through the current location's
+    # scenery IDs and aliases.
+    scenery_id, scenery_data = find_scenery(
+        target,
+        current_area,
+    )
+
+    if not scenery_data:
+        return f"I don't see a {target} here."
+
     target_action = item.get(
         "onUse",
         {},
-    ).get(target)
+    ).get(scenery_id)
 
     if not target_action:
-        return f"You can't use the " f"{display_name} on {target} here."
+        return f"You can't use the " f"{display_name} on {scenery_id} here."
 
     if isinstance(target_action, dict):
         flag_name = target_action.get("setsFlag")
