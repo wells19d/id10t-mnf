@@ -15,9 +15,17 @@ initialState = {
         "equipped": [],
         "health": "Medium",
     },
-    # Runtime changes are created automatically as the game is played.
+    # Runtime state for items.
+    # Example:
+    # "a1_watering_can": {
+    #     "filled": False,
+    # }
+    "itemStates": {},
+    # Runtime changes to areas and scenery.
     "areas": {},
 }
 
 
-currentState = deepcopy(initialState)
+currentState = deepcopy(
+    initialState,
+)

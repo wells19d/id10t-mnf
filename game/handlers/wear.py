@@ -1,5 +1,5 @@
 from game.handlers.common import (
-    get_item_name,
+    get_item_display_name,
     resolve_item,
 )
 from game.itemRegistry import itemRegistry
@@ -25,7 +25,7 @@ def handle_wear(command, game_state):
         return f"You aren't carrying {item_name}."
 
     item = itemRegistry[item_id]
-    display_name = get_item_name(item)
+    display_name = get_item_display_name(item)
 
     if not item.get("wearable", False):
         return item.get(

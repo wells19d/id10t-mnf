@@ -1,8 +1,9 @@
 from game.handlers.common import (
     find_scenery,
     get_current_location_state,
-    get_item_name,
+    get_item_display_name,
     resolve_item,
+    unequip_item,
 )
 from game.itemRegistry import itemRegistry
 
@@ -29,13 +30,20 @@ def handle_throw(command, current_area, game_state):
 
     item = itemRegistry[item_id]
 
-    display_name = get_item_name(item)
+    display_name = get_item_display_name(
+        item,
+    )
 
-    throw_actions = item.get("onThrow")
+    throw_actions = item.get(
+        "onThrow",
+        {},
+    )
 
-    if not throw_actions:
-        return f"You can't throw the {display_name}."
+    target_scenery_id = None
+    throw_action = None
+    attach_to_target = False
 
+    # THROW <item> AT <target>
     if target:
         scenery_id, scenery_data = find_scenery(
             target,
@@ -45,17 +53,37 @@ def handle_throw(command, current_area, game_state):
         if not scenery_data:
             return f"I don't see a {target} here."
 
-        target = scenery_id
+        target_scenery_id = scenery_id
 
-    throw_action = throw_actions.get(
-        target,
-        throw_actions.get("default"),
-    )
+        # Scenery defines special targeted throws.
+        throw_action = scenery_data.get(
+            "throwInteractions",
+            {},
+        ).get(
+            item_id,
+        )
+
+        if throw_action:
+            attach_to_target = True
+
+    # Otherwise use the item's normal throw behavior.
+    if not throw_action:
+        throw_action = throw_actions.get(
+            "default",
+        )
 
     if not throw_action:
-        return f"You can't throw the {display_name} here."
+        return f"You can't throw the {display_name}."
 
-    inventory.remove(item_id)
+    # Thrown items can no longer remain equipped.
+    unequip_item(
+        game_state,
+        item_id,
+    )
+
+    inventory.remove(
+        item_id,
+    )
 
     if not throw_action.get(
         "destroyItem",
@@ -65,7 +93,9 @@ def handle_throw(command, current_area, game_state):
             game_state,
         )
 
-        # Thrown item becomes loose in this location.
-        location_state["items"][item_id] = None
+        if attach_to_target:
+            location_state["items"][item_id] = target_scenery_id
+        else:
+            location_state["items"][item_id] = None
 
     return throw_action["response"]

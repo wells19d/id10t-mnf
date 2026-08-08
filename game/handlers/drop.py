@@ -1,7 +1,8 @@
 from game.handlers.common import (
     get_current_location_state,
-    get_item_name,
     resolve_item,
+    unequip_item,
+    get_item_display_name,
 )
 from game.itemRegistry import itemRegistry
 
@@ -27,9 +28,19 @@ def handle_drop(command, game_state):
 
     item = itemRegistry[item_id]
 
-    display_name = get_item_name(item)
+    display_name = get_item_display_name(
+        item,
+    )
 
-    inventory.remove(item_id)
+    # Dropped items can no longer remain equipped.
+    unequip_item(
+        game_state,
+        item_id,
+    )
+
+    inventory.remove(
+        item_id,
+    )
 
     location_state = get_current_location_state(
         game_state,

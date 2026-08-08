@@ -1,4 +1,4 @@
-from game.handlers.common import get_item_name
+from game.handlers.common import get_item_display_name
 from game.itemRegistry import itemRegistry
 
 
@@ -17,7 +17,7 @@ def handle_inventory(game_state):
         item = itemRegistry.get(item_id)
 
         if item:
-            item_names.append(get_item_name(item))
+            item_names.append(get_item_display_name(item))
 
     narrator_text = "You are carrying: " + ", ".join(item_names) + "."
 

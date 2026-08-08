@@ -1,9 +1,14 @@
 from game.handlers.common import (
+    apply_state_changes,
     find_scenery,
     get_current_area_state,
     get_current_location_state,
-    get_item_name,
+    get_item_display_name,
+    get_item_state,
+    get_scenery_state,
     resolve_item,
+    state_matches,
+    unequip_item,
 )
 from game.itemRegistry import itemRegistry
 
@@ -12,8 +17,7 @@ def handle_use(command, current_area, game_state):
     values = command["values"]
     target = command["target"]
 
-    # Handle special scenery interactions, such as entering
-    # a combination into a safe.
+    # Numeric interactions such as safe combinations.
     if values and target:
         scenery_id, scenery_data = find_scenery(
             target,
@@ -23,26 +27,47 @@ def handle_use(command, current_area, game_state):
         if not scenery_data:
             return f"I don't see a {target} here."
 
-        interactions = current_area.get(
+        area_interaction = current_area.get(
             "interactions",
             {},
+        ).get(
+            scenery_id,
         )
 
-        interaction = interactions.get(scenery_id)
-
-        if interaction and interaction.get("type") == "combination":
-            correct_combination = interaction.get(
+        if area_interaction and area_interaction.get("type") == "combination":
+            correct_combination = area_interaction.get(
                 "combination",
                 [],
             )
 
             if values == correct_combination:
-                location_state = get_current_location_state(game_state)
-                location_state["safeOpened"] = True
+                location_state = get_current_location_state(
+                    game_state,
+                )
 
-                return interaction["onSuccess"]
+                scenery_state = get_scenery_state(
+                    location_state,
+                    scenery_id,
+                )
 
-            return interaction["onFail"]
+                effects = area_interaction.get(
+                    "effects",
+                    {},
+                )
+
+                apply_state_changes(
+                    scenery_state,
+                    effects.get(
+                        "sceneryState",
+                        {
+                            "isOpen": True,
+                        },
+                    ),
+                )
+
+                return area_interaction["onSuccess"]
+
+            return area_interaction["onFail"]
 
     item_name = command["object"]
 
@@ -63,13 +88,14 @@ def handle_use(command, current_area, game_state):
         return f"You aren't carrying {item_name}."
 
     item = itemRegistry[item_id]
-    display_name = get_item_name(item)
+
+    display_name = get_item_display_name(
+        item,
+    )
 
     if not target:
         return f"I don't know what I want to use " f"the {display_name} on."
 
-    # Resolve the player's target through the current location's
-    # scenery IDs and aliases.
     scenery_id, scenery_data = find_scenery(
         target,
         current_area,
@@ -78,24 +104,151 @@ def handle_use(command, current_area, game_state):
     if not scenery_data:
         return f"I don't see a {target} here."
 
-    target_action = item.get(
-        "onUse",
+    # The target scenery defines which items can
+    # interact with it and what those interactions do.
+    interaction = scenery_data.get(
+        "interactions",
         {},
-    ).get(scenery_id)
+    ).get(
+        item_id,
+    )
 
-    if not target_action:
+    if not interaction:
         return f"You can't use the " f"{display_name} on {scenery_id} here."
 
-    if isinstance(target_action, dict):
-        flag_name = target_action.get("setsFlag")
+    location_state = get_current_location_state(
+        game_state,
+    )
 
-        if flag_name:
-            area_state = get_current_area_state(game_state)
-            area_state["flags"][flag_name] = True
+    scenery_state = get_scenery_state(
+        location_state,
+        scenery_id,
+    )
 
-        if target_action.get("destroyItem"):
-            inventory.remove(item_id)
+    item_state = get_item_state(
+        game_state,
+        item_id,
+    )
 
-        return target_action["response"]
+    area_state = get_current_area_state(
+        game_state,
+    )
 
-    return target_action
+    requirements = interaction.get(
+        "requires",
+        {},
+    )
+
+    # Required state of the item being used.
+    required_item_state = requirements.get(
+        "itemState",
+        {},
+    )
+
+    if not state_matches(
+        item_state,
+        required_item_state,
+    ):
+        return interaction.get(
+            "failResponse",
+            "That won't work right now.",
+        )
+
+    # Required state of the target scenery.
+    required_scenery_state = requirements.get(
+        "sceneryState",
+        {},
+    )
+
+    if not state_matches(
+        scenery_state,
+        required_scenery_state,
+    ):
+        return interaction.get(
+            "failResponse",
+            "That won't work right now.",
+        )
+
+    # Required inventory items.
+    for required_item_id in requirements.get(
+        "inventory",
+        [],
+    ):
+        if required_item_id not in inventory:
+            return interaction.get(
+                "failResponse",
+                "You don't have everything you need.",
+            )
+
+    # Required equipped items.
+    equipped = game_state["player"]["equipped"]
+
+    for required_item_id in requirements.get(
+        "equipped",
+        [],
+    ):
+        if required_item_id not in equipped:
+            return interaction.get(
+                "failResponse",
+                "You aren't properly equipped.",
+            )
+
+    # Required area flags.
+    required_flags = requirements.get(
+        "flags",
+        {},
+    )
+
+    if not state_matches(
+        area_state["flags"],
+        required_flags,
+    ):
+        return interaction.get(
+            "failResponse",
+            "That won't work right now.",
+        )
+
+    # All requirements passed.
+    effects = interaction.get(
+        "effects",
+        {},
+    )
+
+    apply_state_changes(
+        scenery_state,
+        effects.get(
+            "sceneryState",
+        ),
+    )
+
+    apply_state_changes(
+        item_state,
+        effects.get(
+            "itemState",
+        ),
+    )
+
+    apply_state_changes(
+        area_state["flags"],
+        effects.get(
+            "flags",
+        ),
+    )
+
+    if effects.get(
+        "destroyItem",
+        False,
+    ):
+        unequip_item(
+            game_state,
+            item_id,
+        )
+
+        inventory.remove(
+            item_id,
+        )
+
+    return interaction.get(
+        "response",
+        f"You use the {display_name} on the {scenery_id}.",
+    )

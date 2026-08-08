@@ -1,37 +1,84 @@
 from game.handlers.common import (
     find_scenery,
+    get_current_location_state,
+    get_item_state,
+    get_scenery_state,
     get_visible_item_ids,
     resolve_item,
+    state_matches,
 )
 from game.itemRegistry import itemRegistry
+
+
+def get_state_description(
+    data,
+    current_state,
+):
+    for state_description in data.get(
+        "stateDescriptions",
+        [],
+    ):
+        required_state = state_description.get(
+            "requiresState",
+            {},
+        )
+
+        if state_matches(
+            current_state,
+            required_state,
+        ):
+            return state_description.get(
+                "description",
+            )
+
+    return None
 
 
 def handle_look(command, current_area, game_state):
     target = command["target"] or command["object"]
 
+    # LOOK
+    # Return the basic description of the current area.
     if not target:
         return current_area.get(
-            "lookResponse",
-            current_area["description"],
+            "description",
+            "There is nothing remarkable here.",
         )
 
+    # LOOK AT <scenery>
     scenery_id, scenery_data = find_scenery(
         target,
         current_area,
     )
 
     if scenery_data:
-        look_response = scenery_data.get("lookResponse")
-        description = scenery_data.get("description")
+        location_state = get_current_location_state(
+            game_state,
+        )
 
-        if look_response:
-            return look_response
+        scenery_state = get_scenery_state(
+            location_state,
+            scenery_id,
+        )
+
+        state_description = get_state_description(
+            scenery_data,
+            scenery_state,
+        )
+
+        if state_description:
+            return state_description
+
+        description = scenery_data.get(
+            "description",
+        )
 
         if description:
             return description
 
-        return f"There is nothing remarkable about the {target}."
+        return f"There is nothing remarkable " f"about the {target}."
 
+    # LOOK AT <item>
     visible_items = (
         get_visible_item_ids(
             current_area,
@@ -51,15 +98,26 @@ def handle_look(command, current_area, game_state):
     if item_id:
         item = itemRegistry[item_id]
 
-        look_response = item.get("lookResponse")
-        description = item.get("description")
+        item_state = get_item_state(
+            game_state,
+            item_id,
+        )
 
-        if look_response:
-            return look_response
+        state_description = get_state_description(
+            item,
+            item_state,
+        )
+
+        if state_description:
+            return state_description
+
+        description = item.get(
+            "description",
+        )
 
         if description:
             return description
 
-        return f"There is nothing remarkable about the {target}."
+        return f"There is nothing remarkable " f"about the {target}."
 
     return f"I don't see a {target} here."

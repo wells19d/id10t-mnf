@@ -1,8 +1,10 @@
 from game.handlers.common import (
+    can_access_scenery_contents,
     find_scenery,
     get_current_location_state,
-    get_item_name,
+    get_item_display_name,
     get_items_in_scenery,
+    get_scenery_state,
     get_visible_item_ids,
     resolve_item,
 )
@@ -20,6 +22,7 @@ def handle_take(command, current_area, game_state):
         game_state,
     )
 
+    # TAKE <item> FROM <scenery>
     if source_name:
         scenery_id, scenery_data = find_scenery(
             source_name,
@@ -29,18 +32,30 @@ def handle_take(command, current_area, game_state):
         if not scenery_data:
             return f"I don't see a {source_name} here."
 
-        scenery_state = location_state.get(
-            "scenery",
-            {},
-        ).get(
+        scenery_state = get_scenery_state(
+            location_state,
             scenery_id,
-            {},
         )
 
-        if scenery_data.get("openable") and not scenery_state.get("isOpen", False):
+        # Closed containers must be opened first.
+        if scenery_data.get("openable") and not scenery_state.get(
+            "isOpen",
+            False,
+        ):
             return scenery_data.get(
                 "takeClosedResponse",
                 f"The {scenery_id} is closed.",
+            )
+
+        # Other scenery conditions may also block
+        # access to its contents.
+        if not can_access_scenery_contents(
+            scenery_data,
+            scenery_state,
+        ):
+            return scenery_data.get(
+                "takeBlockedResponse",
+                f"You can't reach anything in the {scenery_id} right now.",
             )
 
         available_items = get_items_in_scenery(
@@ -48,6 +63,7 @@ def handle_take(command, current_area, game_state):
             scenery_id,
         )
 
+    # TAKE <item>
     else:
         available_items = get_visible_item_ids(
             current_area,
@@ -78,15 +94,18 @@ def handle_take(command, current_area, game_state):
 
     item = itemRegistry[item_id]
 
-    display_name = get_item_name(item)
+    display_name = get_item_display_name(item)
 
-    if not item.get("takeable", False):
+    if not item.get(
+        "takeable",
+        False,
+    ):
         return item.get(
             "takeFail",
             f"I can't take the {display_name}.",
         )
 
-    # Remove the item from the world.
+    # Remove the item from its current world placement.
     location_state["items"].pop(
         item_id,
         None,
@@ -99,5 +118,5 @@ def handle_take(command, current_area, game_state):
 
     return item.get(
         "takeResponse",
-        f"You take the {display_name}.",
+        f"You took the {display_name}.",
     )
