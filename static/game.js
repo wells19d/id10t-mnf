@@ -2,8 +2,12 @@ const commandForm = document.getElementById('command-form');
 const commandInput = document.getElementById('command-input');
 const gameOutput = document.getElementById('game-output');
 
+const SAVE_KEY = 'id10t_save';
+
 const commandHistory = [];
 let historyIndex = 0;
+
+let waitingForStartChoice = false;
 
 function displayMessage(speaker, text) {
   if (speaker === 'system') {
@@ -42,20 +46,128 @@ function displayMessage(speaker, text) {
   gameOutput.appendChild(responseText);
 }
 
+function displayMessages(messages) {
+  if (!messages) {
+    return;
+  }
+
+  messages.forEach((message) => {
+    displayMessage(message.speaker, message.text);
+  });
+}
+
 function scrollToBottom() {
   gameOutput.scrollTop = gameOutput.scrollHeight;
 }
 
-window.addEventListener('resize', () => {
-  requestAnimationFrame(scrollToBottom);
-});
+function saveGameState(state) {
+  if (!state) {
+    return;
+  }
 
-window.addEventListener('load', async () => {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.error('Unable to save game state.', error);
+  }
+}
+
+function getSavedGameState() {
+  const savedGame = localStorage.getItem(SAVE_KEY);
+
+  if (!savedGame) {
+    return null;
+  }
+
+  try {
+    const state = JSON.parse(savedGame);
+
+    if (
+      !state ||
+      typeof state !== 'object' ||
+      !state.player ||
+      typeof state.player !== 'object'
+    ) {
+      localStorage.removeItem(SAVE_KEY);
+
+      return null;
+    }
+
+    return state;
+  } catch (error) {
+    localStorage.removeItem(SAVE_KEY);
+
+    return null;
+  }
+}
+
+async function startNewGame() {
+  waitingForStartChoice = false;
+
+  localStorage.removeItem(SAVE_KEY);
+
+  const response = await fetch('/new-game', {
+    method: 'POST',
+  });
+
+  const data = await response.json();
+
+  displayMessages(data.messages);
+
+  saveGameState(data.state);
+
+  scrollToBottom();
+}
+
+async function loadSavedGame() {
+  const savedState = getSavedGameState();
+
+  if (!savedState) {
+    await startNewGame();
+    return;
+  }
+
+  const response = await fetch('/load-game', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      state: savedState,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    localStorage.removeItem(SAVE_KEY);
+
+    displayMessage(
+      'system',
+      'The previous save could not be loaded. Starting a new game.',
+    );
+
+    await startNewGame();
+    return;
+  }
+
+  waitingForStartChoice = false;
+
+  displayMessages(data.messages);
+
+  saveGameState(data.state);
+
+  scrollToBottom();
+}
+
+async function initializeGame() {
   const response = await fetch('/start');
+
   const data = await response.json();
 
   if (data.startup) {
     const startup = document.createElement('div');
+
     startup.classList.add('startup-block');
 
     startup.innerHTML = `
@@ -69,12 +181,33 @@ window.addEventListener('load', async () => {
     gameOutput.appendChild(startup);
   }
 
-  data.messages.forEach((message) => {
-    displayMessage(message.speaker, message.text);
-  });
+  const savedState = getSavedGameState();
 
-  scrollToBottom();
+  if (savedState) {
+    waitingForStartChoice = true;
+
+    displayMessage(
+      'system',
+      'Type <span class="command-highlight">load save</span> to resume, or type <span class="command-highlight">new game</span>.',
+    );
+
+    scrollToBottom();
+
+    commandInput.focus();
+
+    return;
+  }
+
+  await startNewGame();
+
+  commandInput.focus();
+}
+
+window.addEventListener('resize', () => {
+  requestAnimationFrame(scrollToBottom);
 });
+
+window.addEventListener('load', initializeGame);
 
 commandInput.addEventListener('keydown', (event) => {
   if (event.key === 'ArrowUp') {
@@ -82,6 +215,7 @@ commandInput.addEventListener('keydown', (event) => {
 
     if (historyIndex > 0) {
       historyIndex -= 1;
+
       commandInput.value = commandHistory[historyIndex];
     }
   }
@@ -91,9 +225,11 @@ commandInput.addEventListener('keydown', (event) => {
 
     if (historyIndex < commandHistory.length - 1) {
       historyIndex += 1;
+
       commandInput.value = commandHistory[historyIndex];
     } else {
       historyIndex = commandHistory.length;
+
       commandInput.value = '';
     }
   }
@@ -116,10 +252,51 @@ commandForm.addEventListener('submit', async (event) => {
 
   historyIndex = commandHistory.length;
 
-  displayMessage('user', command);
-  scrollToBottom();
-
   commandInput.value = '';
+
+  const normalizedCommand = command.toLowerCase();
+
+  if (normalizedCommand === 'quit') {
+    waitingForStartChoice = true;
+
+    displayMessage('system', 'Game Ended');
+
+    displayMessage(
+      'system',
+      'Type <span class="command-highlight">load save</span> to resume, or type <span class="command-highlight">new game</span>.',
+    );
+
+    scrollToBottom();
+
+    return;
+  }
+
+  if (waitingForStartChoice) {
+    if (normalizedCommand === 'load' || normalizedCommand === 'load save') {
+      await loadSavedGame();
+      return;
+    }
+
+    if (normalizedCommand === 'new' || normalizedCommand === 'new game') {
+      await startNewGame();
+      return;
+    }
+
+    displayMessage('user', command);
+
+    displayMessage(
+      'system',
+      'Type <span class="command-highlight">load save</span> to resume, or type <span class="command-highlight">new game</span>.',
+    );
+
+    scrollToBottom();
+
+    return;
+  }
+
+  displayMessage('user', command);
+
+  scrollToBottom();
 
   const response = await fetch('/command', {
     method: 'POST',
@@ -141,6 +318,8 @@ commandForm.addEventListener('submit', async (event) => {
     displayMessage('narrator', data.response);
   }
 
+  saveGameState(data.state);
+
   scrollToBottom();
 });
 
@@ -149,10 +328,12 @@ let currentServerVersion = null;
 async function checkServerVersion() {
   try {
     const response = await fetch('/dev-version');
+
     const data = await response.json();
 
     if (currentServerVersion === null) {
       currentServerVersion = data.version;
+
       return;
     }
 
@@ -160,7 +341,7 @@ async function checkServerVersion() {
       window.location.reload();
     }
   } catch (error) {
-    // Flask may be restarting
+    // Flask may be restarting.
   }
 }
 

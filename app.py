@@ -8,10 +8,14 @@ from flask import (
     request,
 )
 
-from areas.clearing import clearing
+from areas.areaRegistry import areaRegistry
 from game.commandParser import parse_command
 from game.handlers.common import get_current_location_state
-from states.gameState import currentState as gameState
+from states.gameState import (
+    currentState as gameState,
+    reset_game_state,
+    restore_game_state,
+)
 
 app = Flask(__name__)
 
@@ -30,7 +34,9 @@ STARTUP_MESSAGE = [
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template(
+        "index.html",
+    )
 
 
 @app.get("/dev-version")
@@ -42,35 +48,117 @@ def dev_version():
     )
 
 
-@app.route("/start")
+@app.get("/start")
 def start_game():
-    if not gameState["player"]["introComplete"]:
-        gameState["player"]["introComplete"] = True
-
-        location_state = get_current_location_state(
-            gameState,
-        )
-
-        location_state["visited"] = True
-
-        return jsonify(
-            {
-                "startup": STARTUP_MESSAGE,
-                "messages": clearing["intro"],
-            }
-        )
-
     return jsonify(
         {
-            "messages": [],
+            "startup": STARTUP_MESSAGE,
         }
     )
 
 
-@app.route("/command", methods=["POST"])
+@app.post("/new-game")
+def new_game():
+    reset_game_state()
+
+    gameState["player"]["introComplete"] = True
+
+    current_location = gameState["player"]["currentLocation"]
+
+    current_area = areaRegistry[current_location]
+
+    location_state = get_current_location_state(
+        gameState,
+    )
+
+    location_state["visited"] = True
+
+    return jsonify(
+        {
+            "messages": current_area.get(
+                "intro",
+                [],
+            ),
+            "state": gameState,
+        }
+    )
+
+
+@app.post("/load-game")
+def load_game():
+    data = (
+        request.get_json(
+            silent=True,
+        )
+        or {}
+    )
+
+    saved_state = data.get(
+        "state",
+    )
+
+    restored = restore_game_state(
+        saved_state,
+    )
+
+    if not restored:
+        return (
+            jsonify(
+                {
+                    "error": "Invalid save data.",
+                }
+            ),
+            400,
+        )
+
+    current_location = gameState["player"].get(
+        "currentLocation",
+        "clearing",
+    )
+
+    current_area = areaRegistry.get(
+        current_location,
+    )
+
+    if not current_area:
+        reset_game_state()
+
+        return (
+            jsonify(
+                {
+                    "error": "Saved location no longer exists.",
+                }
+            ),
+            400,
+        )
+
+    return jsonify(
+        {
+            "messages": [
+                {
+                    "speaker": "narrator",
+                    "text": current_area.get(
+                        "description",
+                        "You look around.",
+                    ),
+                },
+            ],
+            "state": gameState,
+        }
+    )
+
+
+@app.post("/command")
 def command():
+    data = (
+        request.get_json(
+            silent=True,
+        )
+        or {}
+    )
+
     player_command = (
-        request.json.get(
+        data.get(
             "command",
             "",
         )
@@ -85,5 +173,6 @@ def command():
     return jsonify(
         {
             "response": response,
+            "state": gameState,
         }
     )
