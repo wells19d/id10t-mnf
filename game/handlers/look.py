@@ -21,10 +21,16 @@ def handle_look(command, current_area, game_state):
     )
 
     if scenery_data:
-        return scenery_data.get(
-            "lookResponse",
-            scenery_data["description"],
-        )
+        look_response = scenery_data.get("lookResponse")
+        description = scenery_data.get("description")
+
+        if look_response:
+            return look_response
+
+        if description:
+            return description
+
+        return f"There is nothing remarkable about the {target}."
 
     visible_items = (
         get_visible_item_ids(
@@ -45,9 +51,15 @@ def handle_look(command, current_area, game_state):
     if item_id:
         item = itemRegistry[item_id]
 
-        return item.get(
-            "lookResponse",
-            item["description"],
-        )
+        look_response = item.get("lookResponse")
+        description = item.get("description")
 
-    return f"There is nothing remarkable about the {target}."
+        if look_response:
+            return look_response
+
+        if description:
+            return description
+
+        return f"There is nothing remarkable about the {target}."
+
+    return f"I don't see a {target} here."

@@ -16,6 +16,14 @@ app = Flask(__name__)
 
 SERVER_STARTED_AT = time.time()
 
+STARTUP_MESSAGE = [
+    "Project ID10T: A MEMORY NOT FOUND",
+    "A Text-Based Adventure",
+    "Version 0.1",
+    "Developed by AJ Wells at Wellscrypted",
+    'Type "help" or "h" for available commands.',
+]
+
 
 @app.route("/")
 def home():
@@ -44,6 +52,7 @@ def start_game():
 
         return jsonify(
             {
+                "startup": STARTUP_MESSAGE,
                 "messages": clearing["intro"],
             }
         )

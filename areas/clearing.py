@@ -8,10 +8,10 @@ clearing = {
         {
             "speaker": "narrator",
             "text": (
-                "As your eyes slowly open, bright sunlight shines through the green leaves "
+                "As your eyes slowly open, bright sunlight filters through the green leaves "
                 "above you. You blink a few times as your vision clears. You are sitting "
-                "against a large tree at the edge of a grassy clearing. Birds call from "
-                "somewhere in the forest, and a light breeze moves through the trees. "
+                "against a large tree at the edge of a grassy clearing, surrounded by thick forest. "
+                "Birds call from somewhere among the trees, and a light breeze moves through the leaves. "
                 "Several worn paths lead away from the clearing."
             ),
         },
@@ -37,7 +37,7 @@ clearing = {
         },
         {
             "speaker": "voice",
-            "text": "...I don't remember.",
+            "text": "...I don't remember. Maybe I should <span class='command-highlight'>look</span> around and <span class='command-highlight'>search</span> for answers.",
         },
     ],
     "description": (

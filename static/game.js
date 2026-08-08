@@ -6,6 +6,15 @@ const commandHistory = [];
 let historyIndex = 0;
 
 function displayMessage(speaker, text) {
+  if (speaker === 'system') {
+    const systemText = document.createElement('div');
+    systemText.classList.add('system-response');
+    systemText.innerHTML = text;
+
+    gameOutput.appendChild(systemText);
+    return;
+  }
+
   const responseText = document.createElement('div');
 
   let speakerLabel = 'Narrator:';
@@ -44,6 +53,21 @@ window.addEventListener('resize', () => {
 window.addEventListener('load', async () => {
   const response = await fetch('/start');
   const data = await response.json();
+
+  if (data.startup) {
+    const startup = document.createElement('div');
+    startup.classList.add('startup-block');
+
+    startup.innerHTML = `
+      <div class="startup-title">${data.startup[0]}</div>
+      <div class="startup-subtitle">${data.startup[1]}</div>
+      <div class="startup-version">${data.startup[2]}</div>
+      <div class="startup-development">${data.startup[3]}</div>
+      <div class="startup-help">${data.startup[4]}</div>
+    `;
+
+    gameOutput.appendChild(startup);
+  }
 
   data.messages.forEach((message) => {
     displayMessage(message.speaker, message.text);
@@ -85,6 +109,7 @@ commandForm.addEventListener('submit', async (event) => {
   }
 
   commandHistory.push(command);
+
   if (commandHistory.length > 10) {
     commandHistory.shift();
   }

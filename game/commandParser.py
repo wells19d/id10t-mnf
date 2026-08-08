@@ -15,12 +15,16 @@ from game.handlers.take import handle_take
 from game.handlers.throw import handle_throw
 from game.handlers.use import handle_use
 from game.handlers.wear import handle_wear
+from game.help import helpResponse
 
 from states.gameState import currentState as gameState
 
 
 def parse_command(player_command):
     player_state = gameState["player"]
+
+    if player_command in ["help", "h"]:
+        return helpResponse
 
     current_location = player_state["currentLocation"]
 
@@ -96,11 +100,7 @@ def parse_command(player_command):
             gameState,
         )
 
-    if command_verb in [
-        "inventory",
-        "bag",
-        "i",
-    ]:
+    if command_verb in ["inventory", "inv", "bag", "i"]:
         return handle_inventory(
             gameState,
         )
@@ -143,7 +143,9 @@ def parse_command(player_command):
     )
 
     if not failed_action:
-        return failedActions["default"]
+        return failedActions["default"].format(
+            target=player_command,
+        )
 
     command_target = command["object"]
 

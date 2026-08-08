@@ -168,7 +168,7 @@ def handle_search(command, current_area, game_state):
     if not search_results:
         return "You don't find anything useful here."
 
-    narrator_text = "You search the area and find: " + " ".join(search_results)
+    narrator_text = "You search the area and find " + " ".join(search_results)
 
     search_voice = current_area.get(
         "searchVoice",

@@ -7,7 +7,10 @@ itemRegistry = {
             "stick",
         ],
         "description": "A fallen branch from a nearby tree.",
-        "worldDescription": "A fallen branch lies on the ground.",
+        "worldDescription": (
+            "a <em><span class='item-highlight'>fallen branch</span></em> "
+            "lying on the ground."
+        ),
         "takeable": True,
         "wearable": False,
         "onThrow": {
