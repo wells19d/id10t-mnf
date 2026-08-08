@@ -1,3 +1,4 @@
+import logging
 import time
 
 from flask import (
@@ -13,6 +14,8 @@ from game.handlers.common import get_current_location_state
 from states.gameState import currentState as gameState
 
 app = Flask(__name__)
+
+logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
 SERVER_STARTED_AT = time.time()
 
