@@ -12,16 +12,6 @@ massive_tree = {
         "leaves rustle gently in the breeze. There appears to be "
         "no other direction to go except back the way you came."
     ),
-    "lookResponse": [
-        {
-            "speaker": "narrator",
-            "text": (
-                "You are standing in a clearing against a massive tree stretching high into the sky. "
-                "no other direction to go except back the way you came."
-            ),
-        },
-    ],
-    # No loose items initially.
     "items": [],
     "scenery": {
         "tree": {
@@ -34,16 +24,6 @@ massive_tree = {
                 "stretching high into the sky. The bark is rough and weathered, and the "
                 "leaves rustle gently in the breeze."
             ),
-            "lookResponse": [
-                {
-                    "speaker": "narrator",
-                    "text": (
-                        "You look up at the massive tree, marveling at its size and age. "
-                        "The branches seem to reach out in all directions, creating a canopy "
-                        "that filters the sunlight."
-                    ),
-                },
-            ],
             "takeFail": [
                 {
                     "speaker": "narrator",
@@ -52,18 +32,30 @@ massive_tree = {
                         "deeply in the ground."
                     ),
                 },
+                {
+                    "speaker": "voice",
+                    "text": (
+                        "...really? You think you can just pick up massive trees now?"
+                    ),
+                },
             ],
-            # The axe begins embedded in the tree.
-            "items": [
-                "a1_rusty_axe",
-            ],
+            "items": ["a1_rusty_axe", "a1_wornout_work_gloves"],
             "searchable": False,
             "throwInteractions": {
                 "a1_rusty_axe": {
-                    "response": (
-                        "You throw the axe. With dumb luck, it sticks into the tree, "
-                        "leaving it embedded in the trunk."
-                    ),
+                    "response": [
+                        {
+                            "speaker": "narrator",
+                            "text": (
+                                "You throw the axe. With dumb luck, it sticks into the tree, "
+                                "leaving it embedded in the trunk."
+                            ),
+                        },
+                        {
+                            "speaker": "voice",
+                            "text": "Well... that worked.",
+                        },
+                    ],
                 },
             },
         },

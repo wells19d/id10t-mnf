@@ -19,7 +19,14 @@ def handle_inventory(game_state):
         if item:
             item_names.append(get_item_display_name(item))
 
-    narrator_text = "You are carrying: " + ", ".join(item_names) + "."
+    inventory_items = "".join(
+        f"<div class='inventory-item'>{item_name}</div>" for item_name in item_names
+    )
+
+    narrator_text = (
+        "<div class='inventory-label'>You are carrying:</div>"
+        f"<div class='inventory-grid'>{inventory_items}</div>"
+    )
 
     inventory_voice = game_state.get("inventoryVoice")
 

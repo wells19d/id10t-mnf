@@ -197,3 +197,31 @@ main {
 .help-section li {
   margin: 3px 0;
 }
+
+.inventory-label {
+  margin-bottom: 8px;
+}
+
+.inventory-grid {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px 20px;
+  max-width: 650px;
+}
+
+.inventory-item {
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .inventory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 450px) {
+  .inventory-grid {
+    grid-template-columns: 1fr;
+  }
+}

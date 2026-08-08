@@ -37,7 +37,11 @@ clearing = {
         },
         {
             "speaker": "voice",
-            "text": "...I don't remember. Maybe I should <span class='command-highlight'>look</span> around and <span class='command-highlight'>search</span> for answers.",
+            "text": (
+                "...I don't remember. Maybe I should "
+                "<span class='command-highlight'>look</span> around and "
+                "<span class='command-highlight'>search</span> for answers."
+            ),
         },
     ],
     "description": (
@@ -45,21 +49,9 @@ clearing = {
         "Sunlight shines through the trees above. Worn paths lead north, south, "
         "east, and west."
     ),
-    "lookResponse": [
-        {
-            "speaker": "narrator",
-            "text": (
-                "You are standing in a grassy clearing surrounded by thick forest. "
-                "Sunlight shines through the trees above. Worn paths lead north, south, "
-                "east, and west."
-            ),
-        },
-    ],
-    # Loose items currently in this location.
     "items": [
         "a1_fallen_branch",
     ],
-    # Permanent/interactable objects belong here.
     "scenery": {},
     "exits": {
         "north": "massive_tree",
@@ -68,6 +60,3 @@ clearing = {
         "west": "fallen_nursery",
     },
 }
-
-
-# "Larry,\n\nQuit asking me for the safe combination.\n\nYou’ve got everything you need to figure it out.\n\nYour birth month, the day David comes back, and the inspection date.\n\nYou should know by now which one comes first.\n\nCharles"
