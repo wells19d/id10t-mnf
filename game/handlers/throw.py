@@ -28,7 +28,9 @@ def handle_throw(command, current_area, game_state):
         return f"You aren't carrying {item_name}."
 
     item = itemRegistry[item_id]
+
     display_name = get_item_name(item)
+
     throw_actions = item.get("onThrow")
 
     if not throw_actions:
@@ -55,10 +57,15 @@ def handle_throw(command, current_area, game_state):
 
     inventory.remove(item_id)
 
-    if not throw_action.get("destroyItem", False):
-        location_state = get_current_location_state(game_state)
+    if not throw_action.get(
+        "destroyItem",
+        False,
+    ):
+        location_state = get_current_location_state(
+            game_state,
+        )
 
-        if item_id not in location_state["itemsAvailable"]:
-            location_state["itemsAvailable"].append(item_id)
+        # Thrown item becomes loose in this location.
+        location_state["items"][item_id] = None
 
     return throw_action["response"]

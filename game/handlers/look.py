@@ -45,23 +45,9 @@ def handle_look(command, current_area, game_state):
     if item_id:
         item = itemRegistry[item_id]
 
-        area_item = current_area.get(
-            "itemDescriptions",
-            {},
-        ).get(
-            item_id,
-            {},
-        )
-
-        return area_item.get(
+        return item.get(
             "lookResponse",
-            item.get(
-                "lookResponse",
-                area_item.get(
-                    "description",
-                    item["description"],
-                ),
-            ),
+            item["description"],
         )
 
     return f"There is nothing remarkable about the {target}."

@@ -1,286 +1,256 @@
-# Project ID10T: A Memory Not Found
+# Project ID10T: Memory Not Found
 
-Project ID10T: A Memory Not Found — A browser-based, text adventure built with Python and Flask.
+A browser-based, Zork-inspired text adventure built with Python, Flask, HTML, CSS, and JavaScript.
 
-This project serves as a self-directed final project for learning and applying the fundamentals of Python through a larger, complete application.
-
----
-
-## Project Goal
-
-The goal of this project is to strengthen my understanding of Python by building a playable application instead of working only through isolated lessons and exercises.
-
-The project currently focuses on:
-
-- Python functions and modules
-- Dictionaries, lists, and application state
-- Flask routes and JSON responses
-- Parsing text commands
-- Reusable action handlers
-- Movement between connected locations
-- Inventory and item management
-- Interactive scenery and containers
-- Connecting a Python backend to an HTML, CSS, and JavaScript interface
-
-The game is intentionally text-based so the primary focus remains on Python, application structure, and game logic.
+This is a self-directed final project focused on learning Python through a complete application rather than isolated exercises.
 
 ---
 
 ## Concept
 
-The player wakes with no memory of who they are or how they arrived.
+The player wakes in a forest clearing with no memory of who they are or how they arrived.
 
-Through exploration, environmental interaction, and puzzle solving, the player begins uncovering information about the world and their own past.
+Through exploration, environmental interaction, puzzles, and recovered memories, the player begins to uncover what happened and why they are there.
 
-The game is inspired by classic text adventures such as Zork, but runs through a browser-based terminal interface.
+The interface is styled like a simple terminal and separates responses into:
 
----
-
-## Presentation
-
-The interface is designed to resemble a simple terminal.
-
-Game output is divided between:
-
-- **Player** — commands entered by the person playing
+- **Player** — commands entered by the player
 - **Narrator** — descriptions of the world and results of actions
-- **Inner Voice** — occasional thoughts, reactions, hints, or commentary from the character
-
-Most actions only require a Narrator response. The Inner Voice is used only when it adds something meaningful to the moment.
+- **Inner Voice** — occasional thoughts, reactions, hints, or commentary
 
 ---
 
-## Command System
+## Current Commands
 
-The player interacts with the game by entering text commands.
+```text
+look
+look at <target>
 
-Current command types include:
+search
+search <target>
 
-    look
-    look at <target>
+open <target>
+close <target>
 
-    search
-    search <target>
+take <item>
+take <item> from <target>
+drop <item>
 
-    open <target>
-    close <target>
+throw <item>
+throw <item> at <target>
 
-    take <item>
-    take <item> from <target>
+use <item> on <target>
 
-    throw <item>
-    throw <item> at <target>
+wear <item>
 
-    use <item>
-    use <item> on <target>
+inventory
 
-    wear <item>
+north / south / east / west
+n / s / e / w
+```
 
-    inventory
+Aliases currently include:
 
-Movement supports full directions and short aliases:
+```text
+grab
+get
+pick up
+inspect
+examine
+equip
+```
 
-    north
-    south
-    east
-    west
+The browser also supports terminal-style command history:
 
-    n
-    s
-    e
-    w
-
-Several command aliases are also supported:
-
-    grab
-    get
-    pick up
-    inspect
-    examine
-    equip
-
-The parser separates each command into its verb, object, target, and additional values before sending it to the appropriate handler.
+- **Up Arrow** — previous command
+- **Down Arrow** — newer command
+- Keeps the last **10 commands**
 
 ---
 
-## World and Location System
+## World Structure
 
-The game world is divided into connected locations.
+Each location is stored in its own file under `areas/`.
 
-Each location can define:
+An area can define:
 
-- A first-visit introduction
-- A normal location description
-- Available exits
-- Visible scenery
-- Items
+- First-visit narration
+- Normal description
+- LOOK response
+- Loose pickup items
+- Permanent/interactable scenery
 - Searchable objects
-- Openable and closeable containers
-- Location-specific state
+- Openable/closeable containers
+- Items stored inside scenery
+- Exits to other locations
 - Optional Narrator and Inner Voice responses
 
-Indoor and outdoor locations use the same general system.
+### Items vs. Scenery
 
-Interior sections can be connected like any other location while still containing their own scenery, items, interactions, containers, and exits.
+Pickup items are defined once in `game/itemRegistry.py`.
+
+The area file only decides where that item starts:
+
+```python
+"items": [
+    "a1_fallen_branch",
+]
+```
+
+Items inside a container are placed on the scenery object:
+
+```python
+"scenery": {
+    "cupboard": {
+        "openable": True,
+        "closeable": True,
+        "searchable": True,
+        "items": [
+            "a1_house_key",
+        ],
+    },
+}
+```
+
+Permanent objects such as trees, doors, safes, cupboards, calendars, or objects that cannot be taken exist only as scenery in the area file.
+
+Runtime state is created automatically as the player interacts with the world, so new items and scenery no longer need to be manually added to `gameState.py`.
 
 ---
 
-## Items
+## Item Behavior
 
-Items are stored in a central registry and use unique internal IDs.
+Items can support:
 
-This allows the game to distinguish between multiple objects that may share similar names or aliases.
+- Taking
+- Dropping
+- Looking/examining
+- Wearing
+- Throwing
+- Throwing at scenery
+- Using on scenery
+- Being destroyed after an action
+- Setting game flags after successful interactions
 
-For example, the player may enter:
+Example:
 
-    take axe
+```python
+"a1_fallen_branch": {
+    "name": "Fallen Branch",
+    "aliases": ["fallen branch", "branch", "stick"],
+    "description": "A fallen branch from a nearby tree.",
+    "worldDescription": "A fallen branch lies on the ground.",
+    "takeable": True,
+    "wearable": False,
+    "onThrow": {
+        "default": {
+            "response": (
+                "You throw the branch. It spins through the air "
+                "and drops into the grass."
+            ),
+            "destroyItem": False,
+        },
+    },
+},
+```
 
-If only one matching item is available, the action continues normally.
-
-If multiple matching items are available, the game asks the player to be more specific:
-
-    Which axe do you mean?
-
-The player can then enter a more precise command:
-
-    take rusty axe
-
-The game stores the internal item ID while displaying the readable item name to the player.
-
----
-
-## Scenery and Containers
-
-Scenery represents visible parts of a location that may be examined or interacted with but are not necessarily inventory items.
-
-Scenery can support:
-
-- Aliases
-- Descriptions
-- Failed interaction responses
-- Attached items
-- Search behavior
-- Open and closed states
-- Optional Narrator and Inner Voice responses
-
-Containers can hold items that remain hidden until the container is opened and searched.
-
-Changing state is stored separately from the location definition so objects can remain open, closed, searched, emptied, or otherwise changed after the player interacts with them.
+If an item survives being thrown or dropped, it becomes a loose item in the current location and can be picked up again.
 
 ---
 
 ## Look and Search
 
-The `look` and `search` commands serve different purposes.
+`LOOK` describes the current location.
 
-`look` returns the main description of the current location.
+`LOOK AT <target>` examines a specific item or scenery object.
 
-`look at <target>` examines a specific visible item or scenery object.
+`SEARCH` looks for loose items and scenery in the current location.
 
-`search` returns visible scenery and discoverable items within the current location.
+`SEARCH <target>` searches a specific object or container.
 
-`search <target>` searches a specific object or container.
-
-Search results respond to the current game state. Items that have been taken no longer appear, closed containers hide their contents, and scenery can be removed from search results when it no longer contains anything relevant.
+Search results react to the current game state. Taken items disappear, dropped items appear in their new location, and closed containers hide their contents.
 
 ---
 
-## Response System
+## Backend Structure
 
-Handlers can return either a standard Narrator response or a sequence containing both Narrator and Inner Voice messages.
+```text
+game/
+├── commandParser.py
+├── failedActions.py
+├── itemRegistry.py
+├── movement.py
+├── parserUtils.py
+└── handlers/
+    ├── common.py
+    ├── drop.py
+    ├── inventory.py
+    ├── look.py
+    ├── open_close.py
+    ├── search.py
+    ├── take.py
+    ├── throw.py
+    ├── use.py
+    └── wear.py
+```
 
-Most actions use a single Narrator response.
-
-The usual response flow is:
-
-    Narrator
-    Inner Voice
-
-A second Narrator response is reserved for a separate event or result rather than continuing the same action unnecessarily.
+Action logic is separated into handlers while shared lookup/state helpers live in `handlers/common.py`.
 
 ---
 
-## Current Backend Structure
+## Development Workflow
 
-    game/
-    ├── commandParser.py
-    ├── failedActions.py
-    ├── itemRegistry.py
-    ├── movement.py
-    ├── parserUtils.py
-    └── handlers/
-        ├── __init__.py
-        ├── common.py
-        ├── inventory.py
-        ├── look.py
-        ├── open_close.py
-        ├── search.py
-        ├── take.py
-        ├── throw.py
-        ├── use.py
-        └── wear.py
+Run the project with:
 
-Shared helper functions are kept in `handlers/common.py`, while each action handler is stored in its own file.
+```bash
+python start.py
+```
 
-This keeps the command system easier to update as new mechanics are added.
+or:
+
+```bash
+python3 start.py
+```
+
+The launcher:
+
+- Installs Flask if needed
+- Starts Flask in debug mode
+- Opens the game in the browser
+- Automatically reloads Python changes during development
+- Refreshes the browser after the Flask server reloads
+- Shuts down cleanly with `Ctrl+C`
+
+This makes editing area narration and game data much closer to a live-development workflow.
 
 ---
 
 ## Current Progress
 
-Completed or currently working:
+The project currently supports:
 
-- Flask application setup
-- Browser-based terminal interface
-- Player, Narrator, and Inner Voice display
+- Flask backend and browser terminal UI
+- Area-to-area movement
+- First-visit and repeat-visit behavior
 - Command parsing and aliases
-- Directional movement
-- First-visit and repeat-visit location behavior
-- Central game state
 - Central item registry
-- Unique internal item IDs
-- Inventory display
-- Ambiguous item handling
-- Interactive scenery
-- Searchable objects and containers
-- Open and close states
-- Taking items from locations and containers
-- Throw, use, and wear handlers
-- Optional custom Narrator and Inner Voice responses
-- Handler files separated by action
+- Runtime world state
+- Inventory
+- Taking and dropping items
+- Throwing items
+- Using items on scenery
+- Wearable items
+- Searchable scenery
+- Openable/closeable containers
+- Items stored inside containers
+- Custom success and failure responses
+- Optional Inner Voice responses
+- Terminal-style command history
+- Development hot reload
+
+Current work is focused on building the actual narrative, scenery, items, and puzzles for **Area 1: The Forest**.
 
 ---
-
-## Next Steps
-
-The next stage is focused on writing and connecting the actual world content.
-
-This includes:
-
-- Finalizing location descriptions
-- Defining scenery and items for each location
-- Building interior locations
-- Expanding interaction responses
-- Adding environmental puzzles
-- Connecting progression between areas
-- Refining command behavior and failed-action responses
-- Continuing to clean up and simplify the game structure as it grows
-
----
-
-## Running the Project
-
-From the project folder, run:
-
-    python start.py
-
-On systems that use `python3`:
-
-    python3 start.py
-
-If Flask is not installed, the launcher installs it automatically and then starts the game.
-
-## Screenshots
 
 ## Screenshots
 

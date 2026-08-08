@@ -4,6 +4,9 @@ from areas.areaRegistry import areaRegistry
 from game.failedActions import failedActions
 from game.movement import move_player
 from game.parserUtils import parse_command_parts
+
+from game.handlers.common import get_current_location_state
+from game.handlers.drop import handle_drop
 from game.handlers.inventory import handle_inventory
 from game.handlers.look import handle_look
 from game.handlers.open_close import handle_close, handle_open
@@ -12,13 +15,13 @@ from game.handlers.take import handle_take
 from game.handlers.throw import handle_throw
 from game.handlers.use import handle_use
 from game.handlers.wear import handle_wear
+
 from states.gameState import currentState as gameState
 
 
 def parse_command(player_command):
     player_state = gameState["player"]
 
-    current_area_id = player_state["currentArea"]
     current_location = player_state["currentLocation"]
 
     current_area = areaRegistry[current_location]
@@ -33,14 +36,17 @@ def parse_command(player_command):
         if movement_response in areaRegistry:
             new_area = areaRegistry[movement_response]
 
-            new_area_state = gameState["areas"][current_area_id]["locations"][
-                movement_response
-            ]
+            new_area_state = get_current_location_state(
+                gameState,
+            )
 
             if not new_area_state["visited"]:
                 new_area_state["visited"] = True
 
-                intro = new_area.get("intro", [])
+                intro = new_area.get(
+                    "intro",
+                    [],
+                )
 
                 has_intro_text = any(
                     message.get("text", "").strip() for message in intro
@@ -53,7 +59,10 @@ def parse_command(player_command):
 
         return movement_response
 
-    command = parse_command_parts(player_command)
+    command = parse_command_parts(
+        player_command,
+    )
+
     command_verb = command["verb"]
 
     if not command_verb:
@@ -80,13 +89,32 @@ def parse_command(player_command):
             gameState,
         )
 
-    if command_verb in ["inventory", "bag", "i"]:
-        return handle_inventory(gameState)
+    if command_verb == "close":
+        return handle_close(
+            command,
+            current_area,
+            gameState,
+        )
+
+    if command_verb in [
+        "inventory",
+        "bag",
+        "i",
+    ]:
+        return handle_inventory(
+            gameState,
+        )
 
     if command_verb == "take":
         return handle_take(
             command,
             current_area,
+            gameState,
+        )
+
+    if command_verb == "drop":
+        return handle_drop(
+            command,
             gameState,
         )
 
@@ -110,14 +138,9 @@ def parse_command(player_command):
             gameState,
         )
 
-    if command_verb == "close":
-        return handle_close(
-            command,
-            current_area,
-            gameState,
-        )
-
-    failed_action = failedActions.get(command_verb)
+    failed_action = failedActions.get(
+        command_verb,
+    )
 
     if not failed_action:
         return failedActions["default"]
@@ -125,6 +148,8 @@ def parse_command(player_command):
     command_target = command["object"]
 
     if command_target:
-        return failed_action["invalidTarget"].format(target=command_target)
+        return failed_action["invalidTarget"].format(
+            target=command_target,
+        )
 
     return failed_action["missingTarget"]

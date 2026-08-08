@@ -1,17 +1,69 @@
+from areas.areaRegistry import areaRegistry
 from game.itemRegistry import itemRegistry
 
 
 def get_current_area_state(game_state):
-    current_area = game_state["player"]["currentArea"]
+    current_area_id = game_state["player"]["currentArea"]
 
-    return game_state["areas"][current_area]
+    areas = game_state.setdefault("areas", {})
+
+    return areas.setdefault(
+        current_area_id,
+        {
+            "flags": {},
+            "locations": {},
+        },
+    )
+
+
+def build_initial_location_items(area_data):
+    items = {}
+
+    # Loose items in the area.
+    for item_id in area_data.get("items", []):
+        items[item_id] = None
+
+    # Items that begin inside/on scenery.
+    for scenery_id, scenery_data in area_data.get(
+        "scenery",
+        {},
+    ).items():
+        for item_id in scenery_data.get("items", []):
+            items[item_id] = scenery_id
+
+    return items
+
+
+def get_location_state(game_state, location_id):
+    area_state = get_current_area_state(game_state)
+
+    locations = area_state.setdefault(
+        "locations",
+        {},
+    )
+
+    if location_id not in locations:
+        area_data = areaRegistry.get(
+            location_id,
+            {},
+        )
+
+        locations[location_id] = {
+            "visited": False,
+            "items": build_initial_location_items(area_data),
+            "scenery": {},
+        }
+
+    return locations[location_id]
 
 
 def get_current_location_state(game_state):
-    area_state = get_current_area_state(game_state)
     current_location = game_state["player"]["currentLocation"]
 
-    return area_state["locations"][current_location]
+    return get_location_state(
+        game_state,
+        current_location,
+    )
 
 
 def get_item_name(item):
@@ -41,7 +93,10 @@ def find_scenery(target, current_area):
         "scenery",
         {},
     ).items():
-        aliases = scenery_data.get("aliases", [])
+        aliases = scenery_data.get(
+            "aliases",
+            [],
+        )
 
         if target == scenery_id or target in aliases:
             return scenery_id, scenery_data
@@ -54,6 +109,7 @@ def find_items(item_name, item_ids):
         return []
 
     item_name = item_name.strip().lower()
+
     matches = []
 
     for item_id in item_ids:
@@ -62,7 +118,10 @@ def find_items(item_name, item_ids):
         if not item:
             continue
 
-        aliases = item.get("aliases", [])
+        aliases = item.get(
+            "aliases",
+            [],
+        )
 
         if item_name == item_id or item_name in aliases:
             matches.append(item_id)
@@ -71,7 +130,10 @@ def find_items(item_name, item_ids):
 
 
 def resolve_item(item_name, item_ids):
-    matches = find_items(item_name, item_ids)
+    matches = find_items(
+        item_name,
+        item_ids,
+    )
 
     if not matches:
         return None, None
@@ -94,48 +156,46 @@ def get_scenery_state(location_state, scenery_id):
     )
 
 
-def get_scenery_item_ids(current_area):
-    scenery_item_ids = []
-
-    for scenery_data in current_area.get(
-        "scenery",
-        {},
-    ).values():
-        scenery_item_ids.extend(scenery_data.get("items", []))
-
-    return scenery_item_ids
+def get_items_in_scenery(location_state, scenery_id):
+    return [
+        item_id
+        for item_id, container_id in location_state["items"].items()
+        if container_id == scenery_id
+    ]
 
 
 def get_visible_item_ids(current_area, game_state):
-    location_state = get_current_location_state(game_state)
-    available_items = location_state["itemsAvailable"]
+    location_state = get_current_location_state(
+        game_state,
+    )
+
     visible_items = []
 
-    scenery_item_ids = get_scenery_item_ids(current_area)
+    for item_id, container_id in location_state["items"].items():
 
-    for item_id in available_items:
-        if item_id not in scenery_item_ids:
+        # Loose item.
+        if container_id is None:
             visible_items.append(item_id)
+            continue
 
-    for scenery_id, scenery_data in current_area.get(
-        "scenery",
-        {},
-    ).items():
-        scenery_items = scenery_data.get("items", [])
+        scenery_data = current_area.get(
+            "scenery",
+            {},
+        ).get(container_id)
 
-        if not scenery_items:
+        if not scenery_data:
+            visible_items.append(item_id)
             continue
 
         scenery_state = get_scenery_state(
             location_state,
-            scenery_id,
+            container_id,
         )
 
+        # Items inside a closed container are hidden.
         if scenery_data.get("openable") and not scenery_state.get("isOpen", False):
             continue
 
-        for item_id in scenery_items:
-            if item_id in available_items and item_id not in visible_items:
-                visible_items.append(item_id)
+        visible_items.append(item_id)
 
     return visible_items

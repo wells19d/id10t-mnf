@@ -2,6 +2,9 @@ const commandForm = document.getElementById('command-form');
 const commandInput = document.getElementById('command-input');
 const gameOutput = document.getElementById('game-output');
 
+const commandHistory = [];
+let historyIndex = 0;
+
 function displayMessage(speaker, text) {
   const responseText = document.createElement('div');
 
@@ -49,6 +52,29 @@ window.addEventListener('load', async () => {
   scrollToBottom();
 });
 
+commandInput.addEventListener('keydown', (event) => {
+  if (event.key === 'ArrowUp') {
+    event.preventDefault();
+
+    if (historyIndex > 0) {
+      historyIndex -= 1;
+      commandInput.value = commandHistory[historyIndex];
+    }
+  }
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+
+    if (historyIndex < commandHistory.length - 1) {
+      historyIndex += 1;
+      commandInput.value = commandHistory[historyIndex];
+    } else {
+      historyIndex = commandHistory.length;
+      commandInput.value = '';
+    }
+  }
+});
+
 commandForm.addEventListener('submit', async (event) => {
   event.preventDefault();
 
@@ -57,6 +83,13 @@ commandForm.addEventListener('submit', async (event) => {
   if (!command) {
     return;
   }
+
+  commandHistory.push(command);
+  if (commandHistory.length > 10) {
+    commandHistory.shift();
+  }
+
+  historyIndex = commandHistory.length;
 
   displayMessage('user', command);
   scrollToBottom();
@@ -85,3 +118,25 @@ commandForm.addEventListener('submit', async (event) => {
 
   scrollToBottom();
 });
+
+let currentServerVersion = null;
+
+async function checkServerVersion() {
+  try {
+    const response = await fetch('/dev-version');
+    const data = await response.json();
+
+    if (currentServerVersion === null) {
+      currentServerVersion = data.version;
+      return;
+    }
+
+    if (data.version !== currentServerVersion) {
+      window.location.reload();
+    }
+  } catch (error) {
+    // Flask may be restarting
+  }
+}
+
+setInterval(checkServerVersion, 1000);

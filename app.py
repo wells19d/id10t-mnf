@@ -1,10 +1,20 @@
-from flask import Flask, jsonify, render_template, request
+import time
+
+from flask import (
+    Flask,
+    jsonify,
+    render_template,
+    request,
+)
 
 from areas.clearing import clearing
 from game.commandParser import parse_command
+from game.handlers.common import get_current_location_state
 from states.gameState import currentState as gameState
 
 app = Flask(__name__)
+
+SERVER_STARTED_AT = time.time()
 
 
 @app.route("/")
@@ -12,21 +22,56 @@ def home():
     return render_template("index.html")
 
 
+@app.get("/dev-version")
+def dev_version():
+    return jsonify(
+        {
+            "version": SERVER_STARTED_AT,
+        }
+    )
+
+
 @app.route("/start")
 def start_game():
     if not gameState["player"]["introComplete"]:
         gameState["player"]["introComplete"] = True
-        gameState["areas"]["area1"]["locations"]["clearing"]["visited"] = True
 
-        return jsonify({"messages": clearing["intro"]})
+        location_state = get_current_location_state(
+            gameState,
+        )
 
-    return jsonify({"messages": []})
+        location_state["visited"] = True
+
+        return jsonify(
+            {
+                "messages": clearing["intro"],
+            }
+        )
+
+    return jsonify(
+        {
+            "messages": [],
+        }
+    )
 
 
 @app.route("/command", methods=["POST"])
 def command():
-    player_command = request.json.get("command", "").strip().lower()
+    player_command = (
+        request.json.get(
+            "command",
+            "",
+        )
+        .strip()
+        .lower()
+    )
 
-    response = parse_command(player_command)
+    response = parse_command(
+        player_command,
+    )
 
-    return jsonify({"response": response})
+    return jsonify(
+        {
+            "response": response,
+        }
+    )
