@@ -1,2 +1,3 @@
 /z-sandbox
 /__pycache__
+*.py[cod]
