@@ -38,11 +38,17 @@ function displayMessage(speaker, text) {
         ${speakerLabel}
       </div>
 
-      <div class="tr ${speaker}-response">
-        ${text}
-      </div>
+      <div class="tr ${speaker}-response"></div>
     </div>
   `;
+
+  const responseContent = responseText.querySelector('.tr');
+
+  if (speaker === 'user') {
+    responseContent.textContent = text;
+  } else {
+    responseContent.innerHTML = text;
+  }
 
   gameOutput.appendChild(responseText);
 }
