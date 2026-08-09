@@ -2,6 +2,7 @@ from copy import deepcopy
 
 from areas.areaRegistry import areaRegistry
 from game.itemRegistry import itemRegistry
+from states.gameState import GAME_STATE_REQUIREMENT_KEYS
 
 WORLD_ITEM_PLACEMENT = "__world__"
 
@@ -171,17 +172,8 @@ def game_state_requirements_met(
     if not requirements:
         return True
 
-    supported_requirements = {
-        "player",
-        "inventory",
-        "equipped",
-        "flags",
-        "sceneryState",
-        "itemStates",
-    }
-
     if any(
-        key not in supported_requirements
+        key not in GAME_STATE_REQUIREMENT_KEYS
         for key in requirements
     ):
         return False

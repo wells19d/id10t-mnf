@@ -2,6 +2,17 @@
 
 from copy import deepcopy
 
+GAME_STATE_REQUIREMENT_KEYS = frozenset(
+    {
+        "player",
+        "inventory",
+        "equipped",
+        "flags",
+        "sceneryState",
+        "itemStates",
+    }
+)
+
 initialState = {
     "player": {
         "introComplete": False,
