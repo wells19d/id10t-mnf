@@ -20,11 +20,6 @@ initialState = {
 }
 
 
-currentState = deepcopy(
-    initialState,
-)
-
-
 def merge_state(
     default_state,
     saved_state,
@@ -51,16 +46,10 @@ def merge_state(
     return merged_state
 
 
-def reset_game_state():
-    currentState.clear()
-
-    currentState.update(
-        deepcopy(
-            initialState,
-        )
+def create_game_state():
+    return deepcopy(
+        initialState,
     )
-
-    return currentState
 
 
 def restore_game_state(saved_state):
@@ -68,7 +57,7 @@ def restore_game_state(saved_state):
         saved_state,
         dict,
     ):
-        return False
+        return None
 
     saved_player = saved_state.get(
         "player",
@@ -78,17 +67,11 @@ def restore_game_state(saved_state):
         saved_player,
         dict,
     ):
-        return False
+        return None
 
     restored_state = merge_state(
         initialState,
         saved_state,
     )
 
-    currentState.clear()
-
-    currentState.update(
-        restored_state,
-    )
-
-    return True
+    return restored_state

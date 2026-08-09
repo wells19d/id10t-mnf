@@ -6,6 +6,17 @@ from game.itemRegistry import itemRegistry
 WORLD_ITEM_PLACEMENT = "__world__"
 
 
+class CommandFailure:
+    def __init__(self, response):
+        self.response = response
+
+
+def command_failure(response):
+    return CommandFailure(
+        response,
+    )
+
+
 def get_current_area_state(game_state):
     current_area_id = game_state["player"]["currentArea"]
 

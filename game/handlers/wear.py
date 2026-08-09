@@ -1,4 +1,5 @@
 from game.handlers.common import (
+    command_failure,
     get_item_display_name,
     resolve_item,
 )
@@ -9,7 +10,9 @@ def handle_wear(command, game_state):
     item_name = command["object"]
 
     if not item_name:
-        return "I don't know what I want to wear."
+        return command_failure(
+            "I don't know what I want to wear.",
+        )
 
     inventory = game_state["player"]["inventory"]
 
@@ -19,18 +22,24 @@ def handle_wear(command, game_state):
     )
 
     if clarification:
-        return clarification
+        return command_failure(
+            clarification,
+        )
 
     if not item_id:
-        return f"You aren't carrying {item_name}."
+        return command_failure(
+            f"You aren't carrying {item_name}.",
+        )
 
     item = itemRegistry[item_id]
     display_name = get_item_display_name(item)
 
     if not item.get("wearable", False):
-        return item.get(
-            "wearFailResponse",
-            f"You can't wear the {display_name}.",
+        return command_failure(
+            item.get(
+                "wearFailResponse",
+                f"You can't wear the {display_name}.",
+            )
         )
 
     equipped = game_state["player"]["equipped"]

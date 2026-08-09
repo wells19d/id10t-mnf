@@ -1,5 +1,6 @@
 from game.handlers.common import (
     apply_state_changes,
+    command_failure,
     find_scenery,
     get_current_area_state,
     get_current_location_state,
@@ -70,7 +71,9 @@ def handle_open(command, current_area, game_state):
     target = command["object"] or command["target"]
 
     if not target:
-        return "I don't know what I want to open."
+        return command_failure(
+            "I don't know what I want to open.",
+        )
 
     scenery_id, scenery_data = find_scenery(
         target,
@@ -78,15 +81,19 @@ def handle_open(command, current_area, game_state):
     )
 
     if not scenery_data:
-        return f"I don't see a {target} here."
+        return command_failure(
+            f"I don't see a {target} here.",
+        )
 
     if not scenery_data.get(
         "openable",
         False,
     ):
-        return scenery_data.get(
-            "openFailResponse",
-            f"You can't open the {scenery_id}.",
+        return command_failure(
+            scenery_data.get(
+                "openFailResponse",
+                f"You can't open the {scenery_id}.",
+            )
         )
 
     location_state = get_current_location_state(
@@ -103,9 +110,11 @@ def handle_open(command, current_area, game_state):
         "isBroken",
         False,
     ):
-        return scenery_data.get(
-            "brokenOpenResponse",
-            f"The {scenery_id} is already broken open.",
+        return command_failure(
+            scenery_data.get(
+                "brokenOpenResponse",
+                f"The {scenery_id} is already broken open.",
+            )
         )
 
     # Standard locked state.
@@ -113,18 +122,22 @@ def handle_open(command, current_area, game_state):
         "isLocked",
         False,
     ):
-        return scenery_data.get(
-            "lockedResponse",
-            f"The {scenery_id} is locked.",
+        return command_failure(
+            scenery_data.get(
+                "lockedResponse",
+                f"The {scenery_id} is locked.",
+            )
         )
 
     if scenery_state.get(
         "isOpen",
         False,
     ):
-        return scenery_data.get(
-            "alreadyOpenResponse",
-            f"The {scenery_id} is already open.",
+        return command_failure(
+            scenery_data.get(
+                "alreadyOpenResponse",
+                f"The {scenery_id} is already open.",
+            )
         )
 
     # Optional additional requirements.
@@ -138,9 +151,11 @@ def handle_open(command, current_area, game_state):
         game_state,
         scenery_state,
     ):
-        return scenery_data.get(
-            "openBlockedResponse",
-            f"You can't open the {scenery_id} right now.",
+        return command_failure(
+            scenery_data.get(
+                "openBlockedResponse",
+                f"You can't open the {scenery_id} right now.",
+            )
         )
 
     scenery_state["isOpen"] = True
@@ -163,7 +178,9 @@ def handle_close(command, current_area, game_state):
     target = command["object"] or command["target"]
 
     if not target:
-        return "I don't know what I want to close."
+        return command_failure(
+            "I don't know what I want to close.",
+        )
 
     scenery_id, scenery_data = find_scenery(
         target,
@@ -171,15 +188,19 @@ def handle_close(command, current_area, game_state):
     )
 
     if not scenery_data:
-        return f"I don't see a {target} here."
+        return command_failure(
+            f"I don't see a {target} here.",
+        )
 
     if not scenery_data.get(
         "closeable",
         False,
     ):
-        return scenery_data.get(
-            "closeFailResponse",
-            f"You can't close the {scenery_id}.",
+        return command_failure(
+            scenery_data.get(
+                "closeFailResponse",
+                f"You can't close the {scenery_id}.",
+            )
         )
 
     location_state = get_current_location_state(
@@ -196,18 +217,22 @@ def handle_close(command, current_area, game_state):
         "isBroken",
         False,
     ):
-        return scenery_data.get(
-            "brokenCloseResponse",
-            f"The {scenery_id} is broken and can't be closed.",
+        return command_failure(
+            scenery_data.get(
+                "brokenCloseResponse",
+                f"The {scenery_id} is broken and can't be closed.",
+            )
         )
 
     if not scenery_state.get(
         "isOpen",
         False,
     ):
-        return scenery_data.get(
-            "alreadyClosedResponse",
-            f"The {scenery_id} is already closed.",
+        return command_failure(
+            scenery_data.get(
+                "alreadyClosedResponse",
+                f"The {scenery_id} is already closed.",
+            )
         )
 
     # Optional additional requirements.
@@ -221,9 +246,11 @@ def handle_close(command, current_area, game_state):
         game_state,
         scenery_state,
     ):
-        return scenery_data.get(
-            "closeBlockedResponse",
-            f"You can't close the {scenery_id} right now.",
+        return command_failure(
+            scenery_data.get(
+                "closeBlockedResponse",
+                f"You can't close the {scenery_id} right now.",
+            )
         )
 
     scenery_state["isOpen"] = False

@@ -8,6 +8,7 @@ const commandHistory = [];
 let historyIndex = 0;
 
 let waitingForStartChoice = false;
+let currentGameState = null;
 
 function displayMessage(speaker, text) {
   if (speaker === 'system') {
@@ -64,6 +65,8 @@ function saveGameState(state) {
   if (!state) {
     return;
   }
+
+  currentGameState = state;
 
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
@@ -305,6 +308,7 @@ commandForm.addEventListener('submit', async (event) => {
     },
     body: JSON.stringify({
       command: command,
+      state: currentGameState,
     }),
   });
 

@@ -1,4 +1,5 @@
 from game.handlers.common import (
+    command_failure,
     find_scenery,
     get_current_location_state,
     get_item_display_name,
@@ -13,7 +14,9 @@ def handle_throw(command, current_area, game_state):
     target = command["target"]
 
     if not item_name:
-        return "I don't know what I want to throw."
+        return command_failure(
+            "I don't know what I want to throw.",
+        )
 
     inventory = game_state["player"]["inventory"]
 
@@ -23,10 +26,14 @@ def handle_throw(command, current_area, game_state):
     )
 
     if clarification:
-        return clarification
+        return command_failure(
+            clarification,
+        )
 
     if not item_id:
-        return f"You aren't carrying {item_name}."
+        return command_failure(
+            f"You aren't carrying {item_name}.",
+        )
 
     item = itemRegistry[item_id]
 
@@ -51,7 +58,9 @@ def handle_throw(command, current_area, game_state):
         )
 
         if not scenery_data:
-            return f"I don't see a {target} here."
+            return command_failure(
+                f"I don't see a {target} here.",
+            )
 
         target_scenery_id = scenery_id
 
@@ -73,7 +82,9 @@ def handle_throw(command, current_area, game_state):
         )
 
     if not throw_action:
-        return f"You can't throw the {display_name}."
+        return command_failure(
+            f"You can't throw the {display_name}.",
+        )
 
     # Thrown items can no longer remain equipped.
     unequip_item(

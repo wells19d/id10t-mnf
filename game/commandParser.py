@@ -9,6 +9,8 @@ from game.parserUtils import (
 )
 
 from game.handlers.common import (
+    CommandFailure,
+    command_failure,
     get_current_location_state,
     get_item_display_name,
     get_visible_item_ids,
@@ -29,9 +31,6 @@ from game.handlers.wear import handle_wear
 from game.help import helpResponse
 from game.itemRegistry import itemRegistry
 
-from states.gameState import currentState as gameState
-
-
 def response_to_messages(response):
     if isinstance(response, list):
         return response
@@ -47,68 +46,6 @@ def response_to_messages(response):
             "text": response,
         },
     ]
-
-
-def response_failed(
-    command,
-    response,
-):
-    parsed = parse_command_parts(
-        command,
-    )
-
-    verb = parsed["verb"]
-
-    # These commands don't stop a command chain
-    # simply because they found nothing.
-    if verb in [
-        "look",
-        "search",
-        "inventory",
-        "inv",
-        "bag",
-        "i",
-        "help",
-        "h",
-    ]:
-        return False
-
-    messages = response_to_messages(
-        response,
-    )
-
-    narrator_text = " ".join(
-        str(
-            message.get(
-                "text",
-                "",
-            )
-        )
-        for message in messages
-        if message.get("speaker") != "voice"
-    ).lower()
-
-    failure_phrases = [
-        "i don't ",
-        "i can't ",
-        "you can't ",
-        "you aren't ",
-        "that won't ",
-        "don't have ",
-        "not carrying ",
-        "is locked",
-        "is closed",
-        "can't reach",
-        "can't search",
-        "can't open",
-        "can't close",
-        "can't use",
-        "can't throw",
-        "can't take",
-        "can't wear",
-    ]
-
-    return any(phrase in narrator_text for phrase in failure_phrases)
 
 
 def format_compound_item_names(
@@ -142,6 +79,7 @@ def build_aggregate_response(
 
 def get_aggregate_candidate(
     player_command,
+    game_state,
 ):
     command = parse_command_parts(
         player_command,
@@ -174,7 +112,7 @@ def get_aggregate_candidate(
     if verb == "drop":
         item_id, clarification = resolve_item(
             item_name,
-            gameState["player"]["inventory"],
+            game_state["player"]["inventory"],
         )
 
         if clarification or not item_id:
@@ -196,13 +134,13 @@ def get_aggregate_candidate(
 
     # TAKE resolves against visible items in
     # the player's current location.
-    current_location = gameState["player"]["currentLocation"]
+    current_location = game_state["player"]["currentLocation"]
 
     current_area = areaRegistry[current_location]
 
     visible_items = get_visible_item_ids(
         current_area,
-        gameState,
+        game_state,
     )
 
     item_id, clarification = resolve_item(
@@ -227,8 +165,8 @@ def get_aggregate_candidate(
     }
 
 
-def execute_single_command(player_command):
-    player_state = gameState["player"]
+def execute_single_command(player_command, game_state):
+    player_state = game_state["player"]
 
     if player_command in [
         "help",
@@ -245,7 +183,7 @@ def execute_single_command(player_command):
         player_command,
         current_area,
         player_state,
-        gameState,
+        game_state,
     )
 
     if movement_response:
@@ -253,7 +191,7 @@ def execute_single_command(player_command):
             new_area = areaRegistry[movement_response]
 
             new_area_state = get_current_location_state(
-                gameState,
+                game_state,
             )
 
             if not new_area_state["visited"]:
@@ -277,7 +215,9 @@ def execute_single_command(player_command):
 
             return new_area["description"]
 
-        return movement_response
+        return command_failure(
+            movement_response,
+        )
 
     command = parse_command_parts(
         player_command,
@@ -286,36 +226,38 @@ def execute_single_command(player_command):
     command_verb = command["verb"]
 
     if not command_verb:
-        return failedActions["default"].format(
-            target=player_command,
+        return command_failure(
+            failedActions["default"].format(
+                target=player_command,
+            )
         )
 
     if command_verb == "look":
         return handle_look(
             command,
             current_area,
-            gameState,
+            game_state,
         )
 
     if command_verb == "search":
         return handle_search(
             command,
             current_area,
-            gameState,
+            game_state,
         )
 
     if command_verb == "open":
         return handle_open(
             command,
             current_area,
-            gameState,
+            game_state,
         )
 
     if command_verb == "close":
         return handle_close(
             command,
             current_area,
-            gameState,
+            game_state,
         )
 
     if command_verb in [
@@ -325,40 +267,40 @@ def execute_single_command(player_command):
         "i",
     ]:
         return handle_inventory(
-            gameState,
+            game_state,
         )
 
     if command_verb == "take":
         return handle_take(
             command,
             current_area,
-            gameState,
+            game_state,
         )
 
     if command_verb == "drop":
         return handle_drop(
             command,
-            gameState,
+            game_state,
         )
 
     if command_verb == "throw":
         return handle_throw(
             command,
             current_area,
-            gameState,
+            game_state,
         )
 
     if command_verb == "wear":
         return handle_wear(
             command,
-            gameState,
+            game_state,
         )
 
     if command_verb == "use":
         return handle_use(
             command,
             current_area,
-            gameState,
+            game_state,
         )
 
     failed_action = failedActions.get(
@@ -366,21 +308,27 @@ def execute_single_command(player_command):
     )
 
     if not failed_action:
-        return failedActions["default"].format(
-            target=player_command,
+        return command_failure(
+            failedActions["default"].format(
+                target=player_command,
+            )
         )
 
     command_target = command["object"]
 
     if command_target:
-        return failed_action["invalidTarget"].format(
-            target=command_target,
+        return command_failure(
+            failed_action["invalidTarget"].format(
+                target=command_target,
+            )
         )
 
-    return failed_action["missingTarget"]
+    return command_failure(
+        failed_action["missingTarget"],
+    )
 
 
-def parse_command(player_command):
+def parse_command(player_command, game_state):
     commands = parse_compound_commands(
         player_command,
     )
@@ -393,9 +341,18 @@ def parse_command(player_command):
     # Normal single command keeps the exact same
     # response behavior as before.
     if len(commands) == 1:
-        return execute_single_command(
+        response = execute_single_command(
             commands[0],
+            game_state,
         )
+
+        if isinstance(
+            response,
+            CommandFailure,
+        ):
+            return response.response
+
+        return response
 
     responses = []
 
@@ -439,18 +396,22 @@ def parse_command(player_command):
     for command in commands:
         aggregate_candidate = get_aggregate_candidate(
             command,
+            game_state,
         )
 
-        response = execute_single_command(
+        result = execute_single_command(
             command,
+            game_state,
         )
+
+        failed = isinstance(
+            result,
+            CommandFailure,
+        )
+
+        response = result.response if failed else result
 
         response_messages = response_to_messages(
-            response,
-        )
-
-        failed = response_failed(
-            command,
             response,
         )
 

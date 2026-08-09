@@ -1,5 +1,6 @@
 from game.handlers.common import (
     can_access_scenery_contents,
+    command_failure,
     find_scenery,
     get_current_location_state,
     get_item_display_name,
@@ -16,7 +17,9 @@ def handle_take(command, current_area, game_state):
     source_name = command["target"]
 
     if not item_name:
-        return "I don't know what I want to take."
+        return command_failure(
+            "I don't know what I want to take.",
+        )
 
     location_state = get_current_location_state(
         game_state,
@@ -30,7 +33,9 @@ def handle_take(command, current_area, game_state):
         )
 
         if not scenery_data:
-            return f"I don't see a {source_name} here."
+            return command_failure(
+                f"I don't see a {source_name} here.",
+            )
 
         scenery_state = get_scenery_state(
             location_state,
@@ -42,9 +47,11 @@ def handle_take(command, current_area, game_state):
             "isOpen",
             False,
         ):
-            return scenery_data.get(
-                "takeClosedResponse",
-                f"The {scenery_id} is closed.",
+            return command_failure(
+                scenery_data.get(
+                    "takeClosedResponse",
+                    f"The {scenery_id} is closed.",
+                )
             )
 
         # Other scenery conditions may also block
@@ -53,9 +60,11 @@ def handle_take(command, current_area, game_state):
             scenery_data,
             scenery_state,
         ):
-            return scenery_data.get(
-                "takeBlockedResponse",
-                f"You can't reach anything in the {scenery_id} right now.",
+            return command_failure(
+                scenery_data.get(
+                    "takeBlockedResponse",
+                    f"You can't reach anything in the {scenery_id} right now.",
+                )
             )
 
         available_items = get_items_in_scenery(
@@ -76,7 +85,9 @@ def handle_take(command, current_area, game_state):
     )
 
     if clarification:
-        return clarification
+        return command_failure(
+            clarification,
+        )
 
     if not item_id:
         scenery_id, scenery_data = find_scenery(
@@ -85,12 +96,16 @@ def handle_take(command, current_area, game_state):
         )
 
         if scenery_data:
-            return scenery_data.get(
-                "takeFail",
-                f"You can't take the {scenery_id}.",
+            return command_failure(
+                scenery_data.get(
+                    "takeFail",
+                    f"You can't take the {scenery_id}.",
+                )
             )
 
-        return f"I don't see a {item_name} here."
+        return command_failure(
+            f"I don't see a {item_name} here.",
+        )
 
     item = itemRegistry[item_id]
 
@@ -100,9 +115,11 @@ def handle_take(command, current_area, game_state):
         "takeable",
         False,
     ):
-        return item.get(
-            "takeFail",
-            f"I can't take the {display_name}.",
+        return command_failure(
+            item.get(
+                "takeFail",
+                f"I can't take the {display_name}.",
+            )
         )
 
     # Remove the item from its current world placement.

@@ -1,5 +1,6 @@
 from game.handlers.common import (
     apply_state_changes,
+    command_failure,
     find_scenery,
     get_current_area_state,
     get_current_location_state,
@@ -25,7 +26,9 @@ def handle_use(command, current_area, game_state):
         )
 
         if not scenery_data:
-            return f"I don't see a {target} here."
+            return command_failure(
+                f"I don't see a {target} here.",
+            )
 
         area_interaction = current_area.get(
             "interactions",
@@ -67,12 +70,16 @@ def handle_use(command, current_area, game_state):
 
                 return area_interaction["onSuccess"]
 
-            return area_interaction["onFail"]
+            return command_failure(
+                area_interaction["onFail"],
+            )
 
     item_name = command["object"]
 
     if not item_name:
-        return "I don't know what I want to use."
+        return command_failure(
+            "I don't know what I want to use.",
+        )
 
     inventory = game_state["player"]["inventory"]
 
@@ -82,10 +89,14 @@ def handle_use(command, current_area, game_state):
     )
 
     if clarification:
-        return clarification
+        return command_failure(
+            clarification,
+        )
 
     if not item_id:
-        return f"You aren't carrying {item_name}."
+        return command_failure(
+            f"You aren't carrying {item_name}.",
+        )
 
     item = itemRegistry[item_id]
 
@@ -94,7 +105,9 @@ def handle_use(command, current_area, game_state):
     )
 
     if not target:
-        return f"I don't know what I want to use " f"the {display_name} on."
+        return command_failure(
+            f"I don't know what I want to use " f"the {display_name} on.",
+        )
 
     scenery_id, scenery_data = find_scenery(
         target,
@@ -102,7 +115,9 @@ def handle_use(command, current_area, game_state):
     )
 
     if not scenery_data:
-        return f"I don't see a {target} here."
+        return command_failure(
+            f"I don't see a {target} here.",
+        )
 
     # The target scenery defines which items can
     # interact with it and what those interactions do.
@@ -114,7 +129,9 @@ def handle_use(command, current_area, game_state):
     )
 
     if not interaction:
-        return f"You can't use the " f"{display_name} on {scenery_id} here."
+        return command_failure(
+            f"You can't use the " f"{display_name} on {scenery_id} here.",
+        )
 
     location_state = get_current_location_state(
         game_state,
@@ -149,9 +166,11 @@ def handle_use(command, current_area, game_state):
         item_state,
         required_item_state,
     ):
-        return interaction.get(
-            "failResponse",
-            "That won't work right now.",
+        return command_failure(
+            interaction.get(
+                "failResponse",
+                "That won't work right now.",
+            )
         )
 
     # Required state of the target scenery.
@@ -164,9 +183,11 @@ def handle_use(command, current_area, game_state):
         scenery_state,
         required_scenery_state,
     ):
-        return interaction.get(
-            "failResponse",
-            "That won't work right now.",
+        return command_failure(
+            interaction.get(
+                "failResponse",
+                "That won't work right now.",
+            )
         )
 
     # Required inventory items.
@@ -175,9 +196,11 @@ def handle_use(command, current_area, game_state):
         [],
     ):
         if required_item_id not in inventory:
-            return interaction.get(
-                "failResponse",
-                "You don't have everything you need.",
+            return command_failure(
+                interaction.get(
+                    "failResponse",
+                    "You don't have everything you need.",
+                )
             )
 
     # Required equipped items.
@@ -188,9 +211,11 @@ def handle_use(command, current_area, game_state):
         [],
     ):
         if required_item_id not in equipped:
-            return interaction.get(
-                "failResponse",
-                "You aren't properly equipped.",
+            return command_failure(
+                interaction.get(
+                    "failResponse",
+                    "You aren't properly equipped.",
+                )
             )
 
     # Required area flags.
@@ -203,9 +228,11 @@ def handle_use(command, current_area, game_state):
         area_state["flags"],
         required_flags,
     ):
-        return interaction.get(
-            "failResponse",
-            "That won't work right now.",
+        return command_failure(
+            interaction.get(
+                "failResponse",
+                "That won't work right now.",
+            )
         )
 
     # All requirements passed.

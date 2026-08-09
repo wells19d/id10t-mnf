@@ -12,8 +12,7 @@ from areas.areaRegistry import areaRegistry
 from game.commandParser import parse_command
 from game.handlers.common import get_current_location_state
 from states.gameState import (
-    currentState as gameState,
-    reset_game_state,
+    create_game_state,
     restore_game_state,
 )
 
@@ -59,16 +58,16 @@ def start_game():
 
 @app.post("/new-game")
 def new_game():
-    reset_game_state()
+    game_state = create_game_state()
 
-    gameState["player"]["introComplete"] = True
+    game_state["player"]["introComplete"] = True
 
-    current_location = gameState["player"]["currentLocation"]
+    current_location = game_state["player"]["currentLocation"]
 
     current_area = areaRegistry[current_location]
 
     location_state = get_current_location_state(
-        gameState,
+        game_state,
     )
 
     location_state["visited"] = True
@@ -79,7 +78,7 @@ def new_game():
                 "intro",
                 [],
             ),
-            "state": gameState,
+            "state": game_state,
         }
     )
 
@@ -97,11 +96,11 @@ def load_game():
         "state",
     )
 
-    restored = restore_game_state(
+    game_state = restore_game_state(
         saved_state,
     )
 
-    if not restored:
+    if not game_state:
         return (
             jsonify(
                 {
@@ -111,7 +110,7 @@ def load_game():
             400,
         )
 
-    current_location = gameState["player"].get(
+    current_location = game_state["player"].get(
         "currentLocation",
         "clearing",
     )
@@ -121,8 +120,6 @@ def load_game():
     )
 
     if not current_area:
-        reset_game_state()
-
         return (
             jsonify(
                 {
@@ -143,7 +140,7 @@ def load_game():
                     ),
                 },
             ],
-            "state": gameState,
+            "state": game_state,
         }
     )
 
@@ -166,13 +163,30 @@ def command():
         .lower()
     )
 
+    game_state = restore_game_state(
+        data.get(
+            "state",
+        ),
+    )
+
+    if not game_state:
+        return (
+            jsonify(
+                {
+                    "error": "Invalid game state.",
+                }
+            ),
+            400,
+        )
+
     response = parse_command(
         player_command,
+        game_state,
     )
 
     return jsonify(
         {
             "response": response,
-            "state": gameState,
+            "state": game_state,
         }
     )
