@@ -7,6 +7,7 @@ from game.handlers.common import (
     get_item_display_name,
     get_items_in_scenery,
     get_scenery_state,
+    normalize_response_messages,
 )
 from items.itemRegistry import itemRegistry
 
@@ -288,19 +289,15 @@ def handle_search(command, location_definition, game_state):
     if not search_voice:
         return narrator_text
 
-    if isinstance(
+    search_voice_messages = normalize_response_messages(
         search_voice,
-        str,
-    ):
-        search_voice = {
-            "speaker": "voice",
-            "text": search_voice,
-        }
+        default_speaker="voice",
+    )
 
     return [
         {
             "speaker": "narrator",
             "text": narrator_text,
         },
-        search_voice,
+        *search_voice_messages,
     ]

@@ -4,6 +4,11 @@ const gameOutput = document.getElementById('game-output');
 
 const SAVE_KEY = 'id10t_save';
 const GAME_TAB_LOCK = 'id10t_game_tab';
+const VALID_RESPONSE_SPEAKERS = new Set([
+  'narrator',
+  'voice',
+  'system',
+]);
 
 const commandHistory = [];
 let historyIndex = 0;
@@ -70,7 +75,7 @@ function isValidCommandMessage(message) {
   return (
     message &&
     typeof message === 'object' &&
-    typeof message.speaker === 'string' &&
+    VALID_RESPONSE_SPEAKERS.has(message.speaker) &&
     typeof message.text === 'string'
   );
 }

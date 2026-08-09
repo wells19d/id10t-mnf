@@ -15,6 +15,7 @@ from game.handlers.common import (
     get_item_display_name,
     get_location_description,
     get_visible_item_ids,
+    normalize_response_messages,
     resolve_item,
 )
 from game.handlers.drop import handle_drop
@@ -34,22 +35,6 @@ from game.handlers.wear import (
 )
 from game.help import helpResponse
 from items.itemRegistry import itemRegistry
-
-def response_to_messages(response):
-    if isinstance(response, list):
-        return response
-
-    if isinstance(response, dict):
-        return [
-            response,
-        ]
-
-    return [
-        {
-            "speaker": "narrator",
-            "text": response,
-        },
-    ]
 
 
 def format_compound_item_names(
@@ -183,16 +168,18 @@ def execute_single_command(player_command, game_state):
     location_definition = locationRegistry[current_location]
 
     # Movement is checked before normal command parsing.
-    movement_response = move_player(
+    movement_result = move_player(
         player_command,
         location_definition,
         player_state,
         game_state,
     )
 
-    if movement_response:
-        if movement_response in locationRegistry:
-            new_location_definition = locationRegistry[movement_response]
+    if movement_result:
+        if movement_result.destination:
+            new_location_definition = locationRegistry[
+                movement_result.destination
+            ]
 
             new_location_state = get_current_location_state(
                 game_state,
@@ -201,9 +188,15 @@ def execute_single_command(player_command, game_state):
             if not new_location_state["visited"]:
                 new_location_state["visited"] = True
 
-                intro = new_location_definition.get(
+                intro_response = new_location_definition.get(
                     "intro",
                     [],
+                )
+
+                intro_messages = normalize_response_messages(
+                    intro_response,
+                    allow_empty_list=True,
+                    allow_empty_text=True,
                 )
 
                 has_intro_text = any(
@@ -211,11 +204,11 @@ def execute_single_command(player_command, game_state):
                         "text",
                         "",
                     ).strip()
-                    for message in intro
+                    for message in intro_messages
                 )
 
                 if has_intro_text:
-                    return intro
+                    return intro_messages
 
             return get_location_description(
                 new_location_definition,
@@ -223,7 +216,7 @@ def execute_single_command(player_command, game_state):
             )
 
         return command_failure(
-            movement_response,
+            movement_result.response,
         )
 
     command = parse_command_parts(
@@ -424,7 +417,7 @@ def parse_command(player_command, game_state):
 
         response = result.response if failed else result
 
-        response_messages = response_to_messages(
+        response_messages = normalize_response_messages(
             response,
         )
 

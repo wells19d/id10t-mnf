@@ -1,8 +1,38 @@
+from dataclasses import dataclass
+
 from game.handlers.common import (
     get_current_location_state,
     get_scenery_state,
     state_matches,
 )
+
+
+@dataclass(frozen=True)
+class MovementResult:
+    destination: str | None = None
+    response: object = None
+
+    def __post_init__(self):
+        has_destination = self.destination is not None
+        has_response = self.response is not None
+
+        if has_destination == has_response:
+            raise ValueError(
+                "A movement result must contain either a destination or a response."
+            )
+
+    @classmethod
+    def moved(cls, destination):
+        return cls(
+            destination=destination,
+        )
+
+    @classmethod
+    def blocked(cls, response):
+        return cls(
+            response=response,
+        )
+
 
 directionAliases = {
     "n": "north",
@@ -104,7 +134,9 @@ def move_player(
     )
 
     if not exit_data:
-        return f"I can't go {full_direction} from here."
+        return MovementResult.blocked(
+            f"I can't go {full_direction} from here."
+        )
 
     # Standard exit:
     #
@@ -131,23 +163,31 @@ def move_player(
         )
 
         if not next_location:
-            return f"I can't go {full_direction} from here."
+            return MovementResult.blocked(
+                f"I can't go {full_direction} from here."
+            )
 
         if game_state is not None:
             if not exit_requirements_met(
                 exit_data,
                 game_state,
             ):
-                return exit_data.get(
-                    "blockedResponse",
-                    f"You can't go {full_direction} from here.",
+                return MovementResult.blocked(
+                    exit_data.get(
+                        "blockedResponse",
+                        f"You can't go {full_direction} from here.",
+                    )
                 )
 
     else:
-        return f"I can't go {full_direction} from here."
+        return MovementResult.blocked(
+            f"I can't go {full_direction} from here."
+        )
 
     player_state["currentLocation"] = next_location
     player_state["lastDirection"] = full_direction
     player_state["lastShortDirection"] = full_direction[0]
 
-    return next_location
+    return MovementResult.moved(
+        next_location,
+    )

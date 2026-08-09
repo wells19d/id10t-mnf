@@ -1,4 +1,7 @@
-from game.handlers.common import get_item_display_name
+from game.handlers.common import (
+    get_item_display_name,
+    normalize_response_messages,
+)
 from items.itemRegistry import itemRegistry
 
 
@@ -33,16 +36,15 @@ def handle_inventory(game_state):
     if not inventory_voice:
         return narrator_text
 
-    if isinstance(inventory_voice, str):
-        inventory_voice = {
-            "speaker": "voice",
-            "text": inventory_voice,
-        }
+    inventory_voice_messages = normalize_response_messages(
+        inventory_voice,
+        default_speaker="voice",
+    )
 
     return [
         {
             "speaker": "narrator",
             "text": narrator_text,
         },
-        inventory_voice,
+        *inventory_voice_messages,
     ]

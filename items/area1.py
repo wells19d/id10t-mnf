@@ -1,5 +1,7 @@
-area1Items = {
-    "a1_fallen_branch": {
+area1Items = [
+    (
+        "a1_fallen_branch",
+        {
         "name": "Fallen Branch",
         "aliases": [
             "fallen branch",
@@ -25,8 +27,11 @@ area1Items = {
                 "destroyItem": False,
             },
         },
-    },
-    "a1_rusty_axe": {
+        },
+    ),
+    (
+        "a1_rusty_axe",
+        {
         "name": "Rusty Axe",
         "aliases": [
             "rusty axe",
@@ -52,8 +57,11 @@ area1Items = {
                 "destroyItem": False,
             },
         },
-    },
-    "a1_wornout_work_gloves": {
+        },
+    ),
+    (
+        "a1_wornout_work_gloves",
+        {
         "name": "Work Gloves",
         "aliases": [
             "work gloves",
@@ -89,5 +97,6 @@ area1Items = {
                 "destroyItem": False,
             },
         },
-    },
-}
+        },
+    ),
+]

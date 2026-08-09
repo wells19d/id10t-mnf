@@ -14,6 +14,8 @@ from game.definitionValidator import validate_game_definitions
 from game.handlers.common import (
     get_current_location_state,
     get_location_description,
+    is_valid_response,
+    normalize_response_messages,
 )
 from states.gameState import (
     create_game_state,
@@ -94,12 +96,18 @@ def new_game():
             500,
         )
 
+    intro_messages = normalize_response_messages(
+        location_definition.get(
+            "intro",
+            [],
+        ),
+        allow_empty_list=True,
+        allow_empty_text=True,
+    )
+
     return jsonify(
         {
-            "messages": location_definition.get(
-                "intro",
-                [],
-            ),
+            "messages": intro_messages,
             "state": game_state,
         }
     )
@@ -232,6 +240,19 @@ def command():
                 {
                     "error": "The command produced an invalid game state.",
                     "errorCode": "invalid-result-state",
+                }
+            ),
+            500,
+        )
+
+    if not is_valid_response(
+        response,
+    ):
+        return (
+            jsonify(
+                {
+                    "error": "The command produced an invalid response.",
+                    "errorCode": "invalid-result-response",
                 }
             ),
             500,

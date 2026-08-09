@@ -2,6 +2,7 @@ from areas.locationRegistry import (
     locationDefinitionsByArea,
     locationRegistry,
 )
+from game.handlers.common import VALID_RESPONSE_SPEAKERS
 from items.itemRegistry import (
     itemDefinitionsByArea,
     itemRegistry,
@@ -73,6 +74,7 @@ def add_message_errors(
     message,
     definition_path,
     errors,
+    allow_empty_text=False,
 ):
     if not isinstance(message, dict):
         errors.append(
@@ -80,18 +82,35 @@ def add_message_errors(
         )
         return
 
-    for key in [
+    speaker = message.get(
         "speaker",
-        "text",
-    ]:
-        value = message.get(
-            key,
+    )
+
+    if (
+        not isinstance(speaker, str)
+        or speaker not in VALID_RESPONSE_SPEAKERS
+    ):
+        errors.append(
+            f"{definition_path}.speaker must be one of: "
+            f"{', '.join(sorted(VALID_RESPONSE_SPEAKERS))}."
         )
 
-        if not isinstance(value, str) or not value.strip():
-            errors.append(
-                f"{definition_path}.{key} must be a non-empty string."
-            )
+    text = message.get(
+        "text",
+    )
+
+    if not isinstance(text, str) or (
+        not allow_empty_text
+        and not text.strip()
+    ):
+        text_requirement = (
+            "a string"
+            if allow_empty_text
+            else "a non-empty string"
+        )
+        errors.append(
+            f"{definition_path}.text must be {text_requirement}."
+        )
 
 
 def add_response_errors(
@@ -134,44 +153,91 @@ def add_response_errors(
     )
 
 
-def add_message_list_errors(
-    messages,
+def add_intro_response_errors(
+    response,
     definition_path,
     errors,
 ):
-    if not isinstance(messages, list):
-        errors.append(
-            f"{definition_path} must be a list of response messages."
+    if isinstance(response, str):
+        return
+
+    if isinstance(response, dict):
+        add_message_errors(
+            response,
+            definition_path,
+            errors,
+            allow_empty_text=True,
         )
         return
 
-    for index, message in enumerate(messages):
-        message_path = f"{definition_path}[{index}]"
+    if isinstance(response, list):
+        for index, message in enumerate(response):
+            add_message_errors(
+                message,
+                f"{definition_path}[{index}]",
+                errors,
+                allow_empty_text=True,
+            )
+        return
 
-        if not isinstance(message, dict):
+    errors.append(
+        f"{definition_path} must be an intro string, message, or message list."
+    )
+
+
+def add_definition_source_errors(
+    definitions_by_area,
+    definition_label,
+    source_label,
+    errors,
+):
+    definition_sources = {}
+
+    if not isinstance(definitions_by_area, dict):
+        errors.append(
+            f"{source_label} must be a dictionary of definition groups."
+        )
+        return
+
+    for area_id, definitions in definitions_by_area.items():
+        source_path = f"{source_label}[{area_id!r}]"
+
+        if not isinstance(area_id, str) or not area_id:
             errors.append(
-                f"{message_path} must be a response message dictionary."
+                f"{source_path} must use a non-empty string group ID."
+            )
+
+        if not isinstance(definitions, (list, tuple)):
+            errors.append(
+                f"{source_path} must be an ordered list of ID/definition pairs."
             )
             continue
 
-        speaker = message.get(
-            "speaker",
-        )
+        for index, entry in enumerate(definitions):
+            entry_path = f"{source_path}[{index}]"
 
-        if not isinstance(speaker, str) or not speaker.strip():
-            errors.append(
-                f"{message_path}.speaker must be a non-empty string."
-            )
+            if not isinstance(entry, (list, tuple)) or len(entry) != 2:
+                errors.append(
+                    f"{entry_path} must contain an ID and definition."
+                )
+                continue
 
-        if not isinstance(
-            message.get(
-                "text",
-            ),
-            str,
-        ):
-            errors.append(
-                f"{message_path}.text must be a string."
-            )
+            definition_id, _ = entry
+
+            if not isinstance(definition_id, str) or not definition_id:
+                errors.append(
+                    f"{entry_path} must use a non-empty string ID."
+                )
+                continue
+
+            if definition_id in definition_sources:
+                errors.append(
+                    f"{definition_label} ID {definition_id!r} is defined in both "
+                    f"{definition_sources[definition_id]!r} and {area_id!r}."
+                )
+                continue
+
+            definition_sources[definition_id] = area_id
 
 
 def add_local_state_description_errors(
@@ -244,25 +310,13 @@ def add_throw_action_errors(
 
 def get_item_definition_errors():
     errors = []
-    item_sources = {}
 
-    for area_id, area_items in itemDefinitionsByArea.items():
-        source_path = f"itemDefinitionsByArea[{area_id!r}]"
-
-        if not isinstance(area_items, dict):
-            errors.append(
-                f"{source_path} must be a dictionary."
-            )
-            continue
-
-        for item_id in area_items:
-            if item_id in item_sources:
-                errors.append(
-                    f"Item ID {item_id!r} is defined in both "
-                    f"{item_sources[item_id]!r} and {area_id!r}."
-                )
-            else:
-                item_sources[item_id] = area_id
+    add_definition_source_errors(
+        itemDefinitionsByArea,
+        "Item",
+        "itemDefinitionsByArea",
+        errors,
+    )
 
     for item_id, item_data in itemRegistry.items():
         item_path = f"itemRegistry[{item_id!r}]"
@@ -896,25 +950,13 @@ def add_state_description_errors(
 def get_location_definition_errors():
     errors = []
     initial_item_placements = {}
-    location_sources = {}
 
-    for area_id, area_locations in locationDefinitionsByArea.items():
-        source_path = f"locationDefinitionsByArea[{area_id!r}]"
-
-        if not isinstance(area_locations, dict):
-            errors.append(
-                f"{source_path} must be a dictionary."
-            )
-            continue
-
-        for location_id in area_locations:
-            if location_id in location_sources:
-                errors.append(
-                    f"Location ID {location_id!r} is defined in both "
-                    f"{location_sources[location_id]!r} and {area_id!r}."
-                )
-            else:
-                location_sources[location_id] = area_id
+    add_definition_source_errors(
+        locationDefinitionsByArea,
+        "Location",
+        "locationDefinitionsByArea",
+        errors,
+    )
 
     for location_id, location_data in locationRegistry.items():
         location_path = f"locationRegistry[{location_id!r}]"
@@ -944,9 +986,16 @@ def get_location_definition_errors():
                 )
 
         if "intro" in location_data:
-            add_message_list_errors(
+            add_intro_response_errors(
                 location_data["intro"],
                 f"{location_path}.intro",
+                errors,
+            )
+
+        if "searchVoice" in location_data:
+            add_response_errors(
+                location_data["searchVoice"],
+                f"{location_path}.searchVoice",
                 errors,
             )
 
