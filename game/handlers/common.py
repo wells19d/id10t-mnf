@@ -2,9 +2,10 @@ from copy import deepcopy
 
 from areas.areaRegistry import areaRegistry
 from items.itemRegistry import itemRegistry
-from states.gameState import GAME_STATE_REQUIREMENT_KEYS
-
-WORLD_ITEM_PLACEMENT = "__world__"
+from states.gameState import (
+    GAME_STATE_REQUIREMENT_KEYS,
+    WORLD_ITEM_PLACEMENT,
+)
 
 
 class CommandFailure:
