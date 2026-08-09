@@ -1,17 +1,17 @@
-lake_south = {
-    "name": "Lake (South)",
+a1_security_gate = {
+    "name": "Security Gate",
     "intro": [
         {
             "speaker": "narrator",
             "text": "",
         },
     ],
-    "description": ("lake south"),
+    "description": ("security gate"),
     "items": [],
     "exits": {
         "north": False,
-        "south": "fallen_nursery",
-        "east": "lake_east",
+        "south": "a1_road_access",
+        "east": False,
         "west": False,
     },
 }

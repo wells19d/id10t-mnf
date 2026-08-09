@@ -1,4 +1,4 @@
-massive_tree = {
+a1_massive_tree = {
     "name": "Massive Tree",
     "intro": [
         {
@@ -62,7 +62,7 @@ massive_tree = {
     },
     "exits": {
         "north": False,
-        "south": "clearing",
+        "south": "a1_clearing",
         "east": False,
         "west": False,
     },

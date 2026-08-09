@@ -1,4 +1,4 @@
-house_2 = {
+a1_house_2 = {
     "name": "Blue House",
     "intro": [
         {
@@ -9,8 +9,8 @@ house_2 = {
     "description": ("blue house"),
     "items": [],
     "exits": {
-        "north": "stone_ring",
-        "south": "clearing",
+        "north": "a1_stone_ring",
+        "south": "a1_clearing",
         "east": False,
         "west": False,
     },

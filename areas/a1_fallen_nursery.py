@@ -1,4 +1,4 @@
-fallen_nursery = {
+a1_fallen_nursery = {
     "name": "Fallen Nursery",
     "intro": [
         {
@@ -9,9 +9,9 @@ fallen_nursery = {
     "description": ("fallen_nursery"),
     "items": [],
     "exits": {
-        "north": "lake_south",
-        "south": "house_3",
-        "east": "clearing",
+        "north": "a1_lake_south",
+        "south": "a1_house_3",
+        "east": "a1_clearing",
         "west": False,
     },
 }

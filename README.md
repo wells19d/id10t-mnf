@@ -103,6 +103,8 @@ These are handled as system controls rather than in-world player actions.
 
 Each location is stored in its own file under `areas/`.
 
+Location filenames and runtime IDs use an area prefix for global uniqueness. For example, the player-facing **Clearing** location is defined in `areas/a1_clearing.py` and uses the internal ID `a1_clearing`. The prefix records where the content is organized during development; it is not runtime area state or a player-visible progression marker.
+
 A location can define:
 
 - First-visit narration

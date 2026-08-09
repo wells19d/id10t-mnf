@@ -1,4 +1,4 @@
-silent_grove = {
+a1_silent_grove = {
     "name": "Silent Grove",
     "intro": [
         {
@@ -9,9 +9,9 @@ silent_grove = {
     "description": ("silent grove"),
     "items": [],
     "exits": {
-        "north": "clearing",
+        "north": "a1_clearing",
         "south": False,
-        "east": "house_1",
-        "west": "house_3",
+        "east": "a1_house_1",
+        "west": "a1_house_3",
     },
 }

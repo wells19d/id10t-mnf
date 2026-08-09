@@ -1,4 +1,4 @@
-clearing = {
+a1_clearing = {
     "name": "Clearing",
     "intro": [
         {
@@ -54,9 +54,9 @@ clearing = {
     ],
     "scenery": {},
     "exits": {
-        "north": "massive_tree",
-        "south": "silent_grove",
-        "east": "house_2",
-        "west": "fallen_nursery",
+        "north": "a1_massive_tree",
+        "south": "a1_silent_grove",
+        "east": "a1_house_2",
+        "west": "a1_fallen_nursery",
     },
 }

@@ -1,4 +1,7 @@
-from areas.locationRegistry import locationRegistry
+from areas.locationRegistry import (
+    locationDefinitionsByArea,
+    locationRegistry,
+)
 from items.itemRegistry import (
     itemDefinitionsByArea,
     itemRegistry,
@@ -129,6 +132,46 @@ def add_response_errors(
     errors.append(
         f"{definition_path} must be a response string, message, or message list."
     )
+
+
+def add_message_list_errors(
+    messages,
+    definition_path,
+    errors,
+):
+    if not isinstance(messages, list):
+        errors.append(
+            f"{definition_path} must be a list of response messages."
+        )
+        return
+
+    for index, message in enumerate(messages):
+        message_path = f"{definition_path}[{index}]"
+
+        if not isinstance(message, dict):
+            errors.append(
+                f"{message_path} must be a response message dictionary."
+            )
+            continue
+
+        speaker = message.get(
+            "speaker",
+        )
+
+        if not isinstance(speaker, str) or not speaker.strip():
+            errors.append(
+                f"{message_path}.speaker must be a non-empty string."
+            )
+
+        if not isinstance(
+            message.get(
+                "text",
+            ),
+            str,
+        ):
+            errors.append(
+                f"{message_path}.text must be a string."
+            )
 
 
 def add_local_state_description_errors(
@@ -351,6 +394,12 @@ def get_item_definition_errors():
                             f"{action_path} must use a non-empty string ID."
                         )
 
+                    if action_id != "default":
+                        errors.append(
+                            f"{action_path} uses unsupported action "
+                            f"{action_id!r}; item onThrow only supports 'default'."
+                        )
+
                     add_throw_action_errors(
                         throw_action,
                         action_path,
@@ -429,11 +478,17 @@ def add_requirement_errors(
     )
 
     if isinstance(item_states, dict):
-        for item_id in item_states:
+        for item_id, required_state in item_states.items():
             if item_id not in itemRegistry:
                 errors.append(
                     f"{definition_path}.itemStates references unknown item ID "
                     f"{item_id!r}."
+                )
+
+            if not isinstance(required_state, dict):
+                errors.append(
+                    f"{definition_path}.itemStates[{item_id!r}] "
+                    "must be a dictionary."
                 )
 
     scenery_states = requirements.get(
@@ -446,11 +501,17 @@ def add_requirement_errors(
         and isinstance(scenery_states, dict)
         and scenery_ids is not None
     ):
-        for scenery_id in scenery_states:
+        for scenery_id, required_state in scenery_states.items():
             if scenery_id not in scenery_ids:
                 errors.append(
                     f"{definition_path}.sceneryState references unknown scenery "
                     f"ID {scenery_id!r}."
+                )
+
+            if not isinstance(required_state, dict):
+                errors.append(
+                    f"{definition_path}.sceneryState[{scenery_id!r}] "
+                    "must be a dictionary."
                 )
 
 
@@ -835,6 +896,25 @@ def add_state_description_errors(
 def get_location_definition_errors():
     errors = []
     initial_item_placements = {}
+    location_sources = {}
+
+    for area_id, area_locations in locationDefinitionsByArea.items():
+        source_path = f"locationDefinitionsByArea[{area_id!r}]"
+
+        if not isinstance(area_locations, dict):
+            errors.append(
+                f"{source_path} must be a dictionary."
+            )
+            continue
+
+        for location_id in area_locations:
+            if location_id in location_sources:
+                errors.append(
+                    f"Location ID {location_id!r} is defined in both "
+                    f"{location_sources[location_id]!r} and {area_id!r}."
+                )
+            else:
+                location_sources[location_id] = area_id
 
     for location_id, location_data in locationRegistry.items():
         location_path = f"locationRegistry[{location_id!r}]"
@@ -862,6 +942,13 @@ def get_location_definition_errors():
                 errors.append(
                     f"{location_path}.{text_key} must be a non-empty string."
                 )
+
+        if "intro" in location_data:
+            add_message_list_errors(
+                location_data["intro"],
+                f"{location_path}.intro",
+                errors,
+            )
 
         location_items = location_data.get(
             "items",

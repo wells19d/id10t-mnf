@@ -108,7 +108,7 @@ def move_player(
 
     # Standard exit:
     #
-    # "north": "clearing"
+    # "north": "a1_clearing"
     if isinstance(
         exit_data,
         str,

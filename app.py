@@ -135,7 +135,7 @@ def load_game():
 
     current_location = game_state["player"].get(
         "currentLocation",
-        "clearing",
+        "a1_clearing",
     )
 
     location_definition = locationRegistry.get(

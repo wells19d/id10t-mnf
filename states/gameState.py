@@ -7,7 +7,7 @@ from items.itemRegistry import itemRegistry
 
 # Increment this when persistent location/item definitions or state semantics
 # change incompatibly. Development saves are restarted instead of migrated.
-SAVE_VERSION = 3
+SAVE_VERSION = 4
 
 WORLD_ITEM_PLACEMENT = "__world__"
 
@@ -36,7 +36,7 @@ initialState = {
     "saveVersion": SAVE_VERSION,
     "player": {
         "introComplete": False,
-        "currentLocation": "clearing",
+        "currentLocation": "a1_clearing",
         "currentDirection": None,
         "currentShortDirection": None,
         "lastDirection": None,
