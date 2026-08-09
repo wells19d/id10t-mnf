@@ -12,7 +12,7 @@ from game.handlers.common import (
 from items.itemRegistry import itemRegistry
 
 
-def handle_take(command, current_area, game_state):
+def handle_take(command, location_definition, game_state):
     item_name = command["object"]
     source_name = command["target"]
 
@@ -29,7 +29,7 @@ def handle_take(command, current_area, game_state):
     if source_name:
         scenery_id, scenery_data = find_scenery(
             source_name,
-            current_area,
+            location_definition,
         )
 
         if not scenery_data:
@@ -75,7 +75,7 @@ def handle_take(command, current_area, game_state):
     # TAKE <item>
     else:
         available_items = get_visible_item_ids(
-            current_area,
+            location_definition,
             game_state,
         )
 
@@ -92,7 +92,7 @@ def handle_take(command, current_area, game_state):
     if not item_id:
         scenery_id, scenery_data = find_scenery(
             item_name,
-            current_area,
+            location_definition,
         )
 
         if scenery_data:

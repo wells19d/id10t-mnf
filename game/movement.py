@@ -1,5 +1,4 @@
 from game.handlers.common import (
-    get_current_area_state,
     get_current_location_state,
     get_scenery_state,
     state_matches,
@@ -48,19 +47,15 @@ def exit_requirements_met(
         if item_id not in player_state["equipped"]:
             return False
 
-    # Required area flags.
+    # Required world or event flags.
     required_flags = requirements.get(
         "flags",
         {},
     )
 
     if required_flags:
-        area_state = get_current_area_state(
-            game_state,
-        )
-
         if not state_matches(
-            area_state["flags"],
+            game_state["flags"],
             required_flags,
         ):
             return False
@@ -93,7 +88,7 @@ def exit_requirements_met(
 
 def move_player(
     direction,
-    current_area,
+    location_definition,
     player_state,
     game_state=None,
 ):
@@ -104,14 +99,12 @@ def move_player(
     if not full_direction:
         return None
 
-    exit_data = current_area["exits"].get(
+    exit_data = location_definition["exits"].get(
         full_direction,
     )
 
     if not exit_data:
         return f"I can't go {full_direction} from here."
-
-    next_area = None
 
     # Standard exit:
     #
@@ -122,11 +115,10 @@ def move_player(
     ):
         next_location = exit_data
 
-    # Conditional / cross-area exit:
+    # Conditional exit:
     #
     # "north": {
     #     "location": "admin_grounds",
-    #     "area": "area2",
     #     "requires": {...},
     #     "blockedResponse": "...",
     # }
@@ -136,10 +128,6 @@ def move_player(
     ):
         next_location = exit_data.get(
             "location",
-        )
-
-        next_area = exit_data.get(
-            "area",
         )
 
         if not next_location:
@@ -157,10 +145,6 @@ def move_player(
 
     else:
         return f"I can't go {full_direction} from here."
-
-    # Change major game area when the exit specifies one.
-    if next_area:
-        player_state["currentArea"] = next_area
 
     player_state["currentLocation"] = next_location
     player_state["lastDirection"] = full_direction

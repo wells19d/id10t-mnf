@@ -8,7 +8,7 @@ from flask import (
     request,
 )
 
-from areas.areaRegistry import areaRegistry
+from areas.locationRegistry import locationRegistry
 from game.commandParser import parse_command
 from game.definitionValidator import validate_game_definitions
 from game.handlers.common import (
@@ -70,7 +70,7 @@ def new_game():
 
     current_location = game_state["player"]["currentLocation"]
 
-    current_area = areaRegistry[current_location]
+    location_definition = locationRegistry[current_location]
 
     location_state = get_current_location_state(
         game_state,
@@ -80,7 +80,7 @@ def new_game():
 
     return jsonify(
         {
-            "messages": current_area.get(
+            "messages": location_definition.get(
                 "intro",
                 [],
             ),
@@ -121,11 +121,11 @@ def load_game():
         "clearing",
     )
 
-    current_area = areaRegistry.get(
+    location_definition = locationRegistry.get(
         current_location,
     )
 
-    if not current_area:
+    if not location_definition:
         return (
             jsonify(
                 {
@@ -141,7 +141,7 @@ def load_game():
                 {
                     "speaker": "narrator",
                     "text": get_location_description(
-                        current_area,
+                        location_definition,
                         game_state,
                     ),
                 },

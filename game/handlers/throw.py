@@ -9,7 +9,7 @@ from game.handlers.common import (
 from items.itemRegistry import itemRegistry
 
 
-def handle_throw(command, current_area, game_state):
+def handle_throw(command, location_definition, game_state):
     item_name = command["object"]
     target = command["target"]
 
@@ -54,7 +54,7 @@ def handle_throw(command, current_area, game_state):
     if target:
         scenery_id, scenery_data = find_scenery(
             target,
-            current_area,
+            location_definition,
         )
 
         if not scenery_data:

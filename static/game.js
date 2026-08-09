@@ -99,9 +99,12 @@ function isValidCommandResult(data) {
     state.itemStates &&
     typeof state.itemStates === 'object' &&
     !Array.isArray(state.itemStates) &&
-    state.areas &&
-    typeof state.areas === 'object' &&
-    !Array.isArray(state.areas);
+    state.flags &&
+    typeof state.flags === 'object' &&
+    !Array.isArray(state.flags) &&
+    state.locations &&
+    typeof state.locations === 'object' &&
+    !Array.isArray(state.locations);
 
   return responseIsValid && stateIsValid;
 }

@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from areas.areaRegistry import areaRegistry
+from areas.locationRegistry import locationRegistry
 from items.itemRegistry import itemRegistry
 from states.gameState import (
     GAME_STATE_REQUIREMENT_KEYS,
@@ -19,35 +19,18 @@ def command_failure(response):
     )
 
 
-def get_current_area_state(game_state):
-    current_area_id = game_state["player"]["currentArea"]
-
-    areas = game_state.setdefault(
-        "areas",
-        {},
-    )
-
-    return areas.setdefault(
-        current_area_id,
-        {
-            "flags": {},
-            "locations": {},
-        },
-    )
-
-
-def build_initial_location_items(area_data):
+def build_initial_location_items(location_definition):
     items = {}
 
-    # Items that begin naturally in the area.
-    for item_id in area_data.get(
+    # Items that begin naturally in the location.
+    for item_id in location_definition.get(
         "items",
         [],
     ):
         items[item_id] = WORLD_ITEM_PLACEMENT
 
     # Items that begin inside/on scenery.
-    for scenery_id, scenery_data in area_data.get(
+    for scenery_id, scenery_data in location_definition.get(
         "scenery",
         {},
     ).items():
@@ -60,10 +43,10 @@ def build_initial_location_items(area_data):
     return items
 
 
-def build_initial_scenery_state(area_data):
+def build_initial_scenery_state(location_definition):
     scenery_states = {}
 
-    for scenery_id, scenery_data in area_data.get(
+    for scenery_id, scenery_data in location_definition.get(
         "scenery",
         {},
     ).items():
@@ -78,17 +61,13 @@ def build_initial_scenery_state(area_data):
 
 
 def get_location_state(game_state, location_id):
-    area_state = get_current_area_state(
-        game_state,
-    )
-
-    locations = area_state.setdefault(
+    locations = game_state.setdefault(
         "locations",
         {},
     )
 
     if location_id not in locations:
-        area_data = areaRegistry.get(
+        location_definition = locationRegistry.get(
             location_id,
             {},
         )
@@ -96,10 +75,10 @@ def get_location_state(game_state, location_id):
         locations[location_id] = {
             "visited": False,
             "items": build_initial_location_items(
-                area_data,
+                location_definition,
             ),
             "scenery": build_initial_scenery_state(
-                area_data,
+                location_definition,
             ),
         }
 
@@ -214,12 +193,8 @@ def game_state_requirements_met(
         if item_id not in itemRegistry or item_id not in equipped:
             return False
 
-    area_state = get_current_area_state(
-        game_state,
-    )
-
     if not state_matches(
-        area_state["flags"],
+        game_state["flags"],
         requirements.get(
             "flags",
             {},
@@ -228,7 +203,7 @@ def game_state_requirements_met(
         return False
 
     current_location = player_state["currentLocation"]
-    current_area = areaRegistry.get(
+    current_location_definition = locationRegistry.get(
         current_location,
         {},
     )
@@ -240,7 +215,7 @@ def game_state_requirements_met(
         "sceneryState",
         {},
     ).items():
-        if scenery_id not in current_area.get(
+        if scenery_id not in current_location_definition.get(
             "scenery",
             {},
         ):
@@ -362,12 +337,12 @@ def format_item_names(item_names):
 
 def find_scenery(
     target,
-    current_area,
+    location_definition,
 ):
     if not target:
         return None, None
 
-    for scenery_id, scenery_data in current_area.get(
+    for scenery_id, scenery_data in location_definition.get(
         "scenery",
         {},
     ).items():
@@ -470,7 +445,7 @@ def can_access_scenery_contents(
 
 
 def get_visible_item_ids(
-    current_area,
+    location_definition,
     game_state,
 ):
     location_state = get_current_location_state(
@@ -491,7 +466,7 @@ def get_visible_item_ids(
             )
             continue
 
-        scenery_data = current_area.get(
+        scenery_data = location_definition.get(
             "scenery",
             {},
         ).get(

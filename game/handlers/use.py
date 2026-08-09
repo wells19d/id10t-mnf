@@ -2,7 +2,6 @@ from game.handlers.common import (
     apply_state_changes,
     command_failure,
     find_scenery,
-    get_current_area_state,
     get_current_location_state,
     get_item_display_name,
     get_item_state,
@@ -14,7 +13,7 @@ from game.handlers.common import (
 from items.itemRegistry import itemRegistry
 
 
-def handle_use(command, current_area, game_state):
+def handle_use(command, location_definition, game_state):
     values = command["values"]
     target = command["target"]
 
@@ -22,7 +21,7 @@ def handle_use(command, current_area, game_state):
     if values and target:
         scenery_id, scenery_data = find_scenery(
             target,
-            current_area,
+            location_definition,
         )
 
         if not scenery_data:
@@ -30,15 +29,18 @@ def handle_use(command, current_area, game_state):
                 f"I don't see a {target} here.",
             )
 
-        area_interaction = current_area.get(
+        location_interaction = location_definition.get(
             "interactions",
             {},
         ).get(
             scenery_id,
         )
 
-        if area_interaction and area_interaction.get("type") == "combination":
-            correct_combination = area_interaction.get(
+        if (
+            location_interaction
+            and location_interaction.get("type") == "combination"
+        ):
+            correct_combination = location_interaction.get(
                 "combination",
                 [],
             )
@@ -53,7 +55,7 @@ def handle_use(command, current_area, game_state):
                     scenery_id,
                 )
 
-                effects = area_interaction.get(
+                effects = location_interaction.get(
                     "effects",
                     {},
                 )
@@ -68,10 +70,10 @@ def handle_use(command, current_area, game_state):
                     ),
                 )
 
-                return area_interaction["onSuccess"]
+                return location_interaction["onSuccess"]
 
             return command_failure(
-                area_interaction["onFail"],
+                location_interaction["onFail"],
             )
 
     item_name = command["object"]
@@ -111,7 +113,7 @@ def handle_use(command, current_area, game_state):
 
     scenery_id, scenery_data = find_scenery(
         target,
-        current_area,
+        location_definition,
     )
 
     if not scenery_data:
@@ -145,10 +147,6 @@ def handle_use(command, current_area, game_state):
     item_state = get_item_state(
         game_state,
         item_id,
-    )
-
-    area_state = get_current_area_state(
-        game_state,
     )
 
     requirements = interaction.get(
@@ -218,14 +216,14 @@ def handle_use(command, current_area, game_state):
                 )
             )
 
-    # Required area flags.
+    # Required world or event flags.
     required_flags = requirements.get(
         "flags",
         {},
     )
 
     if not state_matches(
-        area_state["flags"],
+        game_state["flags"],
         required_flags,
     ):
         return command_failure(
@@ -256,7 +254,7 @@ def handle_use(command, current_area, game_state):
     )
 
     apply_state_changes(
-        area_state["flags"],
+        game_state["flags"],
         effects.get(
             "flags",
         ),

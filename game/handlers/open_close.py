@@ -2,7 +2,6 @@ from game.handlers.common import (
     apply_state_changes,
     command_failure,
     find_scenery,
-    get_current_area_state,
     get_current_location_state,
     get_scenery_state,
     state_matches,
@@ -47,19 +46,15 @@ def requirements_met(
         if item_id not in player_state["equipped"]:
             return False
 
-    # Required area flags.
+    # Required world or event flags.
     required_flags = requirements.get(
         "flags",
         {},
     )
 
     if required_flags:
-        area_state = get_current_area_state(
-            game_state,
-        )
-
         if not state_matches(
-            area_state["flags"],
+            game_state["flags"],
             required_flags,
         ):
             return False
@@ -67,7 +62,7 @@ def requirements_met(
     return True
 
 
-def handle_open(command, current_area, game_state):
+def handle_open(command, location_definition, game_state):
     target = command["object"] or command["target"]
 
     if not target:
@@ -77,7 +72,7 @@ def handle_open(command, current_area, game_state):
 
     scenery_id, scenery_data = find_scenery(
         target,
-        current_area,
+        location_definition,
     )
 
     if not scenery_data:
@@ -174,7 +169,7 @@ def handle_open(command, current_area, game_state):
     )
 
 
-def handle_close(command, current_area, game_state):
+def handle_close(command, location_definition, game_state):
     target = command["object"] or command["target"]
 
     if not target:
@@ -184,7 +179,7 @@ def handle_close(command, current_area, game_state):
 
     scenery_id, scenery_data = find_scenery(
         target,
-        current_area,
+        location_definition,
     )
 
     if not scenery_data:

@@ -1,6 +1,6 @@
 # game/commandParser.py
 
-from areas.areaRegistry import areaRegistry
+from areas.locationRegistry import locationRegistry
 from game.failedActions import failedActions
 from game.movement import move_player
 from game.parserUtils import (
@@ -140,10 +140,10 @@ def get_aggregate_candidate(
     # the player's current location.
     current_location = game_state["player"]["currentLocation"]
 
-    current_area = areaRegistry[current_location]
+    location_definition = locationRegistry[current_location]
 
     visible_items = get_visible_item_ids(
-        current_area,
+        location_definition,
         game_state,
     )
 
@@ -180,28 +180,28 @@ def execute_single_command(player_command, game_state):
 
     current_location = player_state["currentLocation"]
 
-    current_area = areaRegistry[current_location]
+    location_definition = locationRegistry[current_location]
 
     # Movement is checked before normal command parsing.
     movement_response = move_player(
         player_command,
-        current_area,
+        location_definition,
         player_state,
         game_state,
     )
 
     if movement_response:
-        if movement_response in areaRegistry:
-            new_area = areaRegistry[movement_response]
+        if movement_response in locationRegistry:
+            new_location_definition = locationRegistry[movement_response]
 
-            new_area_state = get_current_location_state(
+            new_location_state = get_current_location_state(
                 game_state,
             )
 
-            if not new_area_state["visited"]:
-                new_area_state["visited"] = True
+            if not new_location_state["visited"]:
+                new_location_state["visited"] = True
 
-                intro = new_area.get(
+                intro = new_location_definition.get(
                     "intro",
                     [],
                 )
@@ -218,7 +218,7 @@ def execute_single_command(player_command, game_state):
                     return intro
 
             return get_location_description(
-                new_area,
+                new_location_definition,
                 game_state,
             )
 
@@ -242,28 +242,28 @@ def execute_single_command(player_command, game_state):
     if command_verb == "look":
         return handle_look(
             command,
-            current_area,
+            location_definition,
             game_state,
         )
 
     if command_verb == "search":
         return handle_search(
             command,
-            current_area,
+            location_definition,
             game_state,
         )
 
     if command_verb == "open":
         return handle_open(
             command,
-            current_area,
+            location_definition,
             game_state,
         )
 
     if command_verb == "close":
         return handle_close(
             command,
-            current_area,
+            location_definition,
             game_state,
         )
 
@@ -280,7 +280,7 @@ def execute_single_command(player_command, game_state):
     if command_verb == "take":
         return handle_take(
             command,
-            current_area,
+            location_definition,
             game_state,
         )
 
@@ -293,7 +293,7 @@ def execute_single_command(player_command, game_state):
     if command_verb == "throw":
         return handle_throw(
             command,
-            current_area,
+            location_definition,
             game_state,
         )
 
@@ -312,7 +312,7 @@ def execute_single_command(player_command, game_state):
     if command_verb == "use":
         return handle_use(
             command,
-            current_area,
+            location_definition,
             game_state,
         )
 

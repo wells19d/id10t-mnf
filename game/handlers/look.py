@@ -35,21 +35,21 @@ def get_state_description(
     return None
 
 
-def handle_look(command, current_area, game_state):
+def handle_look(command, location_definition, game_state):
     target = command["target"] or command["object"]
 
     # LOOK
     # Return the basic description of the current area.
     if not target:
         return get_location_description(
-            current_area,
+            location_definition,
             game_state,
         )
 
     # LOOK AT <scenery>
     scenery_id, scenery_data = find_scenery(
         target,
-        current_area,
+        location_definition,
     )
 
     if scenery_data:
@@ -82,7 +82,7 @@ def handle_look(command, current_area, game_state):
     # LOOK AT <item>
     visible_items = (
         get_visible_item_ids(
-            current_area,
+            location_definition,
             game_state,
         )
         + game_state["player"]["inventory"]

@@ -124,7 +124,7 @@ A location can define:
 Pickup items are grouped by major game area under `items/` and combined by
 `items/itemRegistry.py`.
 
-The area file decides where that item begins.
+The location file decides where that item begins.
 
 A loose item can begin directly in the location:
 
@@ -149,7 +149,7 @@ An item can also begin inside or attached to scenery:
 }
 ```
 
-Permanent objects such as trees, doors, safes, cupboards, calendars, fires, or anything that cannot be taken exist as scenery in the area file.
+Permanent objects such as trees, doors, safes, cupboards, calendars, fires, or anything that cannot be taken exist as scenery in the location file.
 
 Runtime state is created automatically as the player interacts with the world, so new items and scenery do not need to be manually added to `gameState.py`.
 
@@ -391,7 +391,7 @@ Because the browser now stores the current game state, development reloads no lo
 The project currently supports:
 
 - Flask backend and browser terminal UI
-- Area-to-area movement
+- Location-to-location movement
 - Conditional exits based on game state
 - First-visit and repeat-visit behavior
 - Command parsing and aliases
@@ -426,7 +426,7 @@ The underlying game engine and state systems are now largely in place.
 
 Current development is focused on building **Area 1: The Forest**, including its narrative, locations, scenery, items, puzzles, and progression into Area 2.
 
-The goal is for most future game content to be created through area and item definitions rather than adding one-off logic to the game engine.
+The goal is for most future game content to be created through location and item definitions rather than adding one-off logic to the game engine.
 
 ---
 

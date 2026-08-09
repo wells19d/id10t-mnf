@@ -11,7 +11,7 @@ from areas.security_gate import security_gate
 from areas.silent_grove import silent_grove
 from areas.stone_ring import stone_ring
 
-areaRegistry = {
+locationRegistry = {
     "clearing": clearing,
     "fallen_nursery": fallen_nursery,
     "house_1": house_1,

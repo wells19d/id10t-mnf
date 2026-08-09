@@ -1,4 +1,4 @@
-from areas.areaRegistry import areaRegistry
+from areas.locationRegistry import locationRegistry
 from items.itemRegistry import (
     itemDefinitionsByArea,
     itemRegistry,
@@ -723,6 +723,12 @@ def add_exit_errors(
         "sceneryState",
     }
 
+    exit_keys = {
+        "location",
+        "requires",
+        "blockedResponse",
+    }
+
     for direction, exit_data in exits.items():
         exit_path = f"{location_path}.exits[{direction!r}]"
 
@@ -737,6 +743,12 @@ def add_exit_errors(
         if isinstance(exit_data, str):
             destination = exit_data
         elif isinstance(exit_data, dict):
+            for key in exit_data:
+                if key not in exit_keys:
+                    errors.append(
+                        f"{exit_path} uses unsupported exit field {key!r}."
+                    )
+
             destination = exit_data.get(
                 "location",
             )
@@ -750,13 +762,23 @@ def add_exit_errors(
                     scenery_ids,
                     True,
                 )
+
+            if "blockedResponse" in exit_data:
+                add_response_errors(
+                    exit_data["blockedResponse"],
+                    f"{exit_path}.blockedResponse",
+                    errors,
+                )
         else:
             errors.append(
                 f"{exit_path} must be a location ID, dictionary, or False."
             )
             continue
 
-        if not isinstance(destination, str) or destination not in areaRegistry:
+        if (
+            not isinstance(destination, str)
+            or destination not in locationRegistry
+        ):
             errors.append(
                 f"{exit_path} references unknown location ID {destination!r}."
             )
@@ -805,12 +827,12 @@ def add_state_description_errors(
         )
 
 
-def get_area_definition_errors():
+def get_location_definition_errors():
     errors = []
     initial_item_placements = {}
 
-    for location_id, location_data in areaRegistry.items():
-        location_path = f"areaRegistry[{location_id!r}]"
+    for location_id, location_data in locationRegistry.items():
+        location_path = f"locationRegistry[{location_id!r}]"
 
         if not isinstance(location_id, str) or not location_id:
             errors.append(
@@ -896,17 +918,17 @@ def get_area_definition_errors():
             errors,
         )
 
-        area_interactions = location_data.get(
+        location_interactions = location_data.get(
             "interactions",
             {},
         )
 
-        if not isinstance(area_interactions, dict):
+        if not isinstance(location_interactions, dict):
             errors.append(
                 f"{location_path}.interactions must be a dictionary."
             )
         else:
-            for scenery_id, interaction in area_interactions.items():
+            for scenery_id, interaction in location_interactions.items():
                 interaction_path = (
                     f"{location_path}.interactions[{scenery_id!r}]"
                 )
@@ -981,7 +1003,7 @@ def get_area_definition_errors():
 
 
 def validate_game_definitions():
-    errors = get_item_definition_errors() + get_area_definition_errors()
+    errors = get_item_definition_errors() + get_location_definition_errors()
 
     if errors:
         formatted_errors = "\n".join(

@@ -2,10 +2,10 @@
 
 from copy import deepcopy
 
-from areas.areaRegistry import areaRegistry
+from areas.locationRegistry import locationRegistry
 from items.itemRegistry import itemRegistry
 
-SAVE_VERSION = 1
+SAVE_VERSION = 2
 
 WORLD_ITEM_PLACEMENT = "__world__"
 
@@ -34,7 +34,6 @@ initialState = {
     "saveVersion": SAVE_VERSION,
     "player": {
         "introComplete": False,
-        "currentArea": "area1",
         "currentLocation": "clearing",
         "currentDirection": None,
         "currentShortDirection": None,
@@ -45,7 +44,8 @@ initialState = {
         "health": "Medium",
     },
     "itemStates": {},
-    "areas": {},
+    "flags": {},
+    "locations": {},
 }
 
 
@@ -116,16 +116,11 @@ def is_valid_player_state(player_state):
     ):
         return False
 
-    current_area = player_state["currentArea"]
-
-    if not isinstance(current_area, str) or not current_area:
-        return False
-
     current_location = player_state["currentLocation"]
 
     if (
         not isinstance(current_location, str)
-        or current_location not in areaRegistry
+        or current_location not in locationRegistry
     ):
         return False
 
@@ -231,7 +226,7 @@ def is_valid_location_state(
     ):
         return False
 
-    location_scenery = areaRegistry[location_id].get(
+    location_scenery = locationRegistry[location_id].get(
         "scenery",
         {},
     )
@@ -254,40 +249,23 @@ def is_valid_location_state(
     )
 
 
-def is_valid_areas_state(areas_state):
+def is_valid_locations_state(locations_state):
     if not isinstance(
-        areas_state,
+        locations_state,
         dict,
     ):
         return False
 
-    for area_id, area_state in areas_state.items():
-        if not isinstance(area_id, str) or not area_id:
+    for location_id, location_state in locations_state.items():
+        if (
+            not isinstance(location_id, str)
+            or location_id not in locationRegistry
+            or not is_valid_location_state(
+                location_id,
+                location_state,
+            )
+        ):
             return False
-
-        if not isinstance(area_state, dict):
-            return False
-
-        flags = area_state.get(
-            "flags",
-        )
-        locations = area_state.get(
-            "locations",
-        )
-
-        if not isinstance(flags, dict) or not isinstance(locations, dict):
-            return False
-
-        for location_id, location_state in locations.items():
-            if (
-                not isinstance(location_id, str)
-                or location_id not in areaRegistry
-                or not is_valid_location_state(
-                    location_id,
-                    location_state,
-                )
-            ):
-                return False
 
     return True
 
@@ -320,9 +298,17 @@ def is_valid_saved_state(saved_state):
     ):
         return False
 
-    if not is_valid_areas_state(
+    if not isinstance(
         saved_state.get(
-            "areas",
+            "flags",
+        ),
+        dict,
+    ):
+        return False
+
+    if not is_valid_locations_state(
+        saved_state.get(
+            "locations",
         )
     ):
         return False

@@ -45,7 +45,7 @@ def format_search_results(search_results):
     return ", ".join(cleaned_results[:-1]) + f", and {cleaned_results[-1]}"
 
 
-def handle_search(command, current_area, game_state):
+def handle_search(command, location_definition, game_state):
     target = command["target"] or command["object"]
 
     location_state = get_current_location_state(
@@ -56,7 +56,7 @@ def handle_search(command, current_area, game_state):
     if target:
         scenery_id, scenery_data = find_scenery(
             target,
-            current_area,
+            location_definition,
         )
 
         if not scenery_data:
@@ -163,7 +163,7 @@ def handle_search(command, current_area, game_state):
     # SEARCH
     #
     # Search only for visible/discoverable items in
-    # the current area. General scenery descriptions
+    # the current location. General scenery descriptions
     # are not returned here.
     search_results = []
 
@@ -215,7 +215,7 @@ def handle_search(command, current_area, game_state):
             continue
 
         # Item is attached to / associated with scenery.
-        scenery_data = current_area.get(
+        scenery_data = location_definition.get(
             "scenery",
             {},
         ).get(
@@ -231,7 +231,7 @@ def handle_search(command, current_area, game_state):
         )
 
         # Items inside containers should not appear in
-        # a general area search. The player must search
+        # a general location search. The player must search
         # the container directly.
         if scenery_data.get(
             "openable",
@@ -281,7 +281,7 @@ def handle_search(command, current_area, game_state):
 
     narrator_text = "You search the area and find " f"{formatted_results}."
 
-    search_voice = current_area.get(
+    search_voice = location_definition.get(
         "searchVoice",
     )
 

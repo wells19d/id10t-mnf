@@ -59,7 +59,7 @@ area1Items = {
             "work gloves",
             "gloves",
         ],
-        "description": "A pair of worn out work gloves.",
+        "description": "A pair of heavily used, worn out work gloves with holes and tears.",
         "worldDescription": (
             "a pair of worn out <em><span class='item-highlight'>work gloves</span></em> "
             "lying next to the tree base."
