@@ -164,6 +164,155 @@ def state_matches(
     return True
 
 
+def game_state_requirements_met(
+    requirements,
+    game_state,
+):
+    if not requirements:
+        return True
+
+    supported_requirements = {
+        "player",
+        "inventory",
+        "equipped",
+        "flags",
+        "sceneryState",
+        "itemStates",
+    }
+
+    if any(
+        key not in supported_requirements
+        for key in requirements
+    ):
+        return False
+
+    player_state = game_state["player"]
+
+    if not state_matches(
+        player_state,
+        requirements.get(
+            "player",
+            {},
+        ),
+    ):
+        return False
+
+    inventory = player_state.get(
+        "inventory",
+        [],
+    )
+
+    for item_id in requirements.get(
+        "inventory",
+        [],
+    ):
+        if item_id not in itemRegistry or item_id not in inventory:
+            return False
+
+    equipped = player_state.get(
+        "equipped",
+        [],
+    )
+
+    for item_id in requirements.get(
+        "equipped",
+        [],
+    ):
+        if item_id not in itemRegistry or item_id not in equipped:
+            return False
+
+    area_state = get_current_area_state(
+        game_state,
+    )
+
+    if not state_matches(
+        area_state["flags"],
+        requirements.get(
+            "flags",
+            {},
+        ),
+    ):
+        return False
+
+    current_location = player_state["currentLocation"]
+    current_area = areaRegistry.get(
+        current_location,
+        {},
+    )
+    location_state = get_current_location_state(
+        game_state,
+    )
+
+    for scenery_id, required_state in requirements.get(
+        "sceneryState",
+        {},
+    ).items():
+        if scenery_id not in current_area.get(
+            "scenery",
+            {},
+        ):
+            return False
+
+        scenery_state = get_scenery_state(
+            location_state,
+            scenery_id,
+        )
+
+        if not state_matches(
+            scenery_state,
+            required_state,
+        ):
+            return False
+
+    for item_id, required_state in requirements.get(
+        "itemStates",
+        {},
+    ).items():
+        if item_id not in itemRegistry:
+            return False
+
+        item_state = get_item_state(
+            game_state,
+            item_id,
+        )
+
+        if not state_matches(
+            item_state,
+            required_state,
+        ):
+            return False
+
+    return True
+
+
+def get_location_description(
+    location_data,
+    game_state,
+):
+    for state_description in location_data.get(
+        "stateDescriptions",
+        [],
+    ):
+        if game_state_requirements_met(
+            state_description.get(
+                "requires",
+                {},
+            ),
+            game_state,
+        ):
+            description = state_description.get(
+                "description",
+            )
+
+            if description is not None:
+                return description
+
+    return location_data.get(
+        "description",
+        "There is nothing remarkable here.",
+    )
+
+
 def apply_state_changes(
     current_state,
     changes,

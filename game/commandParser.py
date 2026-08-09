@@ -13,6 +13,7 @@ from game.handlers.common import (
     command_failure,
     get_current_location_state,
     get_item_display_name,
+    get_location_description,
     get_visible_item_ids,
     resolve_item,
 )
@@ -213,7 +214,10 @@ def execute_single_command(player_command, game_state):
                 if has_intro_text:
                     return intro
 
-            return new_area["description"]
+            return get_location_description(
+                new_area,
+                game_state,
+            )
 
         return command_failure(
             movement_response,

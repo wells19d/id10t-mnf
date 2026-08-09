@@ -2,6 +2,7 @@ from game.handlers.common import (
     find_scenery,
     get_current_location_state,
     get_item_state,
+    get_location_description,
     get_scenery_state,
     get_visible_item_ids,
     resolve_item,
@@ -40,9 +41,9 @@ def handle_look(command, current_area, game_state):
     # LOOK
     # Return the basic description of the current area.
     if not target:
-        return current_area.get(
-            "description",
-            "There is nothing remarkable here.",
+        return get_location_description(
+            current_area,
+            game_state,
         )
 
     # LOOK AT <scenery>

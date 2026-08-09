@@ -10,7 +10,10 @@ from flask import (
 
 from areas.areaRegistry import areaRegistry
 from game.commandParser import parse_command
-from game.handlers.common import get_current_location_state
+from game.handlers.common import (
+    get_current_location_state,
+    get_location_description,
+)
 from states.gameState import (
     create_game_state,
     restore_game_state,
@@ -134,9 +137,9 @@ def load_game():
             "messages": [
                 {
                     "speaker": "narrator",
-                    "text": current_area.get(
-                        "description",
-                        "You look around.",
+                    "text": get_location_description(
+                        current_area,
+                        game_state,
                     ),
                 },
             ],
