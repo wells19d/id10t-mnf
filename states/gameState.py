@@ -2,6 +2,8 @@
 
 from copy import deepcopy
 
+SAVE_VERSION = 1
+
 GAME_STATE_REQUIREMENT_KEYS = frozenset(
     {
         "player",
@@ -14,6 +16,7 @@ GAME_STATE_REQUIREMENT_KEYS = frozenset(
 )
 
 initialState = {
+    "saveVersion": SAVE_VERSION,
     "player": {
         "introComplete": False,
         "currentArea": "area1",
@@ -68,6 +71,11 @@ def restore_game_state(saved_state):
         saved_state,
         dict,
     ):
+        return None
+
+    if saved_state.get(
+        "saveVersion",
+    ) != SAVE_VERSION:
         return None
 
     saved_player = saved_state.get(
