@@ -3,6 +3,7 @@ const commandInput = document.getElementById('command-input');
 const gameOutput = document.getElementById('game-output');
 
 const SAVE_KEY = 'id10t_save';
+const GAME_TAB_LOCK = 'id10t_game_tab';
 
 const commandHistory = [];
 let historyIndex = 0;
@@ -10,6 +11,7 @@ let historyIndex = 0;
 let waitingForStartChoice = false;
 let currentGameState = null;
 let commandInProgress = false;
+let gameTabActive = false;
 
 function displayMessage(speaker, text) {
   if (speaker === 'system') {
@@ -253,11 +255,63 @@ async function initializeGame() {
   commandInput.focus();
 }
 
+async function initializeGameTab() {
+  if (!navigator.locks) {
+    displayMessage(
+      'system',
+      'This browser cannot start the game with single-tab protection enabled.',
+    );
+
+    scrollToBottom();
+    return;
+  }
+
+  try {
+    await navigator.locks.request(
+      GAME_TAB_LOCK,
+      {
+        mode: 'exclusive',
+        ifAvailable: true,
+      },
+      async (lock) => {
+        if (!lock) {
+          displayMessage(
+            'system',
+            'The game is already running in another tab. Close that tab and refresh this page to continue.',
+          );
+
+          scrollToBottom();
+          return;
+        }
+
+        gameTabActive = true;
+
+        setInterval(checkServerVersion, 1000);
+
+        await initializeGame();
+
+        await new Promise(() => {});
+      },
+    );
+  } catch (error) {
+    gameTabActive = false;
+
+    console.error('Unable to establish the game tab lock.', error);
+
+    displayMessage(
+      'system',
+      'Unable to start the game safely. Please refresh and try again.',
+    );
+
+    scrollToBottom();
+  }
+}
+
 window.addEventListener('resize', () => {
   requestAnimationFrame(scrollToBottom);
 });
 
-window.addEventListener('load', initializeGame);
+window.addEventListener('load', initializeGameTab);
 
 commandInput.addEventListener('keydown', (event) => {
   if (event.key === 'ArrowUp') {
@@ -287,6 +341,10 @@ commandInput.addEventListener('keydown', (event) => {
 
 commandForm.addEventListener('submit', async (event) => {
   event.preventDefault();
+
+  if (!gameTabActive) {
+    return;
+  }
 
   const command = commandInput.value.trim();
 
@@ -444,5 +502,3 @@ async function checkServerVersion() {
     // Flask may be restarting.
   }
 }
-
-setInterval(checkServerVersion, 1000);
