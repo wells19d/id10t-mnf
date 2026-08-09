@@ -4,6 +4,16 @@ from copy import deepcopy
 
 SAVE_VERSION = 1
 
+EQUIPMENT_SLOTS = frozenset(
+    {
+        "head",
+        "chest",
+        "hands",
+        "legs",
+        "feet",
+    }
+)
+
 GAME_STATE_REQUIREMENT_KEYS = frozenset(
     {
         "player",

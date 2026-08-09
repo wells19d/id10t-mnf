@@ -3,6 +3,7 @@ verbAliases = {
     "get": "take",
     "pickup": "take",
     "equip": "wear",
+    "unequip": "remove",
     "inspect": "look",
     "examine": "look",
 }
@@ -32,6 +33,7 @@ commandVerbs = {
     "drop",
     "throw",
     "wear",
+    "remove",
     "use",
     "help",
     "h",
@@ -64,6 +66,7 @@ carryPreviousObjectVerbs = {
     "use",
     "drop",
     "wear",
+    "remove",
 }
 
 

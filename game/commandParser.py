@@ -28,7 +28,10 @@ from game.handlers.search import handle_search
 from game.handlers.take import handle_take
 from game.handlers.throw import handle_throw
 from game.handlers.use import handle_use
-from game.handlers.wear import handle_wear
+from game.handlers.wear import (
+    handle_remove,
+    handle_wear,
+)
 from game.help import helpResponse
 from items.itemRegistry import itemRegistry
 
@@ -296,6 +299,12 @@ def execute_single_command(player_command, game_state):
 
     if command_verb == "wear":
         return handle_wear(
+            command,
+            game_state,
+        )
+
+    if command_verb == "remove":
+        return handle_remove(
             command,
             game_state,
         )

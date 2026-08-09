@@ -35,6 +35,8 @@ helpResponse = [
             "<li>use &lt;item&gt; on &lt;target&gt;</li>"
             "<li>throw &lt;item&gt;</li>"
             "<li>throw &lt;item&gt; at &lt;target&gt;</li>"
+            "<li>wear &lt;item&gt;</li>"
+            "<li>remove &lt;item&gt;</li>"
             "</ul>"
             "<h3>Aliases</h3>"
             "<ul>"
@@ -44,6 +46,7 @@ helpResponse = [
             "<li>inspect</li>"
             "<li>examine</li>"
             "<li>equip</li>"
+            "<li>unequip</li>"
             "</ul>"
             "</div>"
         ),

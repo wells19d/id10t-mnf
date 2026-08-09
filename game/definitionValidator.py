@@ -3,7 +3,10 @@ from items.itemRegistry import (
     itemDefinitionsByArea,
     itemRegistry,
 )
-from states.gameState import GAME_STATE_REQUIREMENT_KEYS
+from states.gameState import (
+    EQUIPMENT_SLOTS,
+    GAME_STATE_REQUIREMENT_KEYS,
+)
 
 DIRECTIONS = {
     "north",
@@ -123,9 +126,10 @@ def get_item_definition_errors():
                 "slot",
             )
 
-            if not isinstance(slot, str) or not slot.strip():
+            if slot not in EQUIPMENT_SLOTS:
                 errors.append(
-                    f"{item_path}.slot is required for wearable items."
+                    f"{item_path}.slot must be one of: "
+                    f"{', '.join(sorted(EQUIPMENT_SLOTS))}."
                 )
 
         if "state" in item_data and not isinstance(
