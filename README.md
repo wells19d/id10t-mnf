@@ -27,47 +27,40 @@ The interface is styled like a simple terminal and separates responses into:
 
 ---
 
-## Current Commands
+## Current Gameplay
+
+The game currently supports movement, exploration, inventory management, item interactions, equipment, containers, environmental state, compound commands, and browser-based save recovery.
+
+Example commands include:
 
 ```text
 look
 look at <target>
-
 search
 search <target>
-
-open <target>
-close <target>
 
 take <item>
 take <item> from <target>
 drop <item>
 
+open <target>
+close <target>
+
+use <item> on <target>
 throw <item>
 throw <item> at <target>
 
-use <item> on <target>
-
 wear <item>
-
+remove <item>
 inventory
 
 north / south / east / west
 n / s / e / w
 ```
 
-Aliases currently include:
+Common aliases include `grab`, `get`, `pick up`, `inspect`, `examine`, `equip`, and `unequip`.
 
-```text
-grab
-get
-pick up
-inspect
-examine
-equip
-```
-
-The parser also supports some compound commands, including:
+The parser also supports some compound commands:
 
 ```text
 take axe and branch
@@ -77,113 +70,57 @@ take hat and wear it
 
 Commands are processed from left to right, and a failed action stops the remaining command chain.
 
-The browser also supports terminal-style command history:
-
-- **Up Arrow** — previous command
-- **Down Arrow** — newer command
-- Keeps the last **10 commands**
-
-Game-control commands include:
-
-```text
-load
-load save
-
-new
-new game
-
-quit
-```
-
-These are handled as system controls rather than in-world player actions.
+The browser also keeps the last 10 commands for Up/Down Arrow history.
 
 ---
 
-## World Structure
+## World and Content Structure
 
-Each location is stored in its own file under `areas/`.
+Locations are stored as data-driven definitions under `areas/`, while pickup items are grouped under `items/`.
 
-Location filenames and runtime IDs use an area prefix for global uniqueness. For example, the player-facing **Clearing** location is defined in `areas/a1_clearing.py` and uses the internal ID `a1_clearing`. The prefix records where the content is organized during development; it is not runtime area state or a player-visible progression marker.
-
-A location can define:
-
-- First-visit narration
-- Normal description
-- Loose pickup items
-- Permanent/interactable scenery
-- Searchable objects
-- Openable/closeable containers
-- Items stored inside or attached to scenery
-- Persistent scenery state
-- State-dependent descriptions
-- Item interactions and effects
-- Target-specific throw interactions
-- Conditional exits
-- Optional Narrator and Inner Voice responses
-
-### Items vs. Scenery
-
-Pickup items are grouped by major game area under `items/` and combined by
-`items/itemRegistry.py`.
-
-The location file decides where that item begins.
-
-A loose item can begin directly in the location:
-
-```python
-"items": [
-    "a1_fallen_branch",
-]
-```
-
-An item can also begin inside or attached to scenery:
-
-```python
-"scenery": {
-    "cupboard": {
-        "openable": True,
-        "closeable": True,
-        "searchable": True,
-        "items": [
-            "a1_house_key",
-        ],
-    },
-}
-```
-
-Permanent objects such as trees, doors, safes, cupboards, calendars, fires, or anything that cannot be taken exist as scenery in the location file.
-
-Runtime state is created automatically as the player interacts with the world, so new items and scenery do not need to be manually added to `gameState.py`.
-
-Item IDs use an area prefix to help keep the registry organized:
+Location and item IDs use an area prefix for global uniqueness:
 
 ```text
+a1_clearing
+a1_massive_tree
 a1_rusty_axe
-a1_wornout_work_gloves
 a1_watering_can
 
 a2_admin_key
 a2_flashlight
 ```
 
-The prefix represents the item's original area, not its current location. An Area 1 item keeps its `a1_` ID even if the player carries it into another area.
+The prefix is an internal organization convention, not player-visible area state.
+
+Locations can define things such as:
+
+- First-visit narration
+- Normal and state-dependent descriptions
+- Items and scenery
+- Searchable or openable objects
+- Persistent scenery state
+- Item interactions and effects
+- Target-specific throw interactions
+- Conditional exits
+- Narrator and Inner Voice responses
+
+The goal is for most future game content to be created through location and item definitions instead of adding one-off engine logic.
 
 ---
 
-## Game State and Interactions
+## Runtime State
 
-The game uses a centralized runtime state for:
+The game tracks persistent runtime state for:
 
 - Current location
 - Visited locations
-- Inventory
-- Equipped items
+- Inventory and equipped items
 - Item state
 - Scenery state
 - Item placement
 - World and event flags
 
-Items can carry their own changing state. For example, a watering can can track whether it is filled:
+For example, an item can track whether it has changed:
 
 ```python
 "state": {
@@ -191,7 +128,7 @@ Items can carry their own changing state. For example, a watering can can track 
 }
 ```
 
-Scenery tracks persistent world conditions such as:
+Scenery can track conditions such as:
 
 ```python
 "state": {
@@ -201,137 +138,46 @@ Scenery tracks persistent world conditions such as:
 }
 ```
 
-Interactions are defined on the scenery being affected. They can require item state, scenery state, inventory items, equipped items, or flags, then apply effects when successful.
-
-This allows puzzles and world interactions to be defined mostly through area and item data instead of adding one-off logic to the game engine.
-
----
-
-## Item Behavior
-
-Items can support:
-
-- Taking
-- Dropping
-- Looking/examining
-- Wearing
-- Throwing
-- Persistent item state
-- Being moved between locations
-- Being attached to scenery
-- Being destroyed after an action
-
-Example:
-
-```python
-"a1_fallen_branch": {
-    "name": "Fallen Branch",
-    "aliases": [
-        "fallen branch",
-        "branch",
-        "stick",
-    ],
-    "description": "A fallen branch from a nearby tree.",
-    "worldDescription": (
-        "a <em><span class='item-highlight'>fallen branch</span></em> "
-        "lying on the ground."
-    ),
-    "looseDescription": (
-        "a <em><span class='item-highlight'>fallen branch</span></em> "
-        "lying on the ground."
-    ),
-    "takeable": True,
-    "wearable": False,
-    "onThrow": {
-        "default": {
-            "response": (
-                "You throw the branch. It spins through the air "
-                "and drops into the grass."
-            ),
-            "destroyItem": False,
-        },
-    },
-},
-```
-
-If an item survives being thrown or dropped, it becomes a loose item in the current location and can be picked up again.
-
-Target-specific behavior belongs to the scenery being targeted. For example, throwing an axe at a tree or using a watering can on a fire can have a unique result without putting every possible target into the item definition.
-
----
-
-## Look and Search
-
-`LOOK` describes the current location.
-
-`LOOK AT <target>` examines a specific visible item or scenery object.
-
-`SEARCH` looks for items and things of importance in the current location.
-
-`SEARCH <target>` searches a specific scenery object or container.
-
-Search results react to the current game state:
-
-- Taken items disappear from their original location
-- Dropped or thrown items appear where they now exist
-- Attached or exposed items can appear in a general search
-- Closed containers hide their contents
-- State-dependent scenery can block access to contained items
-
-General search results are formatted into natural lists instead of returning separate lines for every item.
-
----
-
-## Inventory
-
-The inventory display uses a responsive CSS grid rather than one long sentence.
-
-On larger screens, items can appear across multiple columns. On smaller screens, the grid reduces the number of columns automatically so the inventory remains readable on phones and tablets.
-
-Item names use the same highlighted styling as items referenced elsewhere in the game output.
+This allows the world to react to what the player has already done without hardcoding every puzzle directly into the command handlers.
 
 ---
 
 ## Save and Recovery
 
-The game automatically saves the current state to browser `localStorage`.
+The game automatically stores the current game state in browser `localStorage`.
 
-There is no manual save command and no save-slot system. The browser keeps one current game state and updates it as the player continues.
-
-The saved state includes the player's current location, inventory, equipped items, item state, scenery state, moved items, opened containers, broken objects, puzzle progress, and other runtime state.
-
-A command result is adopted only after its updated state is written successfully. If browser storage is unavailable, the game reports the problem and keeps the last known-good saved state instead of silently continuing with unsaved progress.
+There is currently one save per browser profile rather than manual save slots.
 
 When the game opens:
 
-- If no valid save exists, a new game begins normally
-- If a save exists, the player is prompted to resume or start over
+- A new game begins if no valid save exists
+- An existing save can be resumed
+- Invalid or incompatible development saves are rejected safely
+- Temporary server or network failures do not erase a valid save
+- Failed browser-storage writes are reported instead of silently pretending progress was saved
 
-```text
-Type load save to resume, or type new game.
-```
-
-The following commands are accepted at that prompt:
+Game-control commands include:
 
 ```text
 load
 load save
-
 new
 new game
+quit
 ```
-
-Typing `quit` ends the current play session without deleting progress and returns to the load/new-game prompt.
-
-Invalid, corrupted, or incompatible saves are rejected by the server and replaced through the normal new-game recovery flow. Temporary network or server errors do not delete the existing save.
-
-Loading and starting a new game are system actions, so they are not displayed as `Player:` commands.
 
 ---
 
-## Backend Structure
+## Project Structure
 
 ```text
+areas/
+├── a1_clearing.py
+├── a1_fallen_nursery.py
+├── a1_house_1.py
+├── ...
+└── locationRegistry.py
+
 game/
 ├── commandParser.py
 ├── definitionValidator.py
@@ -356,15 +202,17 @@ items/
 
 states/
 └── gameState.py
+
+static/
+├── game.js
+└── style.css
 ```
 
-Action logic is separated into handlers while shared lookup, state, item-placement, and scenery helpers live in `handlers/common.py`.
-
-`gameState.py` maintains the central runtime state and provides reset and restore behavior for new games and browser save recovery.
+The engine separates command parsing, movement, validation, action handlers, content definitions, and runtime state so new areas can reuse the same underlying systems.
 
 ---
 
-## Development Workflow
+## Development
 
 Run the project with:
 
@@ -378,62 +226,32 @@ or:
 python3 start.py
 ```
 
-The launcher:
+The launcher starts Flask in debug mode, opens the browser, and supports development reloads.
 
-- Installs Flask if needed
-- Starts Flask in debug mode
-- Opens the game in the browser
-- Automatically reloads Python changes during development
-- Refreshes the browser after the Flask server reloads
-- Shuts down cleanly with `Ctrl+C`
-
-Because the browser now stores the current game state, development reloads no longer require restarting from the beginning of Area 1. The saved game can be resumed after the browser refreshes.
-
-During development, persistent item or location-definition changes that are incompatible with existing saved state require incrementing `SAVE_VERSION` in `states/gameState.py`. This includes adding content that must appear in already initialized locations, renaming or removing persistent IDs, changing initial item placement, or changing persistent state fields and their meaning. Old development saves are then rejected and restarted cleanly. The project does not currently migrate saves between versions.
+Definition validation runs at startup so malformed location or item data can fail early during development instead of causing errors later during gameplay.
 
 ---
 
 ## Current Progress
 
-The project currently supports:
+The underlying game engine and state systems are largely in place.
 
-- Flask backend and browser terminal UI
-- Location-to-location movement
-- Conditional exits based on game state
-- First-visit and repeat-visit behavior
-- Command parsing and aliases
-- Compound commands
-- Pronoun carry-forward for supported command chains
-- Central item registry
-- Runtime world state
-- Persistent item placement
-- Item state
-- Scenery state
+Current development is focused on **Area 1: The Forest**, including its narrative, locations, scenery, items, puzzles, and progression into Area 2.
+
+Implemented systems currently include:
+
+- Terminal-style browser UI
+- Flask backend
+- Location movement and conditional exits
+- Command parsing, aliases, and compound commands
+- Inventory and equipment
+- Item/scenery interactions
+- Persistent item and scenery state
+- Searchable and openable scenery
 - State-dependent descriptions
-- Responsive inventory grid
-- Taking and dropping items
-- Throwing items
-- Target-specific throwing interactions
-- Using items on scenery
-- Wearable and equipped items
-- Searchable scenery
-- Openable/closeable containers
-- Items stored inside or attached to scenery
-- Generic interaction requirements and effects
-- Custom success and failure responses
-- Optional Inner Voice responses
-- Conditional puzzle behavior
-- Automatic browser-based game saving
-- Resume and new-game recovery flow
-- `quit` session control
-- Terminal-style command history
+- Automatic browser saving and recovery
+- Definition validation
 - Development hot reload
-
-The underlying game engine and state systems are now largely in place.
-
-Current development is focused on building **Area 1: The Forest**, including its narrative, locations, scenery, items, puzzles, and progression into Area 2.
-
-The goal is for most future game content to be created through location and item definitions rather than adding one-off logic to the game engine.
 
 ---
 
