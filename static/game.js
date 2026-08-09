@@ -9,6 +9,7 @@ let historyIndex = 0;
 
 let waitingForStartChoice = false;
 let currentGameState = null;
+let commandInProgress = false;
 
 function displayMessage(speaker, text) {
   if (speaker === 'system') {
@@ -253,84 +254,94 @@ commandForm.addEventListener('submit', async (event) => {
     return;
   }
 
-  commandHistory.push(command);
-
-  if (commandHistory.length > 10) {
-    commandHistory.shift();
-  }
-
-  historyIndex = commandHistory.length;
-
-  commandInput.value = '';
-
-  const normalizedCommand = command.toLowerCase();
-
-  if (normalizedCommand === 'quit') {
-    waitingForStartChoice = true;
-
-    displayMessage('system', 'Game Ended');
-
-    displayMessage(
-      'system',
-      'Type <span class="command-highlight">load save</span> to resume, or type <span class="command-highlight">new game</span>.',
-    );
-
-    scrollToBottom();
-
+  if (commandInProgress) {
     return;
   }
 
-  if (waitingForStartChoice) {
-    if (normalizedCommand === 'load' || normalizedCommand === 'load save') {
-      await loadSavedGame();
+  commandInProgress = true;
+
+  try {
+    commandHistory.push(command);
+
+    if (commandHistory.length > 10) {
+      commandHistory.shift();
+    }
+
+    historyIndex = commandHistory.length;
+
+    commandInput.value = '';
+
+    const normalizedCommand = command.toLowerCase();
+
+    if (normalizedCommand === 'quit') {
+      waitingForStartChoice = true;
+
+      displayMessage('system', 'Game Ended');
+
+      displayMessage(
+        'system',
+        'Type <span class="command-highlight">load save</span> to resume, or type <span class="command-highlight">new game</span>.',
+      );
+
+      scrollToBottom();
+
       return;
     }
 
-    if (normalizedCommand === 'new' || normalizedCommand === 'new game') {
-      await startNewGame();
+    if (waitingForStartChoice) {
+      if (normalizedCommand === 'load' || normalizedCommand === 'load save') {
+        await loadSavedGame();
+        return;
+      }
+
+      if (normalizedCommand === 'new' || normalizedCommand === 'new game') {
+        await startNewGame();
+        return;
+      }
+
+      displayMessage('user', command);
+
+      displayMessage(
+        'system',
+        'Type <span class="command-highlight">load save</span> to resume, or type <span class="command-highlight">new game</span>.',
+      );
+
+      scrollToBottom();
+
       return;
     }
 
     displayMessage('user', command);
 
-    displayMessage(
-      'system',
-      'Type <span class="command-highlight">load save</span> to resume, or type <span class="command-highlight">new game</span>.',
-    );
-
     scrollToBottom();
 
-    return;
-  }
-
-  displayMessage('user', command);
-
-  scrollToBottom();
-
-  const response = await fetch('/command', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      command: command,
-      state: currentGameState,
-    }),
-  });
-
-  const data = await response.json();
-
-  if (Array.isArray(data.response)) {
-    data.response.forEach((message) => {
-      displayMessage(message.speaker, message.text);
+    const response = await fetch('/command', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        command: command,
+        state: currentGameState,
+      }),
     });
-  } else {
-    displayMessage('narrator', data.response);
+
+    const data = await response.json();
+
+    if (Array.isArray(data.response)) {
+      data.response.forEach((message) => {
+        displayMessage(message.speaker, message.text);
+      });
+    } else {
+      displayMessage('narrator', data.response);
+    }
+
+    saveGameState(data.state);
+
+    scrollToBottom();
+  } finally {
+    commandInProgress = false;
   }
-
-  saveGameState(data.state);
-
-  scrollToBottom();
 });
 
 let currentServerVersion = null;
