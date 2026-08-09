@@ -8,7 +8,7 @@ from game.handlers.common import (
     get_items_in_scenery,
     get_scenery_state,
 )
-from game.itemRegistry import itemRegistry
+from items.itemRegistry import itemRegistry
 
 
 def format_search_results(search_results):

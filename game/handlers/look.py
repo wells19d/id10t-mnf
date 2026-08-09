@@ -8,7 +8,7 @@ from game.handlers.common import (
     resolve_item,
     state_matches,
 )
-from game.itemRegistry import itemRegistry
+from items.itemRegistry import itemRegistry
 
 
 def get_state_description(

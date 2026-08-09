@@ -5,7 +5,7 @@ from game.handlers.common import (
     unequip_item,
     get_item_display_name,
 )
-from game.itemRegistry import itemRegistry
+from items.itemRegistry import itemRegistry
 
 
 def handle_drop(command, game_state):

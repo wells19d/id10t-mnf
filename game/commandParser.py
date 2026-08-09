@@ -30,7 +30,7 @@ from game.handlers.throw import handle_throw
 from game.handlers.use import handle_use
 from game.handlers.wear import handle_wear
 from game.help import helpResponse
-from game.itemRegistry import itemRegistry
+from items.itemRegistry import itemRegistry
 
 def response_to_messages(response):
     if isinstance(response, list):

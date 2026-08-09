@@ -6,7 +6,7 @@ from game.handlers.common import (
     resolve_item,
     unequip_item,
 )
-from game.itemRegistry import itemRegistry
+from items.itemRegistry import itemRegistry
 
 
 def handle_throw(command, current_area, game_state):

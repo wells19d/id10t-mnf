@@ -9,7 +9,7 @@ from game.handlers.common import (
     get_visible_item_ids,
     resolve_item,
 )
-from game.itemRegistry import itemRegistry
+from items.itemRegistry import itemRegistry
 
 
 def handle_take(command, current_area, game_state):

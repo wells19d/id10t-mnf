@@ -121,7 +121,8 @@ A location can define:
 
 ### Items vs. Scenery
 
-Pickup items are defined once in `game/itemRegistry.py`.
+Pickup items are grouped by major game area under `items/` and combined by
+`items/itemRegistry.py`.
 
 The area file decides where that item begins.
 
@@ -328,8 +329,8 @@ Loading and starting a new game are system actions, so they are not displayed as
 ```text
 game/
 ├── commandParser.py
+├── definitionValidator.py
 ├── failedActions.py
-├── itemRegistry.py
 ├── movement.py
 ├── parserUtils.py
 └── handlers/
@@ -343,6 +344,10 @@ game/
     ├── throw.py
     ├── use.py
     └── wear.py
+
+items/
+├── area1.py
+└── itemRegistry.py
 
 states/
 └── gameState.py

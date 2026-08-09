@@ -3,7 +3,7 @@ from game.handlers.common import (
     get_item_display_name,
     resolve_item,
 )
-from game.itemRegistry import itemRegistry
+from items.itemRegistry import itemRegistry
 
 
 def handle_wear(command, game_state):

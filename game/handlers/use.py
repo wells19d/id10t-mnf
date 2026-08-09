@@ -11,7 +11,7 @@ from game.handlers.common import (
     state_matches,
     unequip_item,
 )
-from game.itemRegistry import itemRegistry
+from items.itemRegistry import itemRegistry
 
 
 def handle_use(command, current_area, game_state):

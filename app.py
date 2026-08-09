@@ -10,6 +10,7 @@ from flask import (
 
 from areas.areaRegistry import areaRegistry
 from game.commandParser import parse_command
+from game.definitionValidator import validate_game_definitions
 from game.handlers.common import (
     get_current_location_state,
     get_location_description,
@@ -18,6 +19,8 @@ from states.gameState import (
     create_game_state,
     restore_game_state,
 )
+
+validate_game_definitions()
 
 app = Flask(__name__)
 

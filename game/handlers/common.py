@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 from areas.areaRegistry import areaRegistry
-from game.itemRegistry import itemRegistry
+from items.itemRegistry import itemRegistry
 from states.gameState import GAME_STATE_REQUIREMENT_KEYS
 
 WORLD_ITEM_PLACEMENT = "__world__"
