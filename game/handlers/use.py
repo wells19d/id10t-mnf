@@ -62,12 +62,7 @@ def handle_use(command, location_definition, game_state):
 
                 apply_state_changes(
                     scenery_state,
-                    effects.get(
-                        "sceneryState",
-                        {
-                            "isOpen": True,
-                        },
-                    ),
+                    effects["sceneryState"],
                 )
 
                 return location_interaction["onSuccess"]

@@ -172,15 +172,14 @@ The prefix represents the item's original area, not its current location. An Are
 
 The game uses a centralized runtime state for:
 
-- Current area and location
+- Current location
 - Visited locations
 - Inventory
 - Equipped items
 - Item state
 - Scenery state
 - Item placement
-- Area state
-- Game flags
+- World and event flags
 
 Items can carry their own changing state. For example, a watering can can track whether it is filled:
 
@@ -299,6 +298,8 @@ There is no manual save command and no save-slot system. The browser keeps one c
 
 The saved state includes the player's current location, inventory, equipped items, item state, scenery state, moved items, opened containers, broken objects, puzzle progress, and other runtime state.
 
+A command result is adopted only after its updated state is written successfully. If browser storage is unavailable, the game reports the problem and keeps the last known-good saved state instead of silently continuing with unsaved progress.
+
 When the game opens:
 
 - If no valid save exists, a new game begins normally
@@ -319,6 +320,8 @@ new game
 ```
 
 Typing `quit` ends the current play session without deleting progress and returns to the load/new-game prompt.
+
+Invalid, corrupted, or incompatible saves are rejected by the server and replaced through the normal new-game recovery flow. Temporary network or server errors do not delete the existing save.
 
 Loading and starting a new game are system actions, so they are not displayed as `Player:` commands.
 
@@ -383,6 +386,8 @@ The launcher:
 - Shuts down cleanly with `Ctrl+C`
 
 Because the browser now stores the current game state, development reloads no longer require restarting from the beginning of Area 1. The saved game can be resumed after the browser refreshes.
+
+During development, persistent item or location-definition changes that are incompatible with existing saved state require incrementing `SAVE_VERSION` in `states/gameState.py`. This includes adding content that must appear in already initialized locations, renaming or removing persistent IDs, changing initial item placement, or changing persistent state fields and their meaning. Old development saves are then rejected and restarted cleanly. The project does not currently migrate saves between versions.
 
 ---
 

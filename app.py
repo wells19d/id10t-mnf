@@ -17,6 +17,7 @@ from game.handlers.common import (
 )
 from states.gameState import (
     create_game_state,
+    is_valid_saved_state,
     restore_game_state,
 )
 
@@ -35,6 +36,8 @@ STARTUP_MESSAGE = [
     "Developed by AJ Wells at Wellscrypted",
     'Type "help" or "h" for available commands.',
 ]
+
+INVALID_SAVE_ERROR_CODE = "invalid-save"
 
 
 @app.route("/")
@@ -78,6 +81,19 @@ def new_game():
 
     location_state["visited"] = True
 
+    if not is_valid_saved_state(
+        game_state,
+    ):
+        return (
+            jsonify(
+                {
+                    "error": "The new game produced an invalid game state.",
+                    "errorCode": "invalid-result-state",
+                }
+            ),
+            500,
+        )
+
     return jsonify(
         {
             "messages": location_definition.get(
@@ -111,6 +127,7 @@ def load_game():
             jsonify(
                 {
                     "error": "Invalid save data.",
+                    "errorCode": INVALID_SAVE_ERROR_CODE,
                 }
             ),
             400,
@@ -130,9 +147,28 @@ def load_game():
             jsonify(
                 {
                     "error": "Saved location no longer exists.",
+                    "errorCode": INVALID_SAVE_ERROR_CODE,
                 }
             ),
             400,
+        )
+
+    location_description = get_location_description(
+        location_definition,
+        game_state,
+    )
+
+    if not is_valid_saved_state(
+        game_state,
+    ):
+        return (
+            jsonify(
+                {
+                    "error": "Loading produced an invalid game state.",
+                    "errorCode": "invalid-result-state",
+                }
+            ),
+            500,
         )
 
     return jsonify(
@@ -140,10 +176,7 @@ def load_game():
             "messages": [
                 {
                     "speaker": "narrator",
-                    "text": get_location_description(
-                        location_definition,
-                        game_state,
-                    ),
+                    "text": location_description,
                 },
             ],
             "state": game_state,
@@ -180,6 +213,7 @@ def command():
             jsonify(
                 {
                     "error": "Invalid game state.",
+                    "errorCode": INVALID_SAVE_ERROR_CODE,
                 }
             ),
             400,
@@ -189,6 +223,19 @@ def command():
         player_command,
         game_state,
     )
+
+    if not is_valid_saved_state(
+        game_state,
+    ):
+        return (
+            jsonify(
+                {
+                    "error": "The command produced an invalid game state.",
+                    "errorCode": "invalid-result-state",
+                }
+            ),
+            500,
+        )
 
     return jsonify(
         {

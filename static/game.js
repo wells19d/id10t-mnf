@@ -75,18 +75,14 @@ function isValidCommandMessage(message) {
   );
 }
 
-function isValidCommandResult(data) {
-  if (!data || typeof data !== 'object') {
-    return false;
-  }
+function isValidMessageList(messages) {
+  return (
+    Array.isArray(messages) && messages.every(isValidCommandMessage)
+  );
+}
 
-  const responseIsValid =
-    typeof data.response === 'string' ||
-    (Array.isArray(data.response) &&
-      data.response.every(isValidCommandMessage));
-
-  const state = data.state;
-  const stateIsValid =
+function isValidGameState(state) {
+  return (
     state &&
     typeof state === 'object' &&
     !Array.isArray(state) &&
@@ -104,9 +100,44 @@ function isValidCommandResult(data) {
     !Array.isArray(state.flags) &&
     state.locations &&
     typeof state.locations === 'object' &&
-    !Array.isArray(state.locations);
+    !Array.isArray(state.locations)
+  );
+}
 
-  return responseIsValid && stateIsValid;
+function isValidCommandResult(data) {
+  if (!data || typeof data !== 'object') {
+    return false;
+  }
+
+  const responseIsValid =
+    typeof data.response === 'string' ||
+    isValidCommandMessage(data.response) ||
+    isValidMessageList(data.response);
+
+  return responseIsValid && isValidGameState(data.state);
+}
+
+function isValidStartResult(data) {
+  return (
+    data &&
+    typeof data === 'object' &&
+    isValidMessageList(data.messages) &&
+    isValidGameState(data.state)
+  );
+}
+
+function displayCommandResponse(response) {
+  if (Array.isArray(response)) {
+    displayMessages(response);
+    return;
+  }
+
+  if (isValidCommandMessage(response)) {
+    displayMessage(response.speaker, response.text);
+    return;
+  }
+
+  displayMessage('narrator', response);
 }
 
 function scrollToBottom() {
@@ -114,131 +145,304 @@ function scrollToBottom() {
 }
 
 function saveGameState(state) {
-  if (!state) {
-    return;
+  if (!isValidGameState(state)) {
+    return false;
   }
-
-  currentGameState = state;
 
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+
+    currentGameState = state;
+
+    return true;
   } catch (error) {
     console.error('Unable to save game state.', error);
+
+    return false;
   }
 }
 
 function getSavedGameState() {
-  const savedGame = localStorage.getItem(SAVE_KEY);
+  let savedGame;
+
+  try {
+    savedGame = localStorage.getItem(SAVE_KEY);
+  } catch (error) {
+    console.error('Unable to read the saved game.', error);
+
+    return {
+      status: 'unavailable',
+      state: null,
+    };
+  }
 
   if (!savedGame) {
-    return null;
+    return {
+      status: 'missing',
+      state: null,
+    };
   }
 
   try {
     const state = JSON.parse(savedGame);
 
-    if (
-      !state ||
-      typeof state !== 'object' ||
-      !state.player ||
-      typeof state.player !== 'object'
-    ) {
-      localStorage.removeItem(SAVE_KEY);
-
-      return null;
+    if (!isValidGameState(state)) {
+      return {
+        status: 'invalid',
+        state: null,
+      };
     }
 
-    return state;
+    return {
+      status: 'available',
+      state: state,
+    };
   } catch (error) {
-    localStorage.removeItem(SAVE_KEY);
+    console.error('Unable to parse the saved game.', error);
 
+    return {
+      status: 'invalid',
+      state: null,
+    };
+  }
+}
+
+function discardInvalidSavedGame() {
+  currentGameState = null;
+
+  try {
+    localStorage.removeItem(SAVE_KEY);
+    return true;
+  } catch (error) {
+    console.error('Unable to remove the invalid saved game.', error);
+    return false;
+  }
+}
+
+async function readJsonResponse(response) {
+  try {
+    return await response.json();
+  } catch (error) {
+    console.error('Unable to read the server response.', error);
     return null;
   }
 }
 
 async function startNewGame() {
-  waitingForStartChoice = false;
+  try {
+    const response = await fetch('/new-game', {
+      method: 'POST',
+    });
 
-  localStorage.removeItem(SAVE_KEY);
+    const data = await readJsonResponse(response);
 
-  const response = await fetch('/new-game', {
-    method: 'POST',
-  });
+    if (!response.ok || !isValidStartResult(data)) {
+      console.error('The new-game request returned invalid data.');
 
-  const data = await response.json();
+      displayMessage(
+        'system',
+        'A new game could not be started. No saved progress was changed.',
+      );
 
-  displayMessages(data.messages);
+      waitingForStartChoice = true;
+      scrollToBottom();
+      return false;
+    }
 
-  saveGameState(data.state);
+    if (!saveGameState(data.state)) {
+      displayMessage(
+        'system',
+        'The new game could not be saved, so it was not started. Check that browser storage is available and try again.',
+      );
 
-  scrollToBottom();
-}
+      waitingForStartChoice = true;
+      scrollToBottom();
+      return false;
+    }
 
-async function loadSavedGame() {
-  const savedState = getSavedGameState();
+    waitingForStartChoice = false;
 
-  if (!savedState) {
-    await startNewGame();
-    return;
-  }
-
-  const response = await fetch('/load-game', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      state: savedState,
-    }),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    localStorage.removeItem(SAVE_KEY);
+    displayMessages(data.messages);
+    scrollToBottom();
+    return true;
+  } catch (error) {
+    console.error('Unable to start a new game.', error);
 
     displayMessage(
       'system',
-      'The previous save could not be loaded. Starting a new game.',
+      'Unable to reach the game server. No saved progress was changed.',
+    );
+
+    waitingForStartChoice = true;
+    scrollToBottom();
+    return false;
+  }
+}
+
+async function loadSavedGame() {
+  const savedGame = getSavedGameState();
+
+  if (savedGame.status === 'unavailable') {
+    displayMessage(
+      'system',
+      'Browser storage is unavailable, so the saved game cannot be loaded safely.',
+    );
+
+    scrollToBottom();
+    return false;
+  }
+
+  if (savedGame.status === 'invalid') {
+    discardInvalidSavedGame();
+
+    displayMessage(
+      'system',
+      'The previous save is invalid or corrupted. Starting a new game.',
     );
 
     await startNewGame();
-    return;
+    return false;
   }
 
-  waitingForStartChoice = false;
+  if (savedGame.status === 'missing') {
+    return startNewGame();
+  }
 
-  displayMessages(data.messages);
+  try {
+    const response = await fetch('/load-game', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        state: savedGame.state,
+      }),
+    });
 
-  saveGameState(data.state);
+    const data = await readJsonResponse(response);
 
-  scrollToBottom();
+    if (
+      !response.ok &&
+      response.status === 400 &&
+      data &&
+      data.errorCode === 'invalid-save'
+    ) {
+      discardInvalidSavedGame();
+
+      displayMessage(
+        'system',
+        'The previous save is invalid or incompatible. Starting a new game.',
+      );
+
+      await startNewGame();
+      return false;
+    }
+
+    if (!response.ok) {
+      console.error(`Load request failed with status ${response.status}.`);
+
+      displayMessage(
+        'system',
+        'The saved game could not be loaded because of a temporary server error. Your save has been preserved.',
+      );
+
+      scrollToBottom();
+      return false;
+    }
+
+    if (!isValidStartResult(data)) {
+      console.error('The load request returned invalid data.');
+
+      displayMessage(
+        'system',
+        'The server returned an invalid load response. Your save has been preserved.',
+      );
+
+      scrollToBottom();
+      return false;
+    }
+
+    if (!saveGameState(data.state)) {
+      displayMessage(
+        'system',
+        'The loaded game could not be saved safely. Check that browser storage is available and try again.',
+      );
+
+      scrollToBottom();
+      return false;
+    }
+
+    waitingForStartChoice = false;
+
+    displayMessages(data.messages);
+    scrollToBottom();
+    return true;
+  } catch (error) {
+    console.error('Unable to load the saved game.', error);
+
+    displayMessage(
+      'system',
+      'Unable to reach the game server. Your save has been preserved.',
+    );
+
+    scrollToBottom();
+    return false;
+  }
 }
 
 async function initializeGame() {
-  const response = await fetch('/start');
+  try {
+    const response = await fetch('/start');
+    const data = await readJsonResponse(response);
 
-  const data = await response.json();
+    if (response.ok && data && Array.isArray(data.startup)) {
+      const startup = document.createElement('div');
 
-  if (data.startup) {
-    const startup = document.createElement('div');
+      startup.classList.add('startup-block');
 
-    startup.classList.add('startup-block');
+      startup.innerHTML = `
+        <div class="startup-title">${data.startup[0]}</div>
+        <div class="startup-subtitle">${data.startup[1]}</div>
+        <div class="startup-version">${data.startup[2]}</div>
+        <div class="startup-development">${data.startup[3]}</div>
+        <div class="startup-help">${data.startup[4]}</div>
+      `;
 
-    startup.innerHTML = `
-      <div class="startup-title">${data.startup[0]}</div>
-      <div class="startup-subtitle">${data.startup[1]}</div>
-      <div class="startup-version">${data.startup[2]}</div>
-      <div class="startup-development">${data.startup[3]}</div>
-      <div class="startup-help">${data.startup[4]}</div>
-    `;
-
-    gameOutput.appendChild(startup);
+      gameOutput.appendChild(startup);
+    }
+  } catch (error) {
+    console.error('Unable to load the startup message.', error);
   }
 
-  const savedState = getSavedGameState();
+  const savedGame = getSavedGameState();
 
-  if (savedState) {
+  if (savedGame.status === 'unavailable') {
+    waitingForStartChoice = true;
+
+    displayMessage(
+      'system',
+      'Browser storage is unavailable. The game cannot start safely until storage is available.',
+    );
+
+    scrollToBottom();
+    commandInput.focus();
+    return;
+  }
+
+  if (savedGame.status === 'invalid') {
+    discardInvalidSavedGame();
+
+    displayMessage(
+      'system',
+      'The previous save is invalid or corrupted. Starting a new game.',
+    );
+
+    await startNewGame();
+    commandInput.focus();
+    return;
+  }
+
+  if (savedGame.status === 'available') {
     waitingForStartChoice = true;
 
     displayMessage(
@@ -428,22 +632,40 @@ commandForm.addEventListener('submit', async (event) => {
         }),
       });
 
+      const data = await readJsonResponse(response);
+
       if (!response.ok) {
         console.error(
           `Command request failed with status ${response.status}.`,
         );
 
+        if (
+          response.status === 400 &&
+          data &&
+          data.errorCode === 'invalid-save'
+        ) {
+          discardInvalidSavedGame();
+
+          waitingForStartChoice = true;
+
+          displayMessage(
+            'system',
+            'The saved game is invalid or incompatible. Starting a new game.',
+          );
+
+          await startNewGame();
+          return;
+        }
+
         displayMessage(
           'system',
-          'The command could not be processed. Please try again.',
+          'The command could not be processed because of a temporary server error. Your saved progress has been preserved.',
         );
 
         scrollToBottom();
 
         return;
       }
-
-      const data = await response.json();
 
       if (!isValidCommandResult(data)) {
         console.error('Command request returned invalid data.');
@@ -458,15 +680,17 @@ commandForm.addEventListener('submit', async (event) => {
         return;
       }
 
-      if (Array.isArray(data.response)) {
-        data.response.forEach((message) => {
-          displayMessage(message.speaker, message.text);
-        });
-      } else {
-        displayMessage('narrator', data.response);
+      if (!saveGameState(data.state)) {
+        displayMessage(
+          'system',
+          'The command result could not be saved, so the command was not applied. Check that browser storage is available and try again.',
+        );
+
+        scrollToBottom();
+        return;
       }
 
-      saveGameState(data.state);
+      displayCommandResponse(data.response);
 
       scrollToBottom();
     } catch (error) {

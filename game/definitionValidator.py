@@ -30,6 +30,10 @@ ACTION_EFFECT_KEYS = {
     "destroyItem",
 }
 
+COMBINATION_EFFECT_KEYS = {
+    "sceneryState",
+}
+
 ITEM_RESPONSE_KEYS = {
     "takeFail",
     "takeResponse",
@@ -454,6 +458,7 @@ def add_effect_errors(
     effects,
     definition_path,
     errors,
+    allowed_keys=ACTION_EFFECT_KEYS,
 ):
     if not isinstance(effects, dict):
         errors.append(
@@ -462,7 +467,7 @@ def add_effect_errors(
         return
 
     for key in effects:
-        if key not in ACTION_EFFECT_KEYS:
+        if key not in allowed_keys:
             errors.append(
                 f"{definition_path} uses unsupported effect {key!r}."
             )
@@ -985,12 +990,30 @@ def get_location_definition_errors():
                             errors,
                         )
 
-                    if "effects" in interaction:
-                        add_effect_errors(
-                            interaction["effects"],
-                            f"{interaction_path}.effects",
-                            errors,
+                    effects = interaction.get(
+                        "effects",
+                    )
+
+                    add_effect_errors(
+                        effects,
+                        f"{interaction_path}.effects",
+                        errors,
+                        COMBINATION_EFFECT_KEYS,
+                    )
+
+                    if isinstance(effects, dict):
+                        scenery_effects = effects.get(
+                            "sceneryState",
                         )
+
+                        if (
+                            not isinstance(scenery_effects, dict)
+                            or not scenery_effects
+                        ):
+                            errors.append(
+                                f"{interaction_path}.effects.sceneryState "
+                                "must be a non-empty dictionary."
+                            )
 
     for item_id, placements in initial_item_placements.items():
         if len(placements) > 1:

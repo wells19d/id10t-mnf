@@ -5,7 +5,9 @@ from copy import deepcopy
 from areas.locationRegistry import locationRegistry
 from items.itemRegistry import itemRegistry
 
-SAVE_VERSION = 2
+# Increment this when persistent location/item definitions or state semantics
+# change incompatibly. Development saves are restarted instead of migrated.
+SAVE_VERSION = 3
 
 WORLD_ITEM_PLACEMENT = "__world__"
 
@@ -47,6 +49,32 @@ initialState = {
     "flags": {},
     "locations": {},
 }
+
+
+def build_initial_item_locations():
+    initial_item_locations = {}
+
+    for location_id, location_definition in locationRegistry.items():
+        for item_id in location_definition.get(
+            "items",
+            [],
+        ):
+            initial_item_locations[item_id] = location_id
+
+        for scenery_definition in location_definition.get(
+            "scenery",
+            {},
+        ).values():
+            for item_id in scenery_definition.get(
+                "items",
+                [],
+            ):
+                initial_item_locations[item_id] = location_id
+
+    return initial_item_locations
+
+
+INITIAL_ITEM_LOCATIONS = build_initial_item_locations()
 
 
 def merge_state(
@@ -270,6 +298,34 @@ def is_valid_locations_state(locations_state):
     return True
 
 
+def has_exclusive_item_ownership(
+    player_state,
+    locations_state,
+):
+    owned_item_ids = set(
+        player_state["inventory"],
+    )
+
+    for location_state in locations_state.values():
+        for item_id in location_state["items"]:
+            if item_id in owned_item_ids:
+                return False
+
+            owned_item_ids.add(
+                item_id,
+            )
+
+    for item_id in owned_item_ids:
+        initial_location = INITIAL_ITEM_LOCATIONS.get(
+            item_id,
+        )
+
+        if initial_location and initial_location not in locations_state:
+            return False
+
+    return True
+
+
 def is_valid_saved_state(saved_state):
     if not isinstance(
         saved_state,
@@ -284,10 +340,12 @@ def is_valid_saved_state(saved_state):
     if type(save_version) is not int or save_version != SAVE_VERSION:
         return False
 
+    player_state = saved_state.get(
+        "player",
+    )
+
     if not is_valid_player_state(
-        saved_state.get(
-            "player",
-        )
+        player_state,
     ):
         return False
 
@@ -306,10 +364,18 @@ def is_valid_saved_state(saved_state):
     ):
         return False
 
+    locations_state = saved_state.get(
+        "locations",
+    )
+
     if not is_valid_locations_state(
-        saved_state.get(
-            "locations",
-        )
+        locations_state,
+    ):
+        return False
+
+    if not has_exclusive_item_ownership(
+        player_state,
+        locations_state,
     ):
         return False
 
