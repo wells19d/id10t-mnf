@@ -30,6 +30,170 @@ ACTION_EFFECT_KEYS = {
     "destroyItem",
 }
 
+ITEM_RESPONSE_KEYS = {
+    "takeFail",
+    "takeResponse",
+    "dropResponse",
+    "wearFailResponse",
+    "alreadyWearingResponse",
+    "wearResponse",
+    "removeResponse",
+}
+
+SCENERY_RESPONSE_KEYS = {
+    "takeFail",
+    "takeClosedResponse",
+    "takeBlockedResponse",
+    "searchResponse",
+    "searchClosedResponse",
+    "searchBlockedResponse",
+    "searchEmptyResponse",
+    "openFailResponse",
+    "brokenOpenResponse",
+    "lockedResponse",
+    "alreadyOpenResponse",
+    "openBlockedResponse",
+    "openResponse",
+    "closeFailResponse",
+    "brokenCloseResponse",
+    "alreadyClosedResponse",
+    "closeBlockedResponse",
+    "closeResponse",
+}
+
+
+def add_message_errors(
+    message,
+    definition_path,
+    errors,
+):
+    if not isinstance(message, dict):
+        errors.append(
+            f"{definition_path} must be a response message dictionary."
+        )
+        return
+
+    for key in [
+        "speaker",
+        "text",
+    ]:
+        value = message.get(
+            key,
+        )
+
+        if not isinstance(value, str) or not value.strip():
+            errors.append(
+                f"{definition_path}.{key} must be a non-empty string."
+            )
+
+
+def add_response_errors(
+    response,
+    definition_path,
+    errors,
+):
+    if isinstance(response, str):
+        if not response.strip():
+            errors.append(
+                f"{definition_path} must not be empty."
+            )
+        return
+
+    if isinstance(response, dict):
+        add_message_errors(
+            response,
+            definition_path,
+            errors,
+        )
+        return
+
+    if isinstance(response, list):
+        if not response:
+            errors.append(
+                f"{definition_path} must not be an empty response list."
+            )
+            return
+
+        for index, message in enumerate(response):
+            add_message_errors(
+                message,
+                f"{definition_path}[{index}]",
+                errors,
+            )
+        return
+
+    errors.append(
+        f"{definition_path} must be a response string, message, or message list."
+    )
+
+
+def add_local_state_description_errors(
+    state_descriptions,
+    definition_path,
+    errors,
+):
+    if not isinstance(state_descriptions, list):
+        errors.append(
+            f"{definition_path} must be a list."
+        )
+        return
+
+    for index, state_description in enumerate(state_descriptions):
+        state_path = f"{definition_path}[{index}]"
+
+        if not isinstance(state_description, dict):
+            errors.append(
+                f"{state_path} must be a dictionary."
+            )
+            continue
+
+        if not isinstance(
+            state_description.get(
+                "requiresState",
+            ),
+            dict,
+        ):
+            errors.append(
+                f"{state_path}.requiresState must be a dictionary."
+            )
+
+        description = state_description.get(
+            "description",
+        )
+
+        if not isinstance(description, str) or not description.strip():
+            errors.append(
+                f"{state_path}.description must be a non-empty string."
+            )
+
+
+def add_throw_action_errors(
+    throw_action,
+    definition_path,
+    errors,
+):
+    if not isinstance(throw_action, dict):
+        errors.append(
+            f"{definition_path} must be a dictionary."
+        )
+        return
+
+    add_response_errors(
+        throw_action.get(
+            "response",
+        ),
+        f"{definition_path}.response",
+        errors,
+    )
+
+    if "destroyItem" in throw_action and not isinstance(
+        throw_action["destroyItem"],
+        bool,
+    ):
+        errors.append(
+            f"{definition_path}.destroyItem must be a boolean."
+        )
+
 
 def get_item_definition_errors():
     errors = []
@@ -126,11 +290,31 @@ def get_item_definition_errors():
                 "slot",
             )
 
-            if slot not in EQUIPMENT_SLOTS:
+            if not isinstance(slot, str) or slot not in EQUIPMENT_SLOTS:
                 errors.append(
                     f"{item_path}.slot must be one of: "
                     f"{', '.join(sorted(EQUIPMENT_SLOTS))}."
                 )
+
+        for text_key in [
+            "description",
+            "worldDescription",
+            "looseDescription",
+        ]:
+            if text_key in item_data and (
+                not isinstance(item_data[text_key], str)
+                or not item_data[text_key].strip()
+            ):
+                errors.append(
+                    f"{item_path}.{text_key} must be a non-empty string."
+                )
+
+        for response_key in ITEM_RESPONSE_KEYS.intersection(item_data):
+            add_response_errors(
+                item_data[response_key],
+                f"{item_path}.{response_key}",
+                errors,
+            )
 
         if "state" in item_data and not isinstance(
             item_data["state"],
@@ -140,13 +324,34 @@ def get_item_definition_errors():
                 f"{item_path}.state must be a dictionary."
             )
 
-        if "onThrow" in item_data and not isinstance(
-            item_data["onThrow"],
-            dict,
-        ):
-            errors.append(
-                f"{item_path}.onThrow must be a dictionary."
+        if "stateDescriptions" in item_data:
+            add_local_state_description_errors(
+                item_data["stateDescriptions"],
+                f"{item_path}.stateDescriptions",
+                errors,
             )
+
+        if "onThrow" in item_data:
+            throw_actions = item_data["onThrow"]
+
+            if not isinstance(throw_actions, dict):
+                errors.append(
+                    f"{item_path}.onThrow must be a dictionary."
+                )
+            else:
+                for action_id, throw_action in throw_actions.items():
+                    action_path = f"{item_path}.onThrow[{action_id!r}]"
+
+                    if not isinstance(action_id, str) or not action_id:
+                        errors.append(
+                            f"{action_path} must use a non-empty string ID."
+                        )
+
+                    add_throw_action_errors(
+                        throw_action,
+                        action_path,
+                        errors,
+                    )
 
     return errors
 
@@ -293,6 +498,11 @@ def add_scenery_errors(
     for scenery_id, scenery_data in scenery.items():
         scenery_path = f"{location_path}.scenery[{scenery_id!r}]"
 
+        if not isinstance(scenery_id, str) or not scenery_id:
+            errors.append(
+                f"{scenery_path} must use a non-empty string ID."
+            )
+
         if not isinstance(scenery_data, dict):
             errors.append(
                 f"{scenery_path} must be a dictionary."
@@ -314,6 +524,34 @@ def add_scenery_errors(
                 f"{scenery_path}.aliases must be a list of lowercase strings."
             )
 
+        if "description" in scenery_data and (
+            not isinstance(scenery_data["description"], str)
+            or not scenery_data["description"].strip()
+        ):
+            errors.append(
+                f"{scenery_path}.description must be a non-empty string."
+            )
+
+        for boolean_key in [
+            "searchable",
+            "openable",
+            "closeable",
+        ]:
+            if boolean_key in scenery_data and not isinstance(
+                scenery_data[boolean_key],
+                bool,
+            ):
+                errors.append(
+                    f"{scenery_path}.{boolean_key} must be a boolean."
+                )
+
+        for response_key in SCENERY_RESPONSE_KEYS.intersection(scenery_data):
+            add_response_errors(
+                scenery_data[response_key],
+                f"{scenery_path}.{response_key}",
+                errors,
+            )
+
         if "state" in scenery_data and not isinstance(
             scenery_data["state"],
             dict,
@@ -321,6 +559,52 @@ def add_scenery_errors(
             errors.append(
                 f"{scenery_path}.state must be a dictionary."
             )
+
+        if "stateDescriptions" in scenery_data:
+            add_local_state_description_errors(
+                scenery_data["stateDescriptions"],
+                f"{scenery_path}.stateDescriptions",
+                errors,
+            )
+
+        for state_key in [
+            "contentsRequiresState",
+            "openEffects",
+            "closeEffects",
+        ]:
+            if state_key in scenery_data and not isinstance(
+                scenery_data[state_key],
+                dict,
+            ):
+                errors.append(
+                    f"{scenery_path}.{state_key} must be a dictionary."
+                )
+
+        item_descriptions = scenery_data.get(
+            "itemDescriptions",
+            {},
+        )
+
+        if not isinstance(item_descriptions, dict):
+            errors.append(
+                f"{scenery_path}.itemDescriptions must be a dictionary."
+            )
+        else:
+            for item_id, description in item_descriptions.items():
+                description_path = (
+                    f"{scenery_path}.itemDescriptions[{item_id!r}]"
+                )
+
+                if not isinstance(item_id, str) or item_id not in itemRegistry:
+                    errors.append(
+                        f"{description_path} references unknown item ID "
+                        f"{item_id!r}."
+                    )
+
+                if not isinstance(description, str) or not description.strip():
+                    errors.append(
+                        f"{description_path} must be a non-empty string."
+                    )
 
         scenery_items = scenery_data.get(
             "items",
@@ -335,7 +619,7 @@ def add_scenery_errors(
 
         if isinstance(scenery_items, list):
             for item_id in scenery_items:
-                if item_id in itemRegistry:
+                if isinstance(item_id, str) and item_id in itemRegistry:
                     initial_item_placements.setdefault(
                         item_id,
                         [],
@@ -363,7 +647,7 @@ def add_scenery_errors(
                     f"{scenery_path}.{interaction_key}[{item_id!r}]"
                 )
 
-                if item_id not in itemRegistry:
+                if not isinstance(item_id, str) or item_id not in itemRegistry:
                     errors.append(
                         f"{interaction_path} references unknown item ID {item_id!r}."
                     )
@@ -375,6 +659,17 @@ def add_scenery_errors(
                     continue
 
                 if interaction_key == "interactions":
+                    for response_key in [
+                        "response",
+                        "failResponse",
+                    ]:
+                        if response_key in interaction:
+                            add_response_errors(
+                                interaction[response_key],
+                                f"{interaction_path}.{response_key}",
+                                errors,
+                            )
+
                     if "requires" in interaction:
                         add_requirement_errors(
                             interaction["requires"],
@@ -389,6 +684,12 @@ def add_scenery_errors(
                             f"{interaction_path}.effects",
                             errors,
                         )
+                else:
+                    add_throw_action_errors(
+                        interaction,
+                        interaction_path,
+                        errors,
+                    )
 
         for requirement_key in [
             "openRequires",
@@ -455,7 +756,7 @@ def add_exit_errors(
             )
             continue
 
-        if destination not in areaRegistry:
+        if not isinstance(destination, str) or destination not in areaRegistry:
             errors.append(
                 f"{exit_path} references unknown location ID {destination!r}."
             )
@@ -548,7 +849,7 @@ def get_area_definition_errors():
 
         if isinstance(location_items, list):
             for item_id in location_items:
-                if item_id in itemRegistry:
+                if isinstance(item_id, str) and item_id in itemRegistry:
                     initial_item_placements.setdefault(
                         item_id,
                         [],
@@ -622,18 +923,51 @@ def get_area_definition_errors():
                     )
                     continue
 
-                if interaction.get("type") == "combination":
+                interaction_type = interaction.get(
+                    "type",
+                )
+
+                if interaction_type != "combination":
+                    errors.append(
+                        f"{interaction_path}.type must be 'combination'."
+                    )
+                    continue
+
+                if interaction_type == "combination":
                     combination = interaction.get(
                         "combination",
                     )
 
-                    if not isinstance(combination, list) or not all(
-                        isinstance(value, str) and value.isdigit()
-                        for value in combination
+                    if (
+                        not isinstance(combination, list)
+                        or not combination
+                        or not all(
+                            isinstance(value, str) and value.isdigit()
+                            for value in combination
+                        )
                     ):
                         errors.append(
-                            f"{interaction_path}.combination must be a list "
-                            "of numeric strings."
+                            f"{interaction_path}.combination must be a non-empty "
+                            "list of numeric strings."
+                        )
+
+                    for response_key in [
+                        "onSuccess",
+                        "onFail",
+                    ]:
+                        add_response_errors(
+                            interaction.get(
+                                response_key,
+                            ),
+                            f"{interaction_path}.{response_key}",
+                            errors,
+                        )
+
+                    if "effects" in interaction:
+                        add_effect_errors(
+                            interaction["effects"],
+                            f"{interaction_path}.effects",
+                            errors,
                         )
 
     for item_id, placements in initial_item_placements.items():
