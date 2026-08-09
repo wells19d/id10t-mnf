@@ -64,6 +64,46 @@ function displayMessages(messages) {
   });
 }
 
+function isValidCommandMessage(message) {
+  return (
+    message &&
+    typeof message === 'object' &&
+    typeof message.speaker === 'string' &&
+    typeof message.text === 'string'
+  );
+}
+
+function isValidCommandResult(data) {
+  if (!data || typeof data !== 'object') {
+    return false;
+  }
+
+  const responseIsValid =
+    typeof data.response === 'string' ||
+    (Array.isArray(data.response) &&
+      data.response.every(isValidCommandMessage));
+
+  const state = data.state;
+  const stateIsValid =
+    state &&
+    typeof state === 'object' &&
+    !Array.isArray(state) &&
+    Number.isInteger(state.saveVersion) &&
+    state.player &&
+    typeof state.player === 'object' &&
+    !Array.isArray(state.player) &&
+    Array.isArray(state.player.inventory) &&
+    Array.isArray(state.player.equipped) &&
+    state.itemStates &&
+    typeof state.itemStates === 'object' &&
+    !Array.isArray(state.itemStates) &&
+    state.areas &&
+    typeof state.areas === 'object' &&
+    !Array.isArray(state.areas);
+
+  return responseIsValid && stateIsValid;
+}
+
 function scrollToBottom() {
   gameOutput.scrollTop = gameOutput.scrollHeight;
 }
@@ -315,30 +355,69 @@ commandForm.addEventListener('submit', async (event) => {
 
     scrollToBottom();
 
-    const response = await fetch('/command', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        command: command,
-        state: currentGameState,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (Array.isArray(data.response)) {
-      data.response.forEach((message) => {
-        displayMessage(message.speaker, message.text);
+    try {
+      const response = await fetch('/command', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          command: command,
+          state: currentGameState,
+        }),
       });
-    } else {
-      displayMessage('narrator', data.response);
+
+      if (!response.ok) {
+        console.error(
+          `Command request failed with status ${response.status}.`,
+        );
+
+        displayMessage(
+          'system',
+          'The command could not be processed. Please try again.',
+        );
+
+        scrollToBottom();
+
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!isValidCommandResult(data)) {
+        console.error('Command request returned invalid data.');
+
+        displayMessage(
+          'system',
+          'The command returned an invalid response. Please try again.',
+        );
+
+        scrollToBottom();
+
+        return;
+      }
+
+      if (Array.isArray(data.response)) {
+        data.response.forEach((message) => {
+          displayMessage(message.speaker, message.text);
+        });
+      } else {
+        displayMessage('narrator', data.response);
+      }
+
+      saveGameState(data.state);
+
+      scrollToBottom();
+    } catch (error) {
+      console.error('Command request failed.', error);
+
+      displayMessage(
+        'system',
+        'Unable to reach the game server. Please try again.',
+      );
+
+      scrollToBottom();
     }
-
-    saveGameState(data.state);
-
-    scrollToBottom();
   } finally {
     commandInProgress = false;
   }
