@@ -134,9 +134,7 @@ def move_player(
     )
 
     if not exit_data:
-        return MovementResult.blocked(
-            f"I can't go {full_direction} from here."
-        )
+        return MovementResult.blocked(f"I can't go {full_direction} from here.")
 
     # Standard exit:
     #
@@ -163,9 +161,7 @@ def move_player(
         )
 
         if not next_location:
-            return MovementResult.blocked(
-                f"I can't go {full_direction} from here."
-            )
+            return MovementResult.blocked(f"I can't go {full_direction} from here.")
 
         if game_state is not None:
             if not exit_requirements_met(
@@ -180,9 +176,7 @@ def move_player(
                 )
 
     else:
-        return MovementResult.blocked(
-            f"I can't go {full_direction} from here."
-        )
+        return MovementResult.blocked(f"I can't go {full_direction} from here.")
 
     player_state["currentLocation"] = next_location
     player_state["lastDirection"] = full_direction
@@ -219,7 +213,7 @@ def move_player_to_room(
 
     if not next_location:
         return MovementResult.blocked(
-            f"I can't go to {room_name} from here.",
+            f"I can't go to the {room_name} from here.",
         )
 
     player_state["currentLocation"] = next_location
