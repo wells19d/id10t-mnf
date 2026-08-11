@@ -35,6 +35,7 @@ commandVerbs = {
     "wear",
     "remove",
     "use",
+    "go",
     "help",
     "h",
 }

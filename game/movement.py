@@ -191,3 +191,39 @@ def move_player(
     return MovementResult.moved(
         next_location,
     )
+
+
+def move_player_to_room(
+    room_name,
+    location_definition,
+    player_state,
+):
+    if not room_name:
+        return MovementResult.blocked(
+            "I don't know where I want to go.",
+        )
+
+    normalized_room_name = room_name.strip().lower()
+
+    room_exits = location_definition.get(
+        "roomExits",
+        {},
+    )
+
+    next_location = None
+
+    for exit_name, destination in room_exits.items():
+        if exit_name.strip().lower() == normalized_room_name:
+            next_location = destination
+            break
+
+    if not next_location:
+        return MovementResult.blocked(
+            f"I can't go to {room_name} from here.",
+        )
+
+    player_state["currentLocation"] = next_location
+
+    return MovementResult.moved(
+        next_location,
+    )

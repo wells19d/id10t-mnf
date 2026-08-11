@@ -2,7 +2,10 @@
 
 from areas.locationRegistry import locationRegistry
 from game.failedActions import failedActions
-from game.movement import move_player
+from game.movement import (
+    move_player,
+    move_player_to_room,
+)
 from game.parserUtils import (
     parse_command_parts,
     parse_compound_commands,
@@ -154,6 +157,54 @@ def get_aggregate_candidate(
     }
 
 
+def get_movement_response(
+    movement_result,
+    game_state,
+):
+    if movement_result.destination:
+        new_location_definition = locationRegistry[
+            movement_result.destination
+        ]
+
+        new_location_state = get_current_location_state(
+            game_state,
+        )
+
+        if not new_location_state["visited"]:
+            new_location_state["visited"] = True
+
+            intro_response = new_location_definition.get(
+                "intro",
+                [],
+            )
+
+            intro_messages = normalize_response_messages(
+                intro_response,
+                allow_empty_list=True,
+                allow_empty_text=True,
+            )
+
+            has_intro_text = any(
+                message.get(
+                    "text",
+                    "",
+                ).strip()
+                for message in intro_messages
+            )
+
+            if has_intro_text:
+                return intro_messages
+
+        return get_location_description(
+            new_location_definition,
+            game_state,
+        )
+
+    return command_failure(
+        movement_result.response,
+    )
+
+
 def execute_single_command(player_command, game_state):
     player_state = game_state["player"]
 
@@ -176,47 +227,9 @@ def execute_single_command(player_command, game_state):
     )
 
     if movement_result:
-        if movement_result.destination:
-            new_location_definition = locationRegistry[
-                movement_result.destination
-            ]
-
-            new_location_state = get_current_location_state(
-                game_state,
-            )
-
-            if not new_location_state["visited"]:
-                new_location_state["visited"] = True
-
-                intro_response = new_location_definition.get(
-                    "intro",
-                    [],
-                )
-
-                intro_messages = normalize_response_messages(
-                    intro_response,
-                    allow_empty_list=True,
-                    allow_empty_text=True,
-                )
-
-                has_intro_text = any(
-                    message.get(
-                        "text",
-                        "",
-                    ).strip()
-                    for message in intro_messages
-                )
-
-                if has_intro_text:
-                    return intro_messages
-
-            return get_location_description(
-                new_location_definition,
-                game_state,
-            )
-
-        return command_failure(
-            movement_result.response,
+        return get_movement_response(
+            movement_result,
+            game_state,
         )
 
     command = parse_command_parts(
@@ -230,6 +243,20 @@ def execute_single_command(player_command, game_state):
             failedActions["default"].format(
                 target=player_command,
             )
+        )
+
+    if command_verb == "go":
+        room_name = command["target"] or command["object"]
+
+        movement_result = move_player_to_room(
+            room_name,
+            location_definition,
+            player_state,
+        )
+
+        return get_movement_response(
+            movement_result,
+            game_state,
         )
 
     if command_verb == "look":

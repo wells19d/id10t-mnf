@@ -904,6 +904,35 @@ def add_exit_errors(
             )
 
 
+def add_room_exit_errors(
+    location_path,
+    room_exits,
+    errors,
+):
+    if not isinstance(room_exits, dict):
+        errors.append(
+            f"{location_path}.roomExits must be a dictionary."
+        )
+        return
+
+    for room_name, destination in room_exits.items():
+        room_exit_path = f"{location_path}.roomExits[{room_name!r}]"
+
+        if not isinstance(room_name, str) or not room_name.strip():
+            errors.append(
+                f"{room_exit_path} must use a non-empty string room name."
+            )
+
+        if (
+            not isinstance(destination, str)
+            or destination not in locationRegistry
+        ):
+            errors.append(
+                f"{room_exit_path} references unknown location ID "
+                f"{destination!r}."
+            )
+
+
 def add_state_description_errors(
     location_path,
     state_descriptions,
@@ -1049,6 +1078,12 @@ def get_location_definition_errors():
             scenery_ids,
             errors,
         )
+        if "roomExits" in location_data:
+            add_room_exit_errors(
+                location_path,
+                location_data["roomExits"],
+                errors,
+            )
         add_state_description_errors(
             location_path,
             location_data.get(
