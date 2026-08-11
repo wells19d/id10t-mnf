@@ -9,6 +9,25 @@ from game.handlers.common import (
 from items.itemRegistry import itemRegistry
 
 
+def resolve_drop_item(item_name, player_state):
+    item_id, clarification = resolve_item(
+        item_name,
+        player_state["inventory"],
+        include_match_names=True,
+    )
+
+    if item_id or clarification:
+        return item_id, clarification, False
+
+    item_id, clarification = resolve_item(
+        item_name,
+        player_state["equipped"],
+        include_match_names=True,
+    )
+
+    return item_id, clarification, bool(item_id)
+
+
 def handle_drop(command, game_state):
     item_name = command["object"]
 
@@ -17,12 +36,13 @@ def handle_drop(command, game_state):
             "I don't know what I want to drop.",
         )
 
-    inventory = game_state["player"]["inventory"]
-    equipped = game_state["player"]["equipped"]
+    player_state = game_state["player"]
+    inventory = player_state["inventory"]
+    equipped = player_state["equipped"]
 
-    item_id, clarification = resolve_item(
+    item_id, clarification, is_equipped = resolve_drop_item(
         item_name,
-        inventory + equipped,
+        player_state,
     )
 
     if clarification:
@@ -41,7 +61,7 @@ def handle_drop(command, game_state):
         item,
     )
 
-    if item_id in equipped:
+    if is_equipped:
         final_equipped = [
             equipped_item_id
             for equipped_item_id in equipped
@@ -64,7 +84,16 @@ def handle_drop(command, game_state):
                 game_state,
             )
 
-        game_state["player"]["equipped"] = final_equipped
+        game_state["pendingAction"] = {
+            "type": "equippedDrop",
+            "action": "drop",
+            "itemId": item_id,
+            "locationId": player_state["currentLocation"],
+        }
+
+        return get_pending_action_prompt(
+            game_state,
+        )
     else:
         inventory.remove(
             item_id,

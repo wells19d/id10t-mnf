@@ -393,6 +393,48 @@ def is_valid_pending_action(
         "locationId",
     )
 
+    if not isinstance(item_id, str) or item_id not in itemRegistry:
+        return False
+
+    if (
+        not isinstance(location_id, str)
+        or location_id != player_state["currentLocation"]
+    ):
+        return False
+
+    if action_type == "equippedDrop":
+        if set(pending_action) != {
+            "type",
+            "action",
+            "itemId",
+            "locationId",
+        }:
+            return False
+
+        item = itemRegistry[item_id]
+
+        if (
+            action != "drop"
+            or item_id not in player_state["equipped"]
+            or not item.get("wearable", False)
+            or item.get("slot") not in EQUIPMENT_SLOTS
+        ):
+            return False
+
+        final_equipped = [
+            equipped_id
+            for equipped_id in player_state["equipped"]
+            if equipped_id != item_id
+        ]
+        final_player_state = {
+            **player_state,
+            "equipped": final_equipped,
+        }
+
+        return len(player_state["inventory"]) <= get_total_carry_capacity(
+            final_player_state,
+        )
+
     if action_type != "capacityChange":
         return False
 
@@ -401,15 +443,6 @@ def is_valid_pending_action(
         "remove",
         "drop",
     }:
-        return False
-
-    if not isinstance(item_id, str) or item_id not in itemRegistry:
-        return False
-
-    if (
-        not isinstance(location_id, str)
-        or location_id != player_state["currentLocation"]
-    ):
         return False
 
     item = itemRegistry[item_id]

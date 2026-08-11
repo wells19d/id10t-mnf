@@ -23,7 +23,10 @@ from game.handlers.common import (
     normalize_response_messages,
     resolve_item,
 )
-from game.handlers.drop import handle_drop
+from game.handlers.drop import (
+    handle_drop,
+    resolve_drop_item,
+)
 from game.handlers.inventory import (
     handle_inventory,
     handle_player_status,
@@ -105,18 +108,17 @@ def get_aggregate_candidate(
     if target:
         return None
 
-    # DROP resolves against carried and equipped items.
+    # DROP prioritizes carried items over equipped items.
     if verb == "drop":
-        drop_candidates = (
-            game_state["player"]["inventory"] + game_state["player"]["equipped"]
-        )
-
-        item_id, clarification = resolve_item(
+        item_id, clarification, is_equipped = resolve_drop_item(
             item_name,
-            drop_candidates,
+            game_state["player"],
         )
 
         if clarification or not item_id:
+            return None
+
+        if is_equipped:
             return None
 
         item = itemRegistry[item_id]

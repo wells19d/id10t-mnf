@@ -500,6 +500,12 @@ def get_pending_action_prompt(game_state):
         itemRegistry[item_id],
     )
 
+    if pending_action["type"] == "equippedDrop":
+        return (
+            f"The {item_name} is currently equipped. "
+            "Drop it anyway? Yes or No."
+        )
+
     if action == "wear":
         equipped_item_id = pending_action["equippedItemId"]
         equipped_item_name = get_item_display_name(
@@ -595,6 +601,23 @@ def execute_pending_action(game_state):
     item_name = get_item_display_name(
         item,
     )
+
+    if pending_action["type"] == "equippedDrop":
+        player_state["equipped"] = [
+            equipped_id
+            for equipped_id in player_state["equipped"]
+            if equipped_id != item_id
+        ]
+        place_items_loose(
+            game_state,
+            [item_id],
+        )
+        game_state["pendingAction"] = None
+
+        return item.get(
+            "dropResponse",
+            f"You drop the {item_name}.",
+        )
 
     if action == "wear":
         equipped_item_id = pending_action["equippedItemId"]
@@ -793,8 +816,16 @@ def find_items(
             "aliases",
             [],
         )
+        item_display_name = item.get(
+            "name",
+            "",
+        ).strip().lower()
 
-        if item_name == item_id or item_name in aliases:
+        if (
+            item_name == item_id
+            or item_name == item_display_name
+            or item_name in aliases
+        ):
             matches.append(
                 item_id,
             )
@@ -805,6 +836,7 @@ def find_items(
 def resolve_item(
     item_name,
     item_ids,
+    include_match_names=False,
 ):
     matches = find_items(
         item_name,
@@ -815,6 +847,29 @@ def resolve_item(
         return None, None
 
     if len(matches) > 1:
+        if include_match_names:
+            match_names = [
+                get_item_display_name(
+                    itemRegistry[item_id],
+                )
+                for item_id in matches
+            ]
+
+            if len(match_names) == 2:
+                choices = " or ".join(
+                    match_names,
+                )
+            else:
+                choices = (
+                    ", ".join(match_names[:-1])
+                    + f", or {match_names[-1]}"
+                )
+
+            return None, (
+                f"Which {item_name} do you mean: "
+                f"{choices}?"
+            )
+
         return None, f"Which {item_name} do you mean?"
 
     return matches[0], None
