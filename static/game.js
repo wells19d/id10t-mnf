@@ -1,6 +1,7 @@
 const commandForm = document.getElementById('command-form');
 const commandInput = document.getElementById('command-input');
 const gameOutput = document.getElementById('game-output');
+const terminal = document.querySelector('.terminal');
 
 const SAVE_KEY = 'id10t_save';
 const GAME_TAB_LOCK = 'id10t_game_tab';
@@ -17,6 +18,14 @@ let waitingForStartChoice = false;
 let currentGameState = null;
 let commandInProgress = false;
 let gameTabActive = false;
+
+function focusCommandInput() {
+  if (!gameTabActive || document.visibilityState !== 'visible') {
+    return;
+  }
+
+  commandInput.focus({ preventScroll: true });
+}
 
 function displayMessage(speaker, text) {
   if (speaker === 'system') {
@@ -525,6 +534,30 @@ window.addEventListener('resize', () => {
 
 window.addEventListener('load', initializeGameTab);
 
+window.addEventListener('focus', () => {
+  requestAnimationFrame(focusCommandInput);
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    requestAnimationFrame(focusCommandInput);
+  }
+});
+
+terminal.addEventListener('click', (event) => {
+  if (event.target.closest('input, button, a, select, textarea')) {
+    return;
+  }
+
+  const selection = window.getSelection();
+
+  if (selection && !selection.isCollapsed) {
+    return;
+  }
+
+  focusCommandInput();
+});
+
 commandInput.addEventListener('keydown', (event) => {
   if (event.key === 'ArrowUp') {
     event.preventDefault();
@@ -710,6 +743,8 @@ commandForm.addEventListener('submit', async (event) => {
     }
   } finally {
     commandInProgress = false;
+
+    focusCommandInput();
   }
 });
 
