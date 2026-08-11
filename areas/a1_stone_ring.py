@@ -7,7 +7,9 @@ a1_stone_ring = {
         },
     ],
     "description": ("stone ring"),
-    "items": [],
+    "items": [
+        "a1_matchbox",
+    ],
     "exits": {
         "north": "a1_lake_east",
         "south": False,

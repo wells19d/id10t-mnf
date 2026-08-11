@@ -1,15 +1,29 @@
-from game.handlers.common import (
-    apply_state_changes,
-    command_failure,
+from game.itemAccess import (
     find_scenery,
-    get_current_location_state,
-    get_item_display_name,
-    get_item_state,
-    get_scenery_state,
+    get_visible_item_ids,
     resolve_item,
+)
+from game.itemPresentation import get_item_display_name
+from game.responses import command_failure
+from game.useEngine import (
+    build_changed_state,
+    common_requirements_met,
+    get_target_ownership,
+    handle_item_interaction,
+    handle_scenery_interaction,
+    remove_item_from_owner,
+    resolve_provided_use,
+    state_minimums_met,
+)
+from game.worldState import (
+    apply_state_changes,
+    get_current_location_state,
+    get_item_state_snapshot,
+    get_scenery_state,
     state_matches,
 )
 from items.itemRegistry import itemRegistry
+from states.gameState import WORLD_ITEM_PLACEMENT
 
 
 def handle_use(command, location_definition, game_state):
@@ -48,17 +62,14 @@ def handle_use(command, location_definition, game_state):
                 location_state = get_current_location_state(
                     game_state,
                 )
-
                 scenery_state = get_scenery_state(
                     location_state,
                     scenery_id,
                 )
-
                 effects = location_interaction.get(
                     "effects",
                     {},
                 )
-
                 apply_state_changes(
                     scenery_state,
                     effects["sceneryState"],
@@ -78,31 +89,77 @@ def handle_use(command, location_definition, game_state):
         )
 
     inventory = game_state["player"]["inventory"]
-
-    item_id, clarification = resolve_item(
+    source_item_id, clarification = resolve_item(
         item_name,
         inventory,
     )
+    provider_use = None
 
     if clarification:
         return command_failure(
             clarification,
         )
 
-    if not item_id:
-        return command_failure(
-            f"You aren't carrying {item_name}.",
+    if source_item_id:
+        source_key = source_item_id
+        source_state_item_id = source_item_id
+        source_state = get_item_state_snapshot(
+            game_state,
+            source_item_id,
+        )
+        source_name = get_item_display_name(
+            itemRegistry[source_item_id],
+        )
+    else:
+        provider_item_id, source_key, provider_use, clarification = resolve_provided_use(
+            item_name,
+            inventory,
         )
 
-    item = itemRegistry[item_id]
+        if clarification:
+            return command_failure(
+                clarification,
+            )
 
-    display_name = get_item_display_name(
-        item,
-    )
+        if not provider_item_id:
+            return command_failure(
+                f"You aren't carrying {item_name} or anything that provides it.",
+            )
+
+        source_item_id = None
+        source_state_item_id = provider_item_id
+        source_state = get_item_state_snapshot(
+            game_state,
+            provider_item_id,
+        )
+        source_name = item_name
+
+        if not state_matches(
+            source_state,
+            provider_use.get(
+                "requiresState",
+                {},
+            ),
+        ):
+            return command_failure(
+                provider_use["failResponse"],
+            )
+
+        resource = provider_use["resource"]
+
+        if not state_minimums_met(
+            source_state,
+            {
+                resource["stateKey"]: resource["minimum"],
+            },
+        ):
+            return command_failure(
+                provider_use["failResponse"],
+            )
 
     if not target:
         return command_failure(
-            f"I don't know what I want to use " f"the {display_name} on.",
+            f"I don't know what I want to use the {source_name} on.",
         )
 
     scenery_id, scenery_data = find_scenery(
@@ -110,159 +167,25 @@ def handle_use(command, location_definition, game_state):
         location_definition,
     )
 
-    if not scenery_data:
-        return command_failure(
-            f"I don't see a {target} here.",
+    if scenery_data:
+        return handle_scenery_interaction(
+            source_key,
+            source_item_id,
+            source_state_item_id,
+            source_state,
+            provider_use,
+            scenery_id,
+            scenery_data,
+            game_state,
         )
 
-    # The target scenery defines which items can
-    # interact with it and what those interactions do.
-    interaction = scenery_data.get(
-        "interactions",
-        {},
-    ).get(
-        item_id,
-    )
-
-    if not interaction:
-        return command_failure(
-            f"You can't use the " f"{display_name} on {scenery_id} here.",
-        )
-
-    location_state = get_current_location_state(
+    return handle_item_interaction(
+        source_key,
+        source_item_id,
+        source_state_item_id,
+        source_state,
+        provider_use,
+        target,
+        location_definition,
         game_state,
-    )
-
-    scenery_state = get_scenery_state(
-        location_state,
-        scenery_id,
-    )
-
-    item_state = get_item_state(
-        game_state,
-        item_id,
-    )
-
-    requirements = interaction.get(
-        "requires",
-        {},
-    )
-
-    # Required state of the item being used.
-    required_item_state = requirements.get(
-        "itemState",
-        {},
-    )
-
-    if not state_matches(
-        item_state,
-        required_item_state,
-    ):
-        return command_failure(
-            interaction.get(
-                "failResponse",
-                "That won't work right now.",
-            )
-        )
-
-    # Required state of the target scenery.
-    required_scenery_state = requirements.get(
-        "sceneryState",
-        {},
-    )
-
-    if not state_matches(
-        scenery_state,
-        required_scenery_state,
-    ):
-        return command_failure(
-            interaction.get(
-                "failResponse",
-                "That won't work right now.",
-            )
-        )
-
-    # Required inventory items.
-    for required_item_id in requirements.get(
-        "inventory",
-        [],
-    ):
-        if required_item_id not in inventory:
-            return command_failure(
-                interaction.get(
-                    "failResponse",
-                    "You don't have everything you need.",
-                )
-            )
-
-    # Required equipped items.
-    equipped = game_state["player"]["equipped"]
-
-    for required_item_id in requirements.get(
-        "equipped",
-        [],
-    ):
-        if required_item_id not in equipped:
-            return command_failure(
-                interaction.get(
-                    "failResponse",
-                    "You aren't properly equipped.",
-                )
-            )
-
-    # Required world or event flags.
-    required_flags = requirements.get(
-        "flags",
-        {},
-    )
-
-    if not state_matches(
-        game_state["flags"],
-        required_flags,
-    ):
-        return command_failure(
-            interaction.get(
-                "failResponse",
-                "That won't work right now.",
-            )
-        )
-
-    # All requirements passed.
-    effects = interaction.get(
-        "effects",
-        {},
-    )
-
-    apply_state_changes(
-        scenery_state,
-        effects.get(
-            "sceneryState",
-        ),
-    )
-
-    apply_state_changes(
-        item_state,
-        effects.get(
-            "itemState",
-        ),
-    )
-
-    apply_state_changes(
-        game_state["flags"],
-        effects.get(
-            "flags",
-        ),
-    )
-
-    if effects.get(
-        "destroyItem",
-        False,
-    ):
-        inventory.remove(
-            item_id,
-        )
-
-    return interaction.get(
-        "response",
-        f"You use the {display_name} on the {scenery_id}.",
     )

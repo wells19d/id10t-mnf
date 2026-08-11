@@ -1,7 +1,8 @@
 from game.handlers.common import (
+    append_item_quantity_description,
     find_scenery,
     get_current_location_state,
-    get_item_state,
+    get_item_state_snapshot,
     get_location_description,
     get_scenery_state,
     get_visible_item_ids,
@@ -100,7 +101,7 @@ def handle_look(command, location_definition, game_state):
     if item_id:
         item = itemRegistry[item_id]
 
-        item_state = get_item_state(
+        item_state = get_item_state_snapshot(
             game_state,
             item_id,
         )
@@ -111,14 +112,22 @@ def handle_look(command, location_definition, game_state):
         )
 
         if state_description:
-            return state_description
+            return append_item_quantity_description(
+                state_description,
+                item,
+                item_state,
+            )
 
         description = item.get(
             "description",
         )
 
         if description:
-            return description
+            return append_item_quantity_description(
+                description,
+                item,
+                item_state,
+            )
 
         return f"There is nothing remarkable " f"about the {target}."
 

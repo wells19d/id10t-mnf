@@ -1,13 +1,19 @@
 from game.handlers.common import (
     WORLD_ITEM_PLACEMENT,
+    append_item_quantity_description,
     can_access_scenery_contents,
     find_scenery,
     format_item_names,
     get_current_location_state,
     get_item_display_name,
+    get_item_state_snapshot,
+    get_items_in_item_container,
     get_items_in_scenery,
     get_scenery_state,
+    get_visible_item_ids,
     normalize_response_messages,
+    resolve_item,
+    state_matches,
 )
 from items.itemRegistry import itemRegistry
 
@@ -46,123 +52,237 @@ def format_search_results(search_results):
     return ", ".join(cleaned_results[:-1]) + f", and {cleaned_results[-1]}"
 
 
-def handle_search(command, location_definition, game_state):
-    target = command["target"] or command["object"]
+def _search_item(
+    target,
+    item_id,
+    item,
+    location_state,
+    game_state,
+):
+    if not item.get(
+        "searchable",
+        False,
+    ):
+        return item.get(
+            "searchResponse",
+            f"You don't find anything useful in the {target}.",
+        )
 
-    location_state = get_current_location_state(
+    item_state = get_item_state_snapshot(
+        game_state,
+        item_id,
+    )
+
+    if item.get("openable") and not item_state.get(
+        "isOpen",
+        False,
+    ):
+        return item.get(
+            "searchClosedResponse",
+            f"The {target} is closed.",
+        )
+
+    if not state_matches(
+        item_state,
+        item.get(
+            "contentsRequiresState",
+            {},
+        ),
+    ):
+        return item.get(
+            "searchBlockedResponse",
+            f"You can't search the {target} right now.",
+        )
+
+    item_state["isSearched"] = True
+    game_state["itemStates"][item_id] = item_state
+    contained_item_ids = get_items_in_item_container(
+        location_state,
+        item_id,
+    )
+
+    if contained_item_ids:
+        contained_item_names = [
+            get_item_display_name(
+                itemRegistry[contained_item_id],
+            )
+            for contained_item_id in contained_item_ids
+        ]
+        response = (
+            f"You search the {target} and find "
+            f"{format_item_names(contained_item_names)}."
+        )
+    else:
+        response = item.get(
+            "searchEmptyResponse",
+            f"You search the {target} but find nothing useful.",
+        )
+
+    return append_item_quantity_description(
+        response,
+        item,
+        item_state,
+    )
+
+
+def _search_scenery(
+    scenery_id,
+    scenery_data,
+    location_state,
+):
+    if not scenery_data.get(
+        "searchable",
+        False,
+    ):
+        return scenery_data.get(
+            "searchResponse",
+            f"You don't find anything useful in the {scenery_id}.",
+        )
+
+    scenery_state = get_scenery_state(
+        location_state,
+        scenery_id,
+    )
+
+    # Closed containers must be opened first.
+    if scenery_data.get("openable") and not scenery_state.get(
+        "isOpen",
+        False,
+    ):
+        return scenery_data.get(
+            "searchClosedResponse",
+            f"The {scenery_id} is closed.",
+        )
+
+    # Other scenery conditions may also block
+    # access to its contents.
+    if not can_access_scenery_contents(
+        scenery_data,
+        scenery_state,
+    ):
+        return scenery_data.get(
+            "searchBlockedResponse",
+            f"You can't search the {scenery_id} right now.",
+        )
+
+    item_ids = get_items_in_scenery(
+        location_state,
+        scenery_id,
+    )
+
+    scenery_state["isSearched"] = True
+
+    if not item_ids:
+        return scenery_data.get(
+            "searchEmptyResponse",
+            f"You search the {scenery_id} but find nothing useful.",
+        )
+
+    item_names = []
+
+    for item_id in item_ids:
+        item = itemRegistry.get(
+            item_id,
+        )
+
+        if item:
+            item_names.append(
+                get_item_display_name(
+                    item,
+                )
+            )
+
+    if not item_names:
+        return scenery_data.get(
+            "searchEmptyResponse",
+            f"You search the {scenery_id} but find nothing useful.",
+        )
+
+    item_list = format_item_names(
+        item_names,
+    )
+
+    custom_response = scenery_data.get(
+        "searchResponse",
+    )
+
+    if custom_response:
+        if isinstance(
+            custom_response,
+            list,
+        ):
+            responses = list(
+                custom_response,
+            )
+
+            responses.append(
+                {
+                    "speaker": "narrator",
+                    "text": (f"You find {item_list}."),
+                }
+            )
+
+            return responses
+
+        return custom_response
+
+    return f"You search inside the {scenery_id} " f"and find {item_list}."
+
+
+def _search_target(
+    target,
+    location_definition,
+    location_state,
+    game_state,
+):
+    scenery_id, scenery_data = find_scenery(
+        target,
+        location_definition,
+    )
+
+    if scenery_data:
+        return _search_scenery(
+            scenery_id,
+            scenery_data,
+            location_state,
+        )
+
+    accessible_items = (
+        get_visible_item_ids(
+            location_definition,
+            game_state,
+        )
+        + game_state["player"]["inventory"]
+        + game_state["player"]["equipped"]
+    )
+    item_id, clarification = resolve_item(
+        target,
+        accessible_items,
+    )
+
+    if clarification:
+        return clarification
+
+    item = itemRegistry.get(
+        item_id,
+    )
+
+    if not item:
+        return f"I don't see a {target} here."
+
+    return _search_item(
+        target,
+        item_id,
+        item,
+        location_state,
         game_state,
     )
 
-    # SEARCH <target>
-    if target:
-        scenery_id, scenery_data = find_scenery(
-            target,
-            location_definition,
-        )
 
-        if not scenery_data:
-            return f"I don't see a {target} here."
-
-        if not scenery_data.get(
-            "searchable",
-            False,
-        ):
-            return scenery_data.get(
-                "searchResponse",
-                f"You don't find anything useful in the {scenery_id}.",
-            )
-
-        scenery_state = get_scenery_state(
-            location_state,
-            scenery_id,
-        )
-
-        # Closed containers must be opened first.
-        if scenery_data.get("openable") and not scenery_state.get(
-            "isOpen",
-            False,
-        ):
-            return scenery_data.get(
-                "searchClosedResponse",
-                f"The {scenery_id} is closed.",
-            )
-
-        # Other scenery conditions may also block
-        # access to its contents.
-        if not can_access_scenery_contents(
-            scenery_data,
-            scenery_state,
-        ):
-            return scenery_data.get(
-                "searchBlockedResponse",
-                f"You can't search the {scenery_id} right now.",
-            )
-
-        item_ids = get_items_in_scenery(
-            location_state,
-            scenery_id,
-        )
-
-        scenery_state["isSearched"] = True
-
-        if not item_ids:
-            return scenery_data.get(
-                "searchEmptyResponse",
-                f"You search the {scenery_id} but find nothing useful.",
-            )
-
-        item_names = []
-
-        for item_id in item_ids:
-            item = itemRegistry.get(
-                item_id,
-            )
-
-            if item:
-                item_names.append(
-                    get_item_display_name(
-                        item,
-                    )
-                )
-
-        if not item_names:
-            return scenery_data.get(
-                "searchEmptyResponse",
-                f"You search the {scenery_id} but find nothing useful.",
-            )
-
-        item_list = format_item_names(
-            item_names,
-        )
-
-        custom_response = scenery_data.get(
-            "searchResponse",
-        )
-
-        if custom_response:
-            if isinstance(
-                custom_response,
-                list,
-            ):
-                responses = list(
-                    custom_response,
-                )
-
-                responses.append(
-                    {
-                        "speaker": "narrator",
-                        "text": (f"You find {item_list}."),
-                    }
-                )
-
-                return responses
-
-            return custom_response
-
-        return f"You search inside the {scenery_id} " f"and find {item_list}."
-
-    # SEARCH
-    #
+def _search_area(
+    location_definition,
+    location_state,
+):
     # Search only for visible/discoverable items in
     # the current location. General scenery descriptions
     # are not returned here.
@@ -301,3 +421,24 @@ def handle_search(command, location_definition, game_state):
         },
         *search_voice_messages,
     ]
+
+
+def handle_search(command, location_definition, game_state):
+    target = command["target"] or command["object"]
+
+    location_state = get_current_location_state(
+        game_state,
+    )
+
+    if target:
+        return _search_target(
+            target,
+            location_definition,
+            location_state,
+            game_state,
+        )
+
+    return _search_area(
+        location_definition,
+        location_state,
+    )
