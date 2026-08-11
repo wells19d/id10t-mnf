@@ -113,7 +113,7 @@ def handle_player_status(game_state):
 
     return (
         "<div class='player-status'>"
-        "<div class='player-status-title'>PLAYER STATUS</div>"
+        "<div class='player-status-title'>Player Status</div>"
         "<div class='player-health'>"
         f"<strong>Health:</strong> {escape(player_state['health'])}"
         "</div>"
