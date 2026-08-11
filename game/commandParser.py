@@ -379,12 +379,12 @@ def parse_command(player_command, game_state):
     ):
         confirmation = player_command.strip().lower()
 
-        if confirmation == "yes":
+        if confirmation in ["yes", "y"]:
             return execute_pending_action(
                 game_state,
             )
 
-        if confirmation == "no":
+        if confirmation in ["no", "n"]:
             game_state["pendingAction"] = None
 
             return "You decide not to continue."

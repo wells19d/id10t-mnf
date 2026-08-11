@@ -132,12 +132,16 @@ main {
   color: #d6b26e;
 }
 
+.equipment-highlight {
+  color: #bc7ed8;
+}
+
 .command-highlight {
   color: #e27676;
 }
 
 .inventory-capacity {
-  margin: 10px 0px 15px;
+  margin: 10px 0 15px;
   font-family: monospace;
 }
 
@@ -175,14 +179,11 @@ main {
 
 .help-section {
   margin: 20px;
+  max-width: 700px;
 }
 
 .system-response {
   margin: 20px 0;
-}
-
-.help-section {
-  max-width: 700px;
 }
 
 .help-section h3 {
@@ -219,40 +220,29 @@ main {
   min-width: 0;
 }
 
-@media (max-width: 700px) {
-  .inventory-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 450px) {
-  .inventory-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.equipment-highlight {
-  color: #bc7ed8;
-}
-
 .player-status {
-  max-width: 650px;
+  width: 100%;
 }
 
 .player-status-title {
   margin-bottom: 12px;
 }
 
-.player-health {
-  margin-bottom: 6px;
-}
-
-.player-health strong {
-  font-weight: normal;
-}
-
-.player-health-status {
+.player-health-table {
+  width: 100%;
+  border-collapse: collapse;
   margin-bottom: 16px;
+}
+
+.player-health-table td {
+  vertical-align: top !important;
+  padding: 0 0 6px 0;
+}
+
+.player-health-label {
+  width: 70px;
+  padding-right: 10px !important;
+  white-space: nowrap;
 }
 
 .player-equipment-label {
@@ -267,4 +257,16 @@ main {
 
 .player-equipment-slot {
   font-weight: normal;
+}
+
+@media (max-width: 700px) {
+  .inventory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 450px) {
+  .inventory-grid {
+    grid-template-columns: 1fr;
+  }
 }
