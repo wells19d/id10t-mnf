@@ -1,10 +1,13 @@
 from copy import deepcopy
+import random
 
 from areas.locationRegistry import locationRegistry
 from items.itemRegistry import itemRegistry
 from states.gameState import (
     GAME_STATE_REQUIREMENT_KEYS,
     WORLD_ITEM_PLACEMENT,
+    get_total_carry_capacity,
+    is_valid_pending_action,
 )
 
 VALID_RESPONSE_SPEAKERS = frozenset(
@@ -41,10 +44,7 @@ def is_valid_response_message(
         "text",
     )
 
-    if (
-        not isinstance(speaker, str)
-        or speaker not in VALID_RESPONSE_SPEAKERS
-    ):
+    if not isinstance(speaker, str) or speaker not in VALID_RESPONSE_SPEAKERS:
         return False
 
     if not isinstance(text, str):
@@ -93,9 +93,7 @@ def normalize_response_messages(
         allow_empty_list,
         allow_empty_text,
     ):
-        raise ValueError(
-            "Invalid response shape."
-        )
+        raise ValueError("Invalid response shape.")
 
     if isinstance(response, str):
         return [
@@ -248,10 +246,7 @@ def game_state_requirements_met(
     if not requirements:
         return True
 
-    if any(
-        key not in GAME_STATE_REQUIREMENT_KEYS
-        for key in requirements
-    ):
+    if any(key not in GAME_STATE_REQUIREMENT_KEYS for key in requirements):
         return False
 
     player_state = game_state["player"]
@@ -401,22 +396,344 @@ def get_item_display_name(item):
         item,
     )
 
-    return "<em><span class='item-highlight'>" f"{item_name}" "</span></em>"
-
-
-def unequip_item(
-    game_state,
-    item_id,
-):
-    equipped = game_state["player"].get(
-        "equipped",
-        [],
+    highlight_class = (
+        "equipment-highlight" if item.get("wearable", False) else "item-highlight"
     )
 
-    if item_id in equipped:
-        equipped.remove(
+    return f"<em><span class='{highlight_class}'>" f"{item_name}" "</span></em>"
+
+
+def get_carry_overflow_count(
+    player_state,
+    inventory=None,
+    equipped=None,
+):
+    final_inventory = inventory if inventory is not None else player_state["inventory"]
+    final_equipped = equipped if equipped is not None else player_state["equipped"]
+
+    final_player_state = {
+        **player_state,
+        "inventory": final_inventory,
+        "equipped": final_equipped,
+    }
+
+    return max(
+        0,
+        len(final_inventory)
+        - get_total_carry_capacity(
+            final_player_state,
+        ),
+    )
+
+
+def select_overflow_items(
+    inventory,
+    overflow_count,
+):
+    if overflow_count <= 0:
+        return []
+
+    return random.sample(
+        inventory,
+        overflow_count,
+    )
+
+
+def place_items_loose(
+    game_state,
+    item_ids,
+):
+    if not item_ids:
+        return
+
+    location_state = get_current_location_state(
+        game_state,
+    )
+
+    for item_id in item_ids:
+        location_state["items"][item_id] = None
+
+
+def get_formatted_item_list(item_ids):
+    item_names = [
+        get_item_display_name(
+            itemRegistry[item_id],
+        )
+        for item_id in item_ids
+    ]
+
+    return format_item_names(
+        item_names,
+    )
+
+
+def append_narrator_response(
+    response,
+    narrator_text,
+):
+    messages = normalize_response_messages(
+        response,
+    )
+
+    messages.append(
+        {
+            "speaker": "narrator",
+            "text": narrator_text,
+        }
+    )
+
+    return messages
+
+
+def get_pending_action_prompt(game_state):
+    pending_action = game_state.get(
+        "pendingAction",
+    )
+
+    if not pending_action:
+        return None
+
+    player_state = game_state["player"]
+    action = pending_action["action"]
+    item_id = pending_action["itemId"]
+    item_name = get_item_display_name(
+        itemRegistry[item_id],
+    )
+
+    if action == "wear":
+        equipped_item_id = pending_action["equippedItemId"]
+        equipped_item_name = get_item_display_name(
+            itemRegistry[equipped_item_id],
+        )
+        final_inventory = [
+            inventory_item_id
+            for inventory_item_id in player_state["inventory"]
+            if inventory_item_id != item_id
+        ]
+        final_equipped = [
+            equipped_id
+            for equipped_id in player_state["equipped"]
+            if equipped_id != equipped_item_id
+        ]
+        final_equipped.append(
             item_id,
         )
+        additional_drop_count = get_carry_overflow_count(
+            player_state,
+            final_inventory,
+            final_equipped,
+        )
+
+        if additional_drop_count:
+            drop_description = (
+                f"the {equipped_item_name} and {additional_drop_count} "
+                f"additional carried "
+                f"{'item' if additional_drop_count == 1 else 'items'}"
+            )
+        else:
+            drop_description = f"the {equipped_item_name}"
+
+        return (
+            f"The {item_name} has less carrying space. Equipping it will "
+            f"cause {drop_description} to be dropped on the ground. "
+            "Continue? Yes or No."
+        )
+
+    final_equipped = [
+        equipped_id
+        for equipped_id in player_state["equipped"]
+        if equipped_id != item_id
+    ]
+
+    if action == "remove":
+        final_inventory = [
+            *player_state["inventory"],
+            item_id,
+        ]
+        overflow_count = get_carry_overflow_count(
+            player_state,
+            final_inventory,
+            final_equipped,
+        )
+
+        return (
+            f"Removing the {item_name} will reduce your carrying space and "
+            f"cause {overflow_count} carried "
+            f"{'item' if overflow_count == 1 else 'items'} to fall to the "
+            "ground. Continue? Yes or No."
+        )
+
+    overflow_count = get_carry_overflow_count(
+        player_state,
+        player_state["inventory"],
+        final_equipped,
+    )
+
+    return (
+        f"Dropping the {item_name} will reduce your carrying space and cause "
+        f"{overflow_count} additional carried "
+        f"{'item' if overflow_count == 1 else 'items'} to fall to the ground. "
+        "Continue? Yes or No."
+    )
+
+
+def execute_pending_action(game_state):
+    pending_action = game_state["pendingAction"]
+    player_state = game_state["player"]
+
+    if not is_valid_pending_action(
+        pending_action,
+        player_state,
+    ):
+        game_state["pendingAction"] = None
+
+        return "That pending action can no longer be completed."
+
+    action = pending_action["action"]
+    item_id = pending_action["itemId"]
+    item = itemRegistry[item_id]
+    item_name = get_item_display_name(
+        item,
+    )
+
+    if action == "wear":
+        equipped_item_id = pending_action["equippedItemId"]
+        final_inventory = [
+            inventory_item_id
+            for inventory_item_id in player_state["inventory"]
+            if inventory_item_id != item_id
+        ]
+        final_equipped = [
+            equipped_id
+            for equipped_id in player_state["equipped"]
+            if equipped_id != equipped_item_id
+        ]
+        final_equipped.append(
+            item_id,
+        )
+        overflow_count = get_carry_overflow_count(
+            player_state,
+            final_inventory,
+            final_equipped,
+        )
+        overflow_item_ids = select_overflow_items(
+            final_inventory,
+            overflow_count,
+        )
+        dropped_item_ids = [
+            equipped_item_id,
+            *overflow_item_ids,
+        ]
+
+        player_state["inventory"] = [
+            inventory_item_id
+            for inventory_item_id in final_inventory
+            if inventory_item_id not in overflow_item_ids
+        ]
+        player_state["equipped"] = final_equipped
+        place_items_loose(
+            game_state,
+            dropped_item_ids,
+        )
+        game_state["pendingAction"] = None
+
+        response = item.get(
+            "wearResponse",
+            f"You equip the {item_name}.",
+        )
+
+        return append_narrator_response(
+            response,
+            "The reduced carrying space causes "
+            f"{get_formatted_item_list(dropped_item_ids)} to fall to the ground.",
+        )
+
+    final_equipped = [
+        equipped_id
+        for equipped_id in player_state["equipped"]
+        if equipped_id != item_id
+    ]
+
+    if action == "remove":
+        final_inventory = [
+            *player_state["inventory"],
+            item_id,
+        ]
+        overflow_count = get_carry_overflow_count(
+            player_state,
+            final_inventory,
+            final_equipped,
+        )
+        dropped_item_ids = select_overflow_items(
+            final_inventory,
+            overflow_count,
+        )
+
+        player_state["inventory"] = [
+            inventory_item_id
+            for inventory_item_id in final_inventory
+            if inventory_item_id not in dropped_item_ids
+        ]
+        player_state["equipped"] = final_equipped
+        place_items_loose(
+            game_state,
+            dropped_item_ids,
+        )
+        game_state["pendingAction"] = None
+
+        response = item.get(
+            "removeResponse",
+            f"You remove the {item_name}.",
+        )
+
+        return append_narrator_response(
+            response,
+            "The reduced carrying space causes "
+            f"{get_formatted_item_list(dropped_item_ids)} to fall to the ground.",
+        )
+
+    final_inventory = list(
+        player_state["inventory"],
+    )
+    overflow_count = get_carry_overflow_count(
+        player_state,
+        final_inventory,
+        final_equipped,
+    )
+    overflow_item_ids = select_overflow_items(
+        final_inventory,
+        overflow_count,
+    )
+    dropped_item_ids = [
+        item_id,
+        *overflow_item_ids,
+    ]
+
+    player_state["inventory"] = [
+        inventory_item_id
+        for inventory_item_id in final_inventory
+        if inventory_item_id not in overflow_item_ids
+    ]
+    player_state["equipped"] = final_equipped
+    place_items_loose(
+        game_state,
+        dropped_item_ids,
+    )
+    game_state["pendingAction"] = None
+
+    response = item.get(
+        "dropResponse",
+        f"You drop the {item_name}.",
+    )
+
+    if not overflow_item_ids:
+        return response
+
+    return append_narrator_response(
+        response,
+        "The reduced carrying space also causes "
+        f"{get_formatted_item_list(overflow_item_ids)} to fall to the ground.",
+    )
 
 
 def format_item_names(item_names):

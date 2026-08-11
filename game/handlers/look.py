@@ -86,6 +86,7 @@ def handle_look(command, location_definition, game_state):
             game_state,
         )
         + game_state["player"]["inventory"]
+        + game_state["player"]["equipped"]
     )
 
     item_id, clarification = resolve_item(

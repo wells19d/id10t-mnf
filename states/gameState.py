@@ -7,18 +7,23 @@ from items.itemRegistry import itemRegistry
 
 # Increment this when persistent location/item definitions or state semantics
 # change incompatibly. Development saves are restarted instead of migrated.
-SAVE_VERSION = 4
+SAVE_VERSION = 1
 
 WORLD_ITEM_PLACEMENT = "__world__"
 
+EQUIPMENT_SLOT_ORDER = (
+    "head",
+    "chest",
+    "outerwear",
+    "hands",
+    "legs",
+    "feet",
+    "back",
+    "accessory",
+)
+
 EQUIPMENT_SLOTS = frozenset(
-    {
-        "head",
-        "chest",
-        "hands",
-        "legs",
-        "feet",
-    }
+    EQUIPMENT_SLOT_ORDER,
 )
 
 GAME_STATE_REQUIREMENT_KEYS = frozenset(
@@ -32,6 +37,8 @@ GAME_STATE_REQUIREMENT_KEYS = frozenset(
     }
 )
 
+BASE_CARRY_LIMIT = 10
+
 initialState = {
     "saveVersion": SAVE_VERSION,
     "player": {
@@ -42,12 +49,18 @@ initialState = {
         "lastDirection": None,
         "lastShortDirection": None,
         "inventory": [],
-        "equipped": [],
+        "equipped": [
+            "a1_light_blue_dress_shirt",
+            "a1_loose_fit_blue_jeans",
+            "a1_grey_casual_shoes",
+        ],
         "health": "Medium",
+        "healthStatus": "You are slightly wounded. You have a small cut on your head, but the bleeding has stopped.",
     },
     "itemStates": {},
     "flags": {},
     "locations": {},
+    "pendingAction": None,
 }
 
 
@@ -109,6 +122,26 @@ def create_game_state():
     )
 
 
+def get_total_carry_capacity(player_state):
+    total_capacity = BASE_CARRY_LIMIT
+
+    for item_id in player_state.get(
+        "equipped",
+        [],
+    ):
+        item = itemRegistry.get(
+            item_id,
+            {},
+        )
+
+        total_capacity += item.get(
+            "carryCapacity",
+            0,
+        )
+
+    return total_capacity
+
+
 def is_valid_item_id_list(item_ids):
     if not isinstance(
         item_ids,
@@ -117,8 +150,7 @@ def is_valid_item_id_list(item_ids):
         return False
 
     if not all(
-        isinstance(item_id, str) and item_id in itemRegistry
-        for item_id in item_ids
+        isinstance(item_id, str) and item_id in itemRegistry for item_id in item_ids
     ):
         return False
 
@@ -132,10 +164,7 @@ def is_valid_player_state(player_state):
     ):
         return False
 
-    if any(
-        field not in player_state
-        for field in initialState["player"]
-    ):
+    if any(field not in player_state for field in initialState["player"]):
         return False
 
     if not isinstance(
@@ -160,9 +189,7 @@ def is_valid_player_state(player_state):
     ]:
         direction = player_state[direction_field]
 
-        if direction is not None and (
-            not isinstance(direction, str) or not direction
-        ):
+        if direction is not None and (not isinstance(direction, str) or not direction):
             return False
 
     inventory = player_state["inventory"]
@@ -174,10 +201,7 @@ def is_valid_player_state(player_state):
     if not is_valid_item_id_list(equipped):
         return False
 
-    if any(
-        item_id not in inventory
-        for item_id in equipped
-    ):
+    if set(inventory).intersection(equipped):
         return False
 
     equipped_slots = []
@@ -198,9 +222,18 @@ def is_valid_player_state(player_state):
     if len(equipped_slots) != len(set(equipped_slots)):
         return False
 
-    health = player_state["health"]
+    if len(inventory) > get_total_carry_capacity(
+        player_state,
+    ):
+        return False
 
-    if not isinstance(health, str) or not health:
+    health = player_state["health"]
+    health_status = player_state["healthStatus"]
+
+    if not isinstance(health, str) or not health.strip():
+        return False
+
+    if not isinstance(health_status, str) or not health_status.strip():
         return False
 
     return True
@@ -306,6 +339,14 @@ def has_exclusive_item_ownership(
         player_state["inventory"],
     )
 
+    for item_id in player_state["equipped"]:
+        if item_id in owned_item_ids:
+            return False
+
+        owned_item_ids.add(
+            item_id,
+        )
+
     for location_state in locations_state.values():
         for item_id in location_state["items"]:
             if item_id in owned_item_ids:
@@ -324,6 +365,133 @@ def has_exclusive_item_ownership(
             return False
 
     return True
+
+
+def is_valid_pending_action(
+    pending_action,
+    player_state,
+):
+    if pending_action is None:
+        return True
+
+    if not isinstance(
+        pending_action,
+        dict,
+    ):
+        return False
+
+    action_type = pending_action.get(
+        "type",
+    )
+    action = pending_action.get(
+        "action",
+    )
+    item_id = pending_action.get(
+        "itemId",
+    )
+    location_id = pending_action.get(
+        "locationId",
+    )
+
+    if action_type != "capacityChange":
+        return False
+
+    if action not in {
+        "wear",
+        "remove",
+        "drop",
+    }:
+        return False
+
+    if not isinstance(item_id, str) or item_id not in itemRegistry:
+        return False
+
+    if (
+        not isinstance(location_id, str)
+        or location_id != player_state["currentLocation"]
+    ):
+        return False
+
+    item = itemRegistry[item_id]
+
+    if not item.get("wearable", False) or item.get("slot") != "back":
+        return False
+
+    inventory = player_state["inventory"]
+    equipped = player_state["equipped"]
+
+    if action == "wear":
+        if set(pending_action) != {
+            "type",
+            "action",
+            "itemId",
+            "equippedItemId",
+            "locationId",
+        }:
+            return False
+
+        equipped_item_id = pending_action.get(
+            "equippedItemId",
+        )
+
+        if item_id not in inventory or equipped_item_id not in equipped:
+            return False
+
+        equipped_item = itemRegistry.get(
+            equipped_item_id,
+            {},
+        )
+
+        if (
+            not equipped_item.get("wearable", False)
+            or equipped_item.get("slot") != "back"
+            or equipped_item.get("carryCapacity", 0) <= 0
+        ):
+            return False
+
+        final_equipped = [
+            equipped_id for equipped_id in equipped if equipped_id != equipped_item_id
+        ]
+        final_equipped.append(
+            item_id,
+        )
+
+        final_player_state = {
+            **player_state,
+            "equipped": final_equipped,
+        }
+
+        return len(inventory) > get_total_carry_capacity(
+            final_player_state,
+        )
+
+    if item.get("carryCapacity", 0) <= 0:
+        return False
+
+    if set(pending_action) != {
+        "type",
+        "action",
+        "itemId",
+        "locationId",
+    }:
+        return False
+
+    if item_id not in equipped:
+        return False
+
+    final_equipped = [equipped_id for equipped_id in equipped if equipped_id != item_id]
+    final_player_state = {
+        **player_state,
+        "equipped": final_equipped,
+    }
+    final_capacity = get_total_carry_capacity(
+        final_player_state,
+    )
+
+    if action == "remove":
+        return len(inventory) + 1 > final_capacity
+
+    return len(inventory) > final_capacity
 
 
 def is_valid_saved_state(saved_state):
@@ -376,6 +544,12 @@ def is_valid_saved_state(saved_state):
     if not has_exclusive_item_ownership(
         player_state,
         locations_state,
+    ):
+        return False
+
+    if "pendingAction" not in saved_state or not is_valid_pending_action(
+        saved_state["pendingAction"],
+        player_state,
     ):
         return False
 

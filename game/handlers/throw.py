@@ -4,7 +4,6 @@ from game.handlers.common import (
     get_current_location_state,
     get_item_display_name,
     resolve_item,
-    unequip_item,
 )
 from items.itemRegistry import itemRegistry
 
@@ -85,12 +84,6 @@ def handle_throw(command, location_definition, game_state):
         return command_failure(
             f"You can't throw the {display_name}.",
         )
-
-    # Thrown items can no longer remain equipped.
-    unequip_item(
-        game_state,
-        item_id,
-    )
 
     inventory.remove(
         item_id,

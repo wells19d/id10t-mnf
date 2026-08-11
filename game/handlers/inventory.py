@@ -1,18 +1,35 @@
+from html import escape
+
 from game.handlers.common import (
     get_item_display_name,
     normalize_response_messages,
 )
 from items.itemRegistry import itemRegistry
+from states.gameState import (
+    EQUIPMENT_SLOT_ORDER,
+    get_total_carry_capacity,
+)
 
 
 def handle_inventory(game_state):
-    inventory = game_state["player"]["inventory"]
+    player_state = game_state["player"]
+    inventory = player_state["inventory"]
+    total_capacity = get_total_carry_capacity(
+        player_state,
+    )
+    capacity_text = (
+        "<div class='inventory-capacity'>"
+        f"Item Capacity: {len(inventory)} / {total_capacity}"
+        "</div>"
+    )
 
     if not inventory:
-        return game_state.get(
+        empty_response = game_state.get(
             "inventoryEmptyResponse",
             "You aren't carrying anything.",
         )
+
+        return f"{empty_response}{capacity_text}"
 
     item_names = []
 
@@ -28,6 +45,7 @@ def handle_inventory(game_state):
 
     narrator_text = (
         "<div class='inventory-label'>You are carrying:</div>"
+        f"{capacity_text}"
         f"<div class='inventory-grid'>{inventory_items}</div>"
     )
 
@@ -48,3 +66,61 @@ def handle_inventory(game_state):
         },
         *inventory_voice_messages,
     ]
+
+
+def handle_player_status(game_state):
+    player_state = game_state["player"]
+    equipped = player_state["equipped"]
+
+    equipped_by_slot = {}
+
+    for item_id in equipped:
+        item = itemRegistry.get(item_id)
+
+        if not item:
+            continue
+
+        slot = item.get("slot")
+
+        if slot:
+            equipped_by_slot[slot] = item
+
+    equipment_rows = []
+
+    for slot in EQUIPMENT_SLOT_ORDER:
+        item = equipped_by_slot.get(slot)
+
+        if item:
+            item_name = get_item_display_name(item)
+
+            carry_capacity = item.get(
+                "carryCapacity",
+                0,
+            )
+
+            if slot == "back" and carry_capacity:
+                item_name += f" (+{carry_capacity} item capacity)"
+
+        else:
+            item_name = "Nothing"
+
+        equipment_rows.append(
+            "<div class='player-equipment-row'>"
+            f"<span class='player-equipment-slot'>{slot.title()}:</span> "
+            f"{item_name}"
+            "</div>"
+        )
+
+    return (
+        "<div class='player-status'>"
+        "<div class='player-status-title'>PLAYER STATUS</div>"
+        "<div class='player-health'>"
+        f"<strong>Health:</strong> {escape(player_state['health'])}"
+        "</div>"
+        "<div class='player-health-status'>"
+        f"{escape(player_state['healthStatus'])}"
+        "</div>"
+        "<div class='player-equipment-label'>Equipped:</div>"
+        f"{''.join(equipment_rows)}"
+        "</div>"
+    )

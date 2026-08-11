@@ -1,9 +1,10 @@
 from game.handlers.common import (
     command_failure,
+    get_carry_overflow_count,
     get_current_location_state,
-    resolve_item,
-    unequip_item,
     get_item_display_name,
+    get_pending_action_prompt,
+    resolve_item,
 )
 from items.itemRegistry import itemRegistry
 
@@ -17,10 +18,11 @@ def handle_drop(command, game_state):
         )
 
     inventory = game_state["player"]["inventory"]
+    equipped = game_state["player"]["equipped"]
 
     item_id, clarification = resolve_item(
         item_name,
-        inventory,
+        inventory + equipped,
     )
 
     if clarification:
@@ -30,7 +32,7 @@ def handle_drop(command, game_state):
 
     if not item_id:
         return command_failure(
-            f"You aren't carrying {item_name}.",
+            f"You aren't carrying or wearing {item_name}.",
         )
 
     item = itemRegistry[item_id]
@@ -39,15 +41,34 @@ def handle_drop(command, game_state):
         item,
     )
 
-    # Dropped items can no longer remain equipped.
-    unequip_item(
-        game_state,
-        item_id,
-    )
+    if item_id in equipped:
+        final_equipped = [
+            equipped_item_id
+            for equipped_item_id in equipped
+            if equipped_item_id != item_id
+        ]
 
-    inventory.remove(
-        item_id,
-    )
+        if item.get("carryCapacity", 0) and get_carry_overflow_count(
+            game_state["player"],
+            inventory,
+            final_equipped,
+        ):
+            game_state["pendingAction"] = {
+                "type": "capacityChange",
+                "action": "drop",
+                "itemId": item_id,
+                "locationId": game_state["player"]["currentLocation"],
+            }
+
+            return get_pending_action_prompt(
+                game_state,
+            )
+
+        game_state["player"]["equipped"] = final_equipped
+    else:
+        inventory.remove(
+            item_id,
+        )
 
     location_state = get_current_location_state(
         game_state,

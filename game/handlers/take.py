@@ -2,6 +2,7 @@ from game.handlers.common import (
     can_access_scenery_contents,
     command_failure,
     find_scenery,
+    get_carry_overflow_count,
     get_current_location_state,
     get_item_display_name,
     get_items_in_scenery,
@@ -122,6 +123,19 @@ def handle_take(command, location_definition, game_state):
             )
         )
 
+    inventory = game_state["player"]["inventory"]
+
+    if get_carry_overflow_count(
+        game_state["player"],
+        [
+            *inventory,
+            item_id,
+        ],
+    ):
+        return command_failure(
+            "You can't carry anything else.",
+        )
+
     # Remove the item from its current world placement.
     location_state["items"].pop(
         item_id,
@@ -129,7 +143,7 @@ def handle_take(command, location_definition, game_state):
     )
 
     # Add it to inventory.
-    game_state["player"]["inventory"].append(
+    inventory.append(
         item_id,
     )
 

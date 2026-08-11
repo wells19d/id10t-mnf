@@ -8,7 +8,6 @@ from game.handlers.common import (
     get_scenery_state,
     resolve_item,
     state_matches,
-    unequip_item,
 )
 from items.itemRegistry import itemRegistry
 
@@ -259,11 +258,6 @@ def handle_use(command, location_definition, game_state):
         "destroyItem",
         False,
     ):
-        unequip_item(
-            game_state,
-            item_id,
-        )
-
         inventory.remove(
             item_id,
         )

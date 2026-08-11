@@ -38,6 +38,8 @@ commandVerbs = {
     "go",
     "help",
     "h",
+    "player",
+    "p",
 }
 
 

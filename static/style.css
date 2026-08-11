@@ -136,6 +136,11 @@ main {
   color: #e27676;
 }
 
+.inventory-capacity {
+  margin: 10px 0px 15px;
+  font-family: monospace;
+}
+
 .startup-block {
   margin-bottom: 24px;
   font-family: monospace;
@@ -224,4 +229,42 @@ main {
   .inventory-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.equipment-highlight {
+  color: #bc7ed8;
+}
+
+.player-status {
+  max-width: 650px;
+}
+
+.player-status-title {
+  margin-bottom: 12px;
+}
+
+.player-health {
+  margin-bottom: 6px;
+}
+
+.player-health strong {
+  font-weight: normal;
+}
+
+.player-health-status {
+  margin-bottom: 16px;
+}
+
+.player-equipment-label {
+  margin-bottom: 10px;
+}
+
+.player-equipment-row {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  margin-bottom: 6px;
+}
+
+.player-equipment-slot {
+  font-weight: normal;
 }

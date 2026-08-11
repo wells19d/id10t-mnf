@@ -14,15 +14,20 @@ from game.parserUtils import (
 from game.handlers.common import (
     CommandFailure,
     command_failure,
+    execute_pending_action,
     get_current_location_state,
     get_item_display_name,
     get_location_description,
+    get_pending_action_prompt,
     get_visible_item_ids,
     normalize_response_messages,
     resolve_item,
 )
 from game.handlers.drop import handle_drop
-from game.handlers.inventory import handle_inventory
+from game.handlers.inventory import (
+    handle_inventory,
+    handle_player_status,
+)
 from game.handlers.look import handle_look
 from game.handlers.open_close import (
     handle_close,
@@ -100,11 +105,15 @@ def get_aggregate_candidate(
     if target:
         return None
 
-    # DROP resolves against inventory.
+    # DROP resolves against carried and equipped items.
     if verb == "drop":
+        drop_candidates = (
+            game_state["player"]["inventory"] + game_state["player"]["equipped"]
+        )
+
         item_id, clarification = resolve_item(
             item_name,
-            game_state["player"]["inventory"],
+            drop_candidates,
         )
 
         if clarification or not item_id:
@@ -115,6 +124,9 @@ def get_aggregate_candidate(
         # Preserve custom responses instead of
         # replacing them with a generic combined one.
         if item.get("dropResponse"):
+            return None
+
+        if item.get("carryCapacity", 0):
             return None
 
         return {
@@ -162,9 +174,7 @@ def get_movement_response(
     game_state,
 ):
     if movement_result.destination:
-        new_location_definition = locationRegistry[
-            movement_result.destination
-        ]
+        new_location_definition = locationRegistry[movement_result.destination]
 
         new_location_state = get_current_location_state(
             game_state,
@@ -287,13 +297,13 @@ def execute_single_command(player_command, game_state):
             game_state,
         )
 
-    if command_verb in [
-        "inventory",
-        "inv",
-        "bag",
-        "i",
-    ]:
+    if command_verb in ["inventory", "inv", "bag", "i"]:
         return handle_inventory(
+            game_state,
+        )
+
+    if command_verb in ["player", "p"]:
+        return handle_player_status(
             game_state,
         )
 
@@ -362,6 +372,25 @@ def execute_single_command(player_command, game_state):
 
 
 def parse_command(player_command, game_state):
+    if game_state.get(
+        "pendingAction",
+    ):
+        confirmation = player_command.strip().lower()
+
+        if confirmation == "yes":
+            return execute_pending_action(
+                game_state,
+            )
+
+        if confirmation == "no":
+            game_state["pendingAction"] = None
+
+            return "You decide not to continue."
+
+        return get_pending_action_prompt(
+            game_state,
+        )
+
     commands = parse_compound_commands(
         player_command,
     )
@@ -447,6 +476,17 @@ def parse_command(player_command, game_state):
         response_messages = normalize_response_messages(
             response,
         )
+
+        if game_state.get(
+            "pendingAction",
+        ):
+            flush_aggregate()
+
+            responses.extend(
+                response_messages,
+            )
+
+            break
 
         # Failed commands are never folded into an
         # aggregate response.

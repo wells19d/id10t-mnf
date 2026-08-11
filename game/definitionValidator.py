@@ -397,6 +397,25 @@ def get_item_definition_errors():
                     f"{', '.join(sorted(EQUIPMENT_SLOTS))}."
                 )
 
+        if "carryCapacity" in item_data:
+            carry_capacity = item_data["carryCapacity"]
+
+            if (
+                type(carry_capacity) is not int
+                or carry_capacity <= 0
+            ):
+                errors.append(
+                    f"{item_path}.carryCapacity must be a positive integer."
+                )
+
+            if (
+                not item_data.get("wearable", False)
+                or item_data.get("slot") != "back"
+            ):
+                errors.append(
+                    f"{item_path}.carryCapacity requires a wearable back-slot item."
+                )
+
         for text_key in [
             "description",
             "worldDescription",

@@ -14,6 +14,7 @@ from game.definitionValidator import validate_game_definitions
 from game.handlers.common import (
     get_current_location_state,
     get_location_description,
+    get_pending_action_prompt,
     is_valid_response,
     normalize_response_messages,
 )
@@ -179,14 +180,28 @@ def load_game():
             500,
         )
 
+    messages = [
+        {
+            "speaker": "narrator",
+            "text": location_description,
+        },
+    ]
+
+    pending_action_prompt = get_pending_action_prompt(
+        game_state,
+    )
+
+    if pending_action_prompt:
+        messages.append(
+            {
+                "speaker": "narrator",
+                "text": pending_action_prompt,
+            }
+        )
+
     return jsonify(
         {
-            "messages": [
-                {
-                    "speaker": "narrator",
-                    "text": location_description,
-                },
-            ],
+            "messages": messages,
             "state": game_state,
         }
     )
