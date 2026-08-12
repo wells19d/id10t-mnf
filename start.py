@@ -7,7 +7,7 @@ import time
 import webbrowser
 
 
-def install_flask():
+def installFlask():
     print("Flask is not installed. Installing Flask...")
 
     subprocess.check_call(
@@ -21,25 +21,25 @@ def install_flask():
     )
 
 
-def ensure_flask():
+def ensureFlask():
     try:
         import flask  # noqa: F401
     except ModuleNotFoundError:
-        install_flask()
+        installFlask()
 
 
-def open_browser():
+def openBrowser():
     time.sleep(1)
     webbrowser.open("http://127.0.0.1:5000")
 
 
-def run_game():
+def runGame():
     sys.dont_write_bytecode = True
 
-    ensure_flask()
+    ensureFlask()
 
     threading.Thread(
-        target=open_browser,
+        target=openBrowser,
         daemon=True,
     ).start()
 
@@ -60,4 +60,4 @@ def run_game():
 
 
 if __name__ == "__main__":
-    run_game()
+    runGame()

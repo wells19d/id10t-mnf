@@ -1,44 +1,44 @@
 from game.handlers.common import (
-    command_failure,
-    get_carry_overflow_count,
-    get_item_display_name,
-    get_pending_action_prompt,
-    place_items_loose,
-    resolve_item,
+    commandFailure,
+    overflowCount,
+    displayName,
+    pendingPrompt,
+    placeLooseItems,
+    resolveItem,
 )
-from items.itemRegistry import itemRegistry
+from items.registry import itemRegistry
 
 
-def handle_wear(command, game_state):
+def handleWear(command, game_state):
     item_name = command["object"]
 
     if not item_name:
-        return command_failure(
+        return commandFailure(
             "I don't know what I want to wear.",
         )
 
     inventory = game_state["player"]["inventory"]
 
-    item_id, clarification = resolve_item(
+    item_id, clarification = resolveItem(
         item_name,
         inventory,
     )
 
     if clarification:
-        return command_failure(
+        return commandFailure(
             clarification,
         )
 
     if not item_id:
-        return command_failure(
+        return commandFailure(
             f"You aren't carrying {item_name}.",
         )
 
     item = itemRegistry[item_id]
-    display_name = get_item_display_name(item)
+    display_name = displayName(item)
 
     if not item.get("wearable", False):
-        return command_failure(
+        return commandFailure(
             item.get(
                 "wearFailResponse",
                 f"You can't wear the {display_name}.",
@@ -67,11 +67,11 @@ def handle_wear(command, game_state):
         equipped_item = itemRegistry[equipped_item_id]
 
         if item_slot != "back":
-            equipped_display_name = get_item_display_name(
+            equipped_display_name = displayName(
                 equipped_item,
             )
 
-            return command_failure(
+            return commandFailure(
                 f"You are already wearing the {equipped_display_name}.",
             )
 
@@ -92,7 +92,7 @@ def handle_wear(command, game_state):
             item_id,
         )
 
-        if get_carry_overflow_count(
+        if overflowCount(
             game_state["player"],
             final_inventory,
             final_equipped,
@@ -105,7 +105,7 @@ def handle_wear(command, game_state):
                 "locationId": game_state["player"]["currentLocation"],
             }
 
-            return get_pending_action_prompt(
+            return pendingPrompt(
                 game_state,
             )
 
@@ -130,33 +130,33 @@ def handle_wear(command, game_state):
     )
 
 
-def handle_remove(command, game_state):
+def handleRemove(command, game_state):
     item_name = command["object"]
 
     if not item_name:
-        return command_failure(
+        return commandFailure(
             "I don't know what I want to remove.",
         )
 
     equipped = game_state["player"]["equipped"]
 
-    item_id, clarification = resolve_item(
+    item_id, clarification = resolveItem(
         item_name,
         equipped,
     )
 
     if clarification:
-        return command_failure(
+        return commandFailure(
             clarification,
         )
 
     if not item_id:
-        return command_failure(
+        return commandFailure(
             f"You aren't wearing {item_name}.",
         )
 
     item = itemRegistry[item_id]
-    display_name = get_item_display_name(
+    display_name = displayName(
         item,
     )
 
@@ -170,7 +170,7 @@ def handle_remove(command, game_state):
         for equipped_item_id in equipped
         if equipped_item_id != item_id
     ]
-    overflow_count = get_carry_overflow_count(
+    overflow_count = overflowCount(
         game_state["player"],
         final_inventory,
         final_equipped,
@@ -187,13 +187,13 @@ def handle_remove(command, game_state):
             "locationId": game_state["player"]["currentLocation"],
         }
 
-        return get_pending_action_prompt(
+        return pendingPrompt(
             game_state,
         )
 
     if overflow_count:
         game_state["player"]["equipped"] = final_equipped
-        place_items_loose(
+        placeLooseItems(
             game_state,
             [
                 item_id,

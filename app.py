@@ -8,23 +8,23 @@ from flask import (
     request,
 )
 
-from areas.locationRegistry import locationRegistry
-from game.commandParser import parse_command
-from game.definitionValidator import validate_game_definitions
+from areas.registry import locationRegistry
+from game.commands import parseCommand
+from game.validators import validateGameDefs
 from game.handlers.common import (
-    get_current_location_state,
-    get_location_description,
-    get_pending_action_prompt,
-    is_valid_response,
-    normalize_response_messages,
+    currentLocation,
+    locationText,
+    pendingPrompt,
+    isValidResponse,
+    normalizeResponseMessages,
 )
-from states.gameState import (
-    create_game_state,
-    is_valid_saved_state,
-    restore_game_state,
+from states.game import (
+    newGame,
+    isValidSave,
+    restoreGame,
 )
 
-validate_game_definitions()
+validateGameDefs()
 
 app = Flask(__name__)
 
@@ -51,7 +51,7 @@ def home():
 
 
 @app.get("/dev-version")
-def dev_version():
+def devVersion():
     return jsonify(
         {
             "version": SERVER_STARTED_AT,
@@ -60,7 +60,7 @@ def dev_version():
 
 
 @app.get("/start")
-def start_game():
+def startGame():
     return jsonify(
         {
             "startup": STARTUP_MESSAGE,
@@ -69,8 +69,8 @@ def start_game():
 
 
 @app.post("/new-game")
-def new_game():
-    game_state = create_game_state()
+def newGameRoute():
+    game_state = newGame()
 
     game_state["player"]["introComplete"] = True
 
@@ -78,13 +78,13 @@ def new_game():
 
     location_definition = locationRegistry[current_location]
 
-    location_state = get_current_location_state(
+    location_state = currentLocation(
         game_state,
     )
 
     location_state["visited"] = True
 
-    if not is_valid_saved_state(
+    if not isValidSave(
         game_state,
     ):
         return (
@@ -97,7 +97,7 @@ def new_game():
             500,
         )
 
-    intro_messages = normalize_response_messages(
+    intro_messages = normalizeResponseMessages(
         location_definition.get(
             "intro",
             [],
@@ -115,7 +115,7 @@ def new_game():
 
 
 @app.post("/load-game")
-def load_game():
+def loadGame():
     data = (
         request.get_json(
             silent=True,
@@ -127,7 +127,7 @@ def load_game():
         "state",
     )
 
-    game_state = restore_game_state(
+    game_state = restoreGame(
         saved_state,
     )
 
@@ -162,12 +162,12 @@ def load_game():
             400,
         )
 
-    location_description = get_location_description(
+    location_description = locationText(
         location_definition,
         game_state,
     )
 
-    if not is_valid_saved_state(
+    if not isValidSave(
         game_state,
     ):
         return (
@@ -187,7 +187,7 @@ def load_game():
         },
     ]
 
-    pending_action_prompt = get_pending_action_prompt(
+    pending_action_prompt = pendingPrompt(
         game_state,
     )
 
@@ -225,7 +225,7 @@ def command():
         .lower()
     )
 
-    game_state = restore_game_state(
+    game_state = restoreGame(
         data.get(
             "state",
         ),
@@ -242,12 +242,12 @@ def command():
             400,
         )
 
-    response = parse_command(
+    response = parseCommand(
         player_command,
         game_state,
     )
 
-    if not is_valid_saved_state(
+    if not isValidSave(
         game_state,
     ):
         return (
@@ -260,7 +260,7 @@ def command():
             500,
         )
 
-    if not is_valid_response(
+    if not isValidResponse(
         response,
     ):
         return (

@@ -1,17 +1,17 @@
-from game.responses import normalize_response_messages
-from game.worldState import state_matches
-from items.itemRegistry import itemRegistry
+from game.responses import normalizeResponseMessages
+from game.worldState import stateMatches
+from items.registry import itemRegistry
 
 
-def get_item_name(item):
+def itemName(item):
     return item.get(
         "name",
         item["aliases"][0],
     )
 
 
-def get_item_display_name(item):
-    item_name = get_item_name(
+def displayName(item):
+    item_name = itemName(
         item,
     )
 
@@ -22,24 +22,24 @@ def get_item_display_name(item):
     return f"<em><span class='{highlight_class}'>" f"{item_name}" "</span></em>"
 
 
-def get_formatted_item_list(item_ids):
+def itemList(item_ids):
     item_names = [
-        get_item_display_name(
+        displayName(
             itemRegistry[item_id],
         )
         for item_id in item_ids
     ]
 
-    return format_item_names(
+    return formatNames(
         item_names,
     )
 
 
-def append_narrator_response(
+def addNarration(
     response,
     narrator_text,
 ):
-    messages = normalize_response_messages(
+    messages = normalizeResponseMessages(
         response,
     )
 
@@ -53,7 +53,7 @@ def append_narrator_response(
     return messages
 
 
-def get_item_quantity_description(
+def quantityText(
     item,
     item_state,
 ):
@@ -64,7 +64,7 @@ def get_item_quantity_description(
     if not quantity_display:
         return None
 
-    if not state_matches(
+    if not stateMatches(
         item_state,
         quantity_display.get(
             "requiresState",
@@ -90,12 +90,12 @@ def get_item_quantity_description(
     return f"It contains {quantity} {label}."
 
 
-def append_item_quantity_description(
+def addQuantityText(
     response,
     item,
     item_state,
 ):
-    quantity_description = get_item_quantity_description(
+    quantity_description = quantityText(
         item,
         item_state,
     )
@@ -106,13 +106,13 @@ def append_item_quantity_description(
     if isinstance(response, str):
         return f"{response} {quantity_description}"
 
-    return append_narrator_response(
+    return addNarration(
         response,
         quantity_description,
     )
 
 
-def format_item_names(item_names):
+def formatNames(item_names):
     if len(item_names) == 1:
         return f"a {item_names[0]}"
 

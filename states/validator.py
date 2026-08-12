@@ -1,16 +1,16 @@
-from areas.locationRegistry import locationRegistry
-from items.itemRegistry import itemRegistry
-from states.stateModel import (
+from areas.registry import locationRegistry
+from items.registry import itemRegistry
+from states.model import (
     EQUIPMENT_SLOTS,
     INITIAL_ITEM_LOCATIONS,
     SAVE_VERSION,
     WORLD_ITEM_PLACEMENT,
-    get_total_carry_capacity,
+    carryLimit,
     initialState,
 )
 
 
-def is_valid_item_id_list(item_ids):
+def isValidItemIdList(item_ids):
     if not isinstance(
         item_ids,
         list,
@@ -25,7 +25,7 @@ def is_valid_item_id_list(item_ids):
     return len(item_ids) == len(set(item_ids))
 
 
-def is_valid_player_state(player_state):
+def isValidPlayerState(player_state):
     if not isinstance(
         player_state,
         dict,
@@ -63,10 +63,10 @@ def is_valid_player_state(player_state):
     inventory = player_state["inventory"]
     equipped = player_state["equipped"]
 
-    if not is_valid_item_id_list(inventory):
+    if not isValidItemIdList(inventory):
         return False
 
-    if not is_valid_item_id_list(equipped):
+    if not isValidItemIdList(equipped):
         return False
 
     if set(inventory).intersection(equipped):
@@ -90,7 +90,7 @@ def is_valid_player_state(player_state):
     if len(equipped_slots) != len(set(equipped_slots)):
         return False
 
-    if len(inventory) > get_total_carry_capacity(
+    if len(inventory) > carryLimit(
         player_state,
     ):
         return False
@@ -107,7 +107,7 @@ def is_valid_player_state(player_state):
     return True
 
 
-def is_valid_item_states(item_states):
+def isValidItemStates(item_states):
     if not isinstance(
         item_states,
         dict,
@@ -142,7 +142,7 @@ def is_valid_item_states(item_states):
     return True
 
 
-def is_valid_location_state(
+def isValidLocationState(
     location_id,
     location_state,
 ):
@@ -205,7 +205,7 @@ def is_valid_location_state(
     )
 
 
-def is_valid_locations_state(locations_state):
+def isValidLocationsState(locations_state):
     if not isinstance(
         locations_state,
         dict,
@@ -216,7 +216,7 @@ def is_valid_locations_state(locations_state):
         if (
             not isinstance(location_id, str)
             or location_id not in locationRegistry
-            or not is_valid_location_state(
+            or not isValidLocationState(
                 location_id,
                 location_state,
             )
@@ -226,7 +226,7 @@ def is_valid_locations_state(locations_state):
     return True
 
 
-def has_exclusive_item_ownership(
+def hasExclusiveItemOwnership(
     player_state,
     locations_state,
 ):
@@ -262,7 +262,7 @@ def has_exclusive_item_ownership(
     return True
 
 
-def is_valid_pending_action(
+def isValidPendingAction(
     pending_action,
     game_state,
 ):
@@ -328,7 +328,7 @@ def is_valid_pending_action(
             "equipped": final_equipped,
         }
 
-        return len(player_state["inventory"]) <= get_total_carry_capacity(
+        return len(player_state["inventory"]) <= carryLimit(
             final_player_state,
         )
 
@@ -375,7 +375,7 @@ def is_valid_pending_action(
         ]
         overflow_count = max(
             0,
-            len(final_inventory) - get_total_carry_capacity(player_state),
+            len(final_inventory) - carryLimit(player_state),
         )
 
         return 0 < overflow_count <= len(player_state["inventory"])
@@ -439,7 +439,7 @@ def is_valid_pending_action(
             "equipped": final_equipped,
         }
 
-        return len(inventory) > get_total_carry_capacity(
+        return len(inventory) > carryLimit(
             final_player_state,
         )
 
@@ -462,7 +462,7 @@ def is_valid_pending_action(
         **player_state,
         "equipped": final_equipped,
     }
-    final_capacity = get_total_carry_capacity(
+    final_capacity = carryLimit(
         final_player_state,
     )
 
@@ -472,7 +472,7 @@ def is_valid_pending_action(
     return len(inventory) > final_capacity
 
 
-def is_valid_saved_state(saved_state):
+def isValidSave(saved_state):
     if not isinstance(
         saved_state,
         dict,
@@ -490,12 +490,12 @@ def is_valid_saved_state(saved_state):
         "player",
     )
 
-    if not is_valid_player_state(
+    if not isValidPlayerState(
         player_state,
     ):
         return False
 
-    if not is_valid_item_states(
+    if not isValidItemStates(
         saved_state.get(
             "itemStates",
         )
@@ -514,18 +514,18 @@ def is_valid_saved_state(saved_state):
         "locations",
     )
 
-    if not is_valid_locations_state(
+    if not isValidLocationsState(
         locations_state,
     ):
         return False
 
-    if not has_exclusive_item_ownership(
+    if not hasExclusiveItemOwnership(
         player_state,
         locations_state,
     ):
         return False
 
-    if "pendingAction" not in saved_state or not is_valid_pending_action(
+    if "pendingAction" not in saved_state or not isValidPendingAction(
         saved_state["pendingAction"],
         saved_state,
     ):

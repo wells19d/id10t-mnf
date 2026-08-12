@@ -1,18 +1,18 @@
 from game.handlers.common import (
-    append_item_quantity_description,
-    find_scenery,
-    get_current_location_state,
-    get_item_state_snapshot,
-    get_location_description,
-    get_scenery_state,
-    get_visible_item_ids,
-    resolve_item,
-    state_matches,
+    addQuantityText,
+    findScenery,
+    currentLocation,
+    getItemStateSnapshot,
+    locationText,
+    getSceneryState,
+    visibleItemIds,
+    resolveItem,
+    stateMatches,
 )
-from items.itemRegistry import itemRegistry
+from items.registry import itemRegistry
 
 
-def get_state_description(
+def getStateDescription(
     data,
     current_state,
 ):
@@ -25,7 +25,7 @@ def get_state_description(
             {},
         )
 
-        if state_matches(
+        if stateMatches(
             current_state,
             required_state,
         ):
@@ -36,34 +36,34 @@ def get_state_description(
     return None
 
 
-def handle_look(command, location_definition, game_state):
+def handleLook(command, location_definition, game_state):
     target = command["target"] or command["object"]
 
     # LOOK
     # Return the basic description of the current area.
     if not target:
-        return get_location_description(
+        return locationText(
             location_definition,
             game_state,
         )
 
     # LOOK AT <scenery>
-    scenery_id, scenery_data = find_scenery(
+    scenery_id, scenery_data = findScenery(
         target,
         location_definition,
     )
 
     if scenery_data:
-        location_state = get_current_location_state(
+        location_state = currentLocation(
             game_state,
         )
 
-        scenery_state = get_scenery_state(
+        scenery_state = getSceneryState(
             location_state,
             scenery_id,
         )
 
-        state_description = get_state_description(
+        state_description = getStateDescription(
             scenery_data,
             scenery_state,
         )
@@ -82,7 +82,7 @@ def handle_look(command, location_definition, game_state):
 
     # LOOK AT <item>
     visible_items = (
-        get_visible_item_ids(
+        visibleItemIds(
             location_definition,
             game_state,
         )
@@ -90,7 +90,7 @@ def handle_look(command, location_definition, game_state):
         + game_state["player"]["equipped"]
     )
 
-    item_id, clarification = resolve_item(
+    item_id, clarification = resolveItem(
         target,
         visible_items,
     )
@@ -101,18 +101,18 @@ def handle_look(command, location_definition, game_state):
     if item_id:
         item = itemRegistry[item_id]
 
-        item_state = get_item_state_snapshot(
+        item_state = getItemStateSnapshot(
             game_state,
             item_id,
         )
 
-        state_description = get_state_description(
+        state_description = getStateDescription(
             item,
             item_state,
         )
 
         if state_description:
-            return append_item_quantity_description(
+            return addQuantityText(
                 state_description,
                 item,
                 item_state,
@@ -123,7 +123,7 @@ def handle_look(command, location_definition, game_state):
         )
 
         if description:
-            return append_item_quantity_description(
+            return addQuantityText(
                 description,
                 item,
                 item_state,

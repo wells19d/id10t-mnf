@@ -1,21 +1,21 @@
 from game.itemAccess import (
-    get_visible_item_ids,
-    resolve_item,
+    visibleItemIds,
+    resolveItem,
 )
-from game.itemPresentation import get_item_display_name
-from game.responses import command_failure
+from game.itemDisplay import displayName
+from game.responses import commandFailure
 from game.worldState import (
-    apply_state_changes,
-    get_current_location_state,
-    get_item_state_snapshot,
-    get_scenery_state,
-    state_matches,
+    applyChanges,
+    currentLocation,
+    getItemStateSnapshot,
+    getSceneryState,
+    stateMatches,
 )
-from items.itemRegistry import itemRegistry
-from states.gameState import WORLD_ITEM_PLACEMENT
+from items.registry import itemRegistry
+from states.game import WORLD_ITEM_PLACEMENT
 
 
-def resolve_provided_use(
+def resolveProvider(
     use_name,
     inventory,
 ):
@@ -47,7 +47,7 @@ def resolve_provided_use(
 
     if len(matches) > 1:
         provider_names = [
-            get_item_display_name(
+            displayName(
                 itemRegistry[provider_item_id],
             )
             for provider_item_id, _, _ in matches
@@ -72,7 +72,7 @@ def resolve_provided_use(
     return provider_item_id, use_id, provided_use, None
 
 
-def state_minimums_met(
+def minimumsMet(
     current_state,
     minimums,
 ):
@@ -87,7 +87,7 @@ def state_minimums_met(
     return True
 
 
-def build_changed_state(
+def previewChanges(
     current_state,
     updates=None,
     deltas=None,
@@ -117,7 +117,7 @@ def build_changed_state(
     return final_state
 
 
-def common_requirements_met(
+def requirementsMet(
     requirements,
     game_state,
 ):
@@ -137,7 +137,7 @@ def common_requirements_met(
         if item_id not in player_state["equipped"]:
             return False
 
-    return state_matches(
+    return stateMatches(
         game_state["flags"],
         requirements.get(
             "flags",
@@ -146,7 +146,7 @@ def common_requirements_met(
     )
 
 
-def get_target_ownership(
+def targetOwner(
     target_item_id,
     game_state,
 ):
@@ -158,7 +158,7 @@ def get_target_ownership(
     if target_item_id in player_state["equipped"]:
         return "equipped", None
 
-    location_state = get_current_location_state(
+    location_state = currentLocation(
         game_state,
     )
 
@@ -168,7 +168,7 @@ def get_target_ownership(
     return None, None
 
 
-def remove_item_from_owner(
+def removeOwnedItem(
     item_id,
     ownership,
     game_state,
@@ -185,7 +185,7 @@ def remove_item_from_owner(
         )
         return
 
-    get_current_location_state(
+    currentLocation(
         game_state,
     )["items"].pop(
         item_id,
@@ -193,7 +193,7 @@ def remove_item_from_owner(
     )
 
 
-def handle_item_interaction(
+def useItem(
     source_key,
     source_item_id,
     source_state_item_id,
@@ -204,25 +204,25 @@ def handle_item_interaction(
     game_state,
 ):
     target_candidates = (
-        get_visible_item_ids(
+        visibleItemIds(
             location_definition,
             game_state,
         )
         + game_state["player"]["inventory"]
         + game_state["player"]["equipped"]
     )
-    target_item_id, clarification = resolve_item(
+    target_item_id, clarification = resolveItem(
         target_name,
         target_candidates,
     )
 
     if clarification:
-        return command_failure(
+        return commandFailure(
             clarification,
         )
 
     if not target_item_id:
-        return command_failure(
+        return commandFailure(
             f"I don't see a {target_name} here.",
         )
 
@@ -235,8 +235,8 @@ def handle_item_interaction(
     )
 
     if not interaction:
-        return command_failure(
-            f"You can't use that on the {get_item_display_name(target_item)} here.",
+        return commandFailure(
+            f"You can't use that on the {displayName(target_item)} here.",
         )
 
     if provider_use:
@@ -250,11 +250,11 @@ def handle_item_interaction(
             {},
         )
 
-    if not state_matches(
+    if not stateMatches(
         target_item,
         target_definition_requirements,
     ):
-        return command_failure(
+        return commandFailure(
             interaction.get(
                 "targetDefinitionFailResponse",
                 interaction.get(
@@ -273,52 +273,52 @@ def handle_item_interaction(
         "That won't work right now.",
     )
 
-    if not state_matches(
+    if not stateMatches(
         source_state,
         requirements.get(
             "sourceItemState",
             {},
         ),
-    ) or not state_minimums_met(
+    ) or not minimumsMet(
         source_state,
         requirements.get(
             "sourceItemStateMinimums",
             {},
         ),
     ):
-        return command_failure(
+        return commandFailure(
             interaction.get(
                 "sourceStateFailResponse",
                 fail_response,
             )
         )
 
-    target_state = get_item_state_snapshot(
+    target_state = getItemStateSnapshot(
         game_state,
         target_item_id,
     )
 
-    if not state_matches(
+    if not stateMatches(
         target_state,
         requirements.get(
             "targetItemState",
             {},
         ),
-    ) or not state_minimums_met(
+    ) or not minimumsMet(
         target_state,
         requirements.get(
             "targetItemStateMinimums",
             {},
         ),
     ):
-        return command_failure(
+        return commandFailure(
             interaction.get(
                 "targetStateFailResponse",
                 fail_response,
             )
         )
 
-    target_ownership, target_placement = get_target_ownership(
+    target_ownership, target_placement = targetOwner(
         target_item_id,
         game_state,
     )
@@ -327,7 +327,7 @@ def handle_item_interaction(
     )
 
     if required_ownership and target_ownership != required_ownership:
-        return command_failure(
+        return commandFailure(
             interaction.get(
                 "targetLocationFailResponse",
                 fail_response,
@@ -338,18 +338,18 @@ def handle_item_interaction(
         target_ownership != "currentLocation"
         or target_placement not in {WORLD_ITEM_PLACEMENT, None}
     ):
-        return command_failure(
+        return commandFailure(
             interaction.get(
                 "targetLocationFailResponse",
                 fail_response,
             )
         )
 
-    if not common_requirements_met(
+    if not requirementsMet(
         requirements,
         game_state,
     ):
-        return command_failure(
+        return commandFailure(
             fail_response,
         )
 
@@ -371,14 +371,14 @@ def handle_item_interaction(
             source_deltas.get(resource_state_key, 0) - resource["consume"]
         )
 
-    final_source_state = build_changed_state(
+    final_source_state = previewChanges(
         source_state,
         effects.get(
             "sourceItemState",
         ),
         source_deltas,
     )
-    final_target_state = build_changed_state(
+    final_target_state = previewChanges(
         target_state,
         effects.get(
             "targetItemState",
@@ -389,7 +389,7 @@ def handle_item_interaction(
     )
 
     if final_source_state is None or final_target_state is None:
-        return command_failure(
+        return commandFailure(
             fail_response,
         )
 
@@ -402,7 +402,7 @@ def handle_item_interaction(
         or effects.get("targetItemStateDeltas")
     ):
         game_state["itemStates"][target_item_id] = final_target_state
-    apply_state_changes(
+    applyChanges(
         game_state["flags"],
         effects.get(
             "flags",
@@ -413,7 +413,7 @@ def handle_item_interaction(
         "destroySource",
         False,
     ) and source_item_id:
-        remove_item_from_owner(
+        removeOwnedItem(
             source_item_id,
             "inventory",
             game_state,
@@ -423,7 +423,7 @@ def handle_item_interaction(
         "destroyTarget",
         False,
     ):
-        remove_item_from_owner(
+        removeOwnedItem(
             target_item_id,
             target_ownership,
             game_state,
@@ -431,11 +431,11 @@ def handle_item_interaction(
 
     return interaction.get(
         "response",
-        f"You use it on the {get_item_display_name(target_item)}.",
+        f"You use it on the {displayName(target_item)}.",
     )
 
 
-def handle_scenery_interaction(
+def useScenery(
     source_key,
     source_item_id,
     source_state_item_id,
@@ -453,14 +453,14 @@ def handle_scenery_interaction(
     )
 
     if not interaction:
-        return command_failure(
+        return commandFailure(
             f"You can't use that on {scenery_id} here.",
         )
 
-    location_state = get_current_location_state(
+    location_state = currentLocation(
         game_state,
     )
-    scenery_state = get_scenery_state(
+    scenery_state = getSceneryState(
         location_state,
         scenery_id,
     )
@@ -473,23 +473,23 @@ def handle_scenery_interaction(
         "That won't work right now.",
     )
 
-    if not state_matches(
+    if not stateMatches(
         source_state,
         requirements.get(
             "itemState",
             {},
         ),
-    ) or not state_matches(
+    ) or not stateMatches(
         scenery_state,
         requirements.get(
             "sceneryState",
             {},
         ),
-    ) or not common_requirements_met(
+    ) or not requirementsMet(
         requirements,
         game_state,
     ):
-        return command_failure(
+        return commandFailure(
             fail_response,
         )
 
@@ -503,7 +503,7 @@ def handle_scenery_interaction(
         resource = provider_use["resource"]
         source_deltas[resource["stateKey"]] = -resource["consume"]
 
-    final_source_state = build_changed_state(
+    final_source_state = previewChanges(
         source_state,
         effects.get(
             "itemState",
@@ -512,18 +512,18 @@ def handle_scenery_interaction(
     )
 
     if final_source_state is None:
-        return command_failure(
+        return commandFailure(
             fail_response,
         )
 
     game_state["itemStates"][source_state_item_id] = final_source_state
-    apply_state_changes(
+    applyChanges(
         scenery_state,
         effects.get(
             "sceneryState",
         ),
     )
-    apply_state_changes(
+    applyChanges(
         game_state["flags"],
         effects.get(
             "flags",

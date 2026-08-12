@@ -1,20 +1,20 @@
 import random
 
-from game.itemAccess import get_items_in_item_container
-from game.itemPresentation import (
-    append_narrator_response,
-    get_formatted_item_list,
-    get_item_display_name,
+from game.itemAccess import containerItems
+from game.itemDisplay import (
+    addNarration,
+    itemList,
+    displayName,
 )
-from game.worldState import get_current_location_state
-from items.itemRegistry import itemRegistry
-from states.gameState import (
-    get_total_carry_capacity,
-    is_valid_pending_action,
+from game.worldState import currentLocation
+from items.registry import itemRegistry
+from states.game import (
+    carryLimit,
+    isValidPendingAction,
 )
 
 
-def get_carry_overflow_count(
+def overflowCount(
     player_state,
     inventory=None,
     equipped=None,
@@ -31,13 +31,13 @@ def get_carry_overflow_count(
     return max(
         0,
         len(final_inventory)
-        - get_total_carry_capacity(
+        - carryLimit(
             final_player_state,
         ),
     )
 
 
-def select_overflow_items(
+def selectOverflow(
     inventory,
     overflow_count,
 ):
@@ -50,14 +50,14 @@ def select_overflow_items(
     )
 
 
-def place_items_loose(
+def placeLooseItems(
     game_state,
     item_ids,
 ):
     if not item_ids:
         return
 
-    location_state = get_current_location_state(
+    location_state = currentLocation(
         game_state,
     )
 
@@ -65,7 +65,7 @@ def place_items_loose(
         location_state["items"][item_id] = None
 
 
-def get_pending_action_prompt(game_state):
+def pendingPrompt(game_state):
     pending_action = game_state.get(
         "pendingAction",
     )
@@ -76,15 +76,15 @@ def get_pending_action_prompt(game_state):
     player_state = game_state["player"]
     action = pending_action["action"]
     item_id = pending_action["itemId"]
-    item_name = get_item_display_name(
+    item_name = displayName(
         itemRegistry[item_id],
     )
 
     if pending_action["type"] == "takeOverflow":
-        location_state = get_current_location_state(
+        location_state = currentLocation(
             game_state,
         )
-        contained_item_ids = get_items_in_item_container(
+        contained_item_ids = containerItems(
             location_state,
             item_id,
         )
@@ -93,7 +93,7 @@ def get_pending_action_prompt(game_state):
             item_id,
             *contained_item_ids,
         ]
-        overflow_count = get_carry_overflow_count(
+        overflow_count = overflowCount(
             player_state,
             final_inventory,
         )
@@ -113,7 +113,7 @@ def get_pending_action_prompt(game_state):
 
     if action == "wear":
         equipped_item_id = pending_action["equippedItemId"]
-        equipped_item_name = get_item_display_name(
+        equipped_item_name = displayName(
             itemRegistry[equipped_item_id],
         )
         final_inventory = [
@@ -129,7 +129,7 @@ def get_pending_action_prompt(game_state):
         final_equipped.append(
             item_id,
         )
-        additional_drop_count = get_carry_overflow_count(
+        additional_drop_count = overflowCount(
             player_state,
             final_inventory,
             final_equipped,
@@ -161,7 +161,7 @@ def get_pending_action_prompt(game_state):
             *player_state["inventory"],
             item_id,
         ]
-        overflow_count = get_carry_overflow_count(
+        overflow_count = overflowCount(
             player_state,
             final_inventory,
             final_equipped,
@@ -174,7 +174,7 @@ def get_pending_action_prompt(game_state):
             "ground. Continue? Yes or No."
         )
 
-    overflow_count = get_carry_overflow_count(
+    overflow_count = overflowCount(
         player_state,
         player_state["inventory"],
         final_equipped,
@@ -188,11 +188,11 @@ def get_pending_action_prompt(game_state):
     )
 
 
-def execute_pending_action(game_state):
+def runPending(game_state):
     pending_action = game_state["pendingAction"]
     player_state = game_state["player"]
 
-    if not is_valid_pending_action(
+    if not isValidPendingAction(
         pending_action,
         game_state,
     ):
@@ -203,15 +203,15 @@ def execute_pending_action(game_state):
     action = pending_action["action"]
     item_id = pending_action["itemId"]
     item = itemRegistry[item_id]
-    item_name = get_item_display_name(
+    item_name = displayName(
         item,
     )
 
     if pending_action["type"] == "takeOverflow":
-        location_state = get_current_location_state(
+        location_state = currentLocation(
             game_state,
         )
-        contained_item_ids = get_items_in_item_container(
+        contained_item_ids = containerItems(
             location_state,
             item_id,
         )
@@ -223,11 +223,11 @@ def execute_pending_action(game_state):
             *player_state["inventory"],
             *acquired_item_ids,
         ]
-        overflow_count = get_carry_overflow_count(
+        overflow_count = overflowCount(
             player_state,
             final_inventory,
         )
-        dropped_item_ids = select_overflow_items(
+        dropped_item_ids = selectOverflow(
             player_state["inventory"],
             overflow_count,
         )
@@ -244,7 +244,7 @@ def execute_pending_action(game_state):
                 None,
             )
 
-        place_items_loose(
+        placeLooseItems(
             game_state,
             dropped_item_ids,
         )
@@ -255,10 +255,10 @@ def execute_pending_action(game_state):
             f"You took the {item_name} and everything still inside it.",
         )
 
-        return append_narrator_response(
+        return addNarration(
             response,
             "To make room, you drop "
-            f"{get_formatted_item_list(dropped_item_ids)} on the ground.",
+            f"{itemList(dropped_item_ids)} on the ground.",
         )
 
     if pending_action["type"] == "equippedDrop":
@@ -267,7 +267,7 @@ def execute_pending_action(game_state):
             for equipped_id in player_state["equipped"]
             if equipped_id != item_id
         ]
-        place_items_loose(
+        placeLooseItems(
             game_state,
             [item_id],
         )
@@ -293,12 +293,12 @@ def execute_pending_action(game_state):
         final_equipped.append(
             item_id,
         )
-        overflow_count = get_carry_overflow_count(
+        overflow_count = overflowCount(
             player_state,
             final_inventory,
             final_equipped,
         )
-        overflow_item_ids = select_overflow_items(
+        overflow_item_ids = selectOverflow(
             final_inventory,
             overflow_count,
         )
@@ -313,7 +313,7 @@ def execute_pending_action(game_state):
             if inventory_item_id not in overflow_item_ids
         ]
         player_state["equipped"] = final_equipped
-        place_items_loose(
+        placeLooseItems(
             game_state,
             dropped_item_ids,
         )
@@ -324,10 +324,10 @@ def execute_pending_action(game_state):
             f"You equip the {item_name}.",
         )
 
-        return append_narrator_response(
+        return addNarration(
             response,
             "The reduced carrying space causes "
-            f"{get_formatted_item_list(dropped_item_ids)} to fall to the ground.",
+            f"{itemList(dropped_item_ids)} to fall to the ground.",
         )
 
     final_equipped = [
@@ -341,12 +341,12 @@ def execute_pending_action(game_state):
             *player_state["inventory"],
             item_id,
         ]
-        overflow_count = get_carry_overflow_count(
+        overflow_count = overflowCount(
             player_state,
             final_inventory,
             final_equipped,
         )
-        dropped_item_ids = select_overflow_items(
+        dropped_item_ids = selectOverflow(
             final_inventory,
             overflow_count,
         )
@@ -357,7 +357,7 @@ def execute_pending_action(game_state):
             if inventory_item_id not in dropped_item_ids
         ]
         player_state["equipped"] = final_equipped
-        place_items_loose(
+        placeLooseItems(
             game_state,
             dropped_item_ids,
         )
@@ -368,21 +368,21 @@ def execute_pending_action(game_state):
             f"You remove the {item_name}.",
         )
 
-        return append_narrator_response(
+        return addNarration(
             response,
             "The reduced carrying space causes "
-            f"{get_formatted_item_list(dropped_item_ids)} to fall to the ground.",
+            f"{itemList(dropped_item_ids)} to fall to the ground.",
         )
 
     final_inventory = list(
         player_state["inventory"],
     )
-    overflow_count = get_carry_overflow_count(
+    overflow_count = overflowCount(
         player_state,
         final_inventory,
         final_equipped,
     )
-    overflow_item_ids = select_overflow_items(
+    overflow_item_ids = selectOverflow(
         final_inventory,
         overflow_count,
     )
@@ -397,7 +397,7 @@ def execute_pending_action(game_state):
         if inventory_item_id not in overflow_item_ids
     ]
     player_state["equipped"] = final_equipped
-    place_items_loose(
+    placeLooseItems(
         game_state,
         dropped_item_ids,
     )
@@ -411,8 +411,8 @@ def execute_pending_action(game_state):
     if not overflow_item_ids:
         return response
 
-    return append_narrator_response(
+    return addNarration(
         response,
         "The reduced carrying space also causes "
-        f"{get_formatted_item_list(overflow_item_ids)} to fall to the ground.",
+        f"{itemList(overflow_item_ids)} to fall to the ground.",
     )

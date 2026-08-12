@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
 from game.handlers.common import (
-    get_current_location_state,
-    get_scenery_state,
-    state_matches,
+    currentLocation,
+    getSceneryState,
+    stateMatches,
 )
 
 
@@ -46,7 +46,7 @@ directionAliases = {
 }
 
 
-def exit_requirements_met(
+def exitRequirementsMet(
     exit_data,
     game_state,
 ):
@@ -84,7 +84,7 @@ def exit_requirements_met(
     )
 
     if required_flags:
-        if not state_matches(
+        if not stateMatches(
             game_state["flags"],
             required_flags,
         ):
@@ -97,17 +97,17 @@ def exit_requirements_met(
     )
 
     if required_scenery:
-        location_state = get_current_location_state(
+        location_state = currentLocation(
             game_state,
         )
 
         for scenery_id, required_state in required_scenery.items():
-            scenery_state = get_scenery_state(
+            scenery_state = getSceneryState(
                 location_state,
                 scenery_id,
             )
 
-            if not state_matches(
+            if not stateMatches(
                 scenery_state,
                 required_state,
             ):
@@ -116,7 +116,7 @@ def exit_requirements_met(
     return True
 
 
-def move_player(
+def movePlayer(
     direction,
     location_definition,
     player_state,
@@ -164,7 +164,7 @@ def move_player(
             return MovementResult.blocked(f"I can't go {full_direction} from here.")
 
         if game_state is not None:
-            if not exit_requirements_met(
+            if not exitRequirementsMet(
                 exit_data,
                 game_state,
             ):
@@ -187,7 +187,7 @@ def move_player(
     )
 
 
-def move_player_to_room(
+def movePlayerToRoom(
     room_name,
     location_definition,
     player_state,

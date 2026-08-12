@@ -1,19 +1,19 @@
-from areas.locationRegistry import locationRegistry
-from game.handlers.drop import resolve_drop_item
+from areas.registry import locationRegistry
+from game.handlers.drop import resolveDropItem
 from game.itemAccess import (
-    get_visible_item_ids,
-    resolve_item,
+    visibleItemIds,
+    resolveItem,
 )
-from game.itemPresentation import get_item_display_name
-from game.parserUtils import parse_command_parts
+from game.itemDisplay import displayName
+from game.parsing import parseParts
 from game.responses import (
     CommandFailure,
-    normalize_response_messages,
+    normalizeResponseMessages,
 )
-from items.itemRegistry import itemRegistry
+from items.registry import itemRegistry
 
 
-def format_compound_item_names(
+def formatItems(
     item_names,
 ):
     if len(item_names) == 1:
@@ -25,11 +25,11 @@ def format_compound_item_names(
     return ", ".join(item_names[:-1]) + f", and {item_names[-1]}"
 
 
-def build_aggregate_response(
+def aggregateResponse(
     verb,
     item_names,
 ):
-    formatted_names = format_compound_item_names(
+    formatted_names = formatItems(
         item_names,
     )
 
@@ -42,11 +42,11 @@ def build_aggregate_response(
     return None
 
 
-def get_aggregate_candidate(
+def aggregateCandidate(
     player_command,
     game_state,
 ):
-    command = parse_command_parts(
+    command = parseParts(
         player_command,
     )
 
@@ -75,7 +75,7 @@ def get_aggregate_candidate(
 
     # DROP prioritizes carried items over equipped items.
     if verb == "drop":
-        item_id, clarification, is_equipped = resolve_drop_item(
+        item_id, clarification, is_equipped = resolveDropItem(
             item_name,
             game_state["player"],
         )
@@ -98,7 +98,7 @@ def get_aggregate_candidate(
 
         return {
             "verb": verb,
-            "itemName": get_item_display_name(
+            "itemName": displayName(
                 item,
             ),
         }
@@ -109,12 +109,12 @@ def get_aggregate_candidate(
 
     location_definition = locationRegistry[current_location]
 
-    visible_items = get_visible_item_ids(
+    visible_items = visibleItemIds(
         location_definition,
         game_state,
     )
 
-    item_id, clarification = resolve_item(
+    item_id, clarification = resolveItem(
         item_name,
         visible_items,
     )
@@ -138,16 +138,16 @@ def get_aggregate_candidate(
 
     return {
         "verb": verb,
-        "itemName": get_item_display_name(
+        "itemName": displayName(
             item,
         ),
     }
 
 
-def execute_compound_commands(
+def runCompound(
     commands,
     game_state,
-    execute_single_command,
+    runOne,
 ):
     responses = []
 
@@ -157,7 +157,7 @@ def execute_compound_commands(
     aggregate_names = []
     aggregate_original_responses = []
 
-    def flush_aggregate():
+    def flushAggregate():
         nonlocal aggregate_verb
         nonlocal aggregate_names
         nonlocal aggregate_original_responses
@@ -171,7 +171,7 @@ def execute_compound_commands(
             responses.extend(aggregate_original_responses[0])
 
         else:
-            aggregate_response = build_aggregate_response(
+            aggregate_response = aggregateResponse(
                 aggregate_verb,
                 aggregate_names,
             )
@@ -189,12 +189,12 @@ def execute_compound_commands(
 
     # Compound commands execute left to right.
     for command in commands:
-        aggregate_candidate = get_aggregate_candidate(
+        aggregate_candidate = aggregateCandidate(
             command,
             game_state,
         )
 
-        result = execute_single_command(
+        result = runOne(
             command,
             game_state,
         )
@@ -206,14 +206,14 @@ def execute_compound_commands(
 
         response = result.response if failed else result
 
-        response_messages = normalize_response_messages(
+        response_messages = normalizeResponseMessages(
             response,
         )
 
         if game_state.get(
             "pendingAction",
         ):
-            flush_aggregate()
+            flushAggregate()
 
             responses.extend(
                 response_messages,
@@ -224,7 +224,7 @@ def execute_compound_commands(
         # Failed commands are never folded into an
         # aggregate response.
         if failed:
-            flush_aggregate()
+            flushAggregate()
 
             responses.extend(
                 response_messages,
@@ -240,7 +240,7 @@ def execute_compound_commands(
             # A different aggregateable verb starts
             # a new group.
             if aggregate_verb and candidate_verb != aggregate_verb:
-                flush_aggregate()
+                flushAggregate()
 
             aggregate_verb = candidate_verb
 
@@ -255,12 +255,12 @@ def execute_compound_commands(
             continue
 
         # Non-aggregateable actions preserve order.
-        flush_aggregate()
+        flushAggregate()
 
         responses.extend(
             response_messages,
         )
 
-    flush_aggregate()
+    flushAggregate()
 
     return responses

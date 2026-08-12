@@ -1,14 +1,14 @@
 from copy import deepcopy
 
-from areas.locationRegistry import locationRegistry
-from items.itemRegistry import itemRegistry
-from states.gameState import (
+from areas.registry import locationRegistry
+from items.registry import itemRegistry
+from states.game import (
     GAME_STATE_REQUIREMENT_KEYS,
     WORLD_ITEM_PLACEMENT,
 )
 
 
-def build_initial_location_items(location_definition):
+def buildInitialLocationItems(location_definition):
     items = {}
 
     # Items that begin naturally in the location.
@@ -40,7 +40,7 @@ def build_initial_location_items(location_definition):
     return items
 
 
-def build_initial_scenery_state(location_definition):
+def buildInitialSceneryState(location_definition):
     scenery_states = {}
 
     for scenery_id, scenery_data in location_definition.get(
@@ -57,7 +57,7 @@ def build_initial_scenery_state(location_definition):
     return scenery_states
 
 
-def get_location_state(game_state, location_id):
+def getLocationState(game_state, location_id):
     locations = game_state.setdefault(
         "locations",
         {},
@@ -71,10 +71,10 @@ def get_location_state(game_state, location_id):
 
         locations[location_id] = {
             "visited": False,
-            "items": build_initial_location_items(
+            "items": buildInitialLocationItems(
                 location_definition,
             ),
-            "scenery": build_initial_scenery_state(
+            "scenery": buildInitialSceneryState(
                 location_definition,
             ),
         }
@@ -82,16 +82,16 @@ def get_location_state(game_state, location_id):
     return locations[location_id]
 
 
-def get_current_location_state(game_state):
+def currentLocation(game_state):
     current_location = game_state["player"]["currentLocation"]
 
-    return get_location_state(
+    return getLocationState(
         game_state,
         current_location,
     )
 
 
-def get_scenery_state(
+def getSceneryState(
     location_state,
     scenery_id,
 ):
@@ -106,7 +106,7 @@ def get_scenery_state(
     )
 
 
-def get_item_state(
+def getItemState(
     game_state,
     item_id,
 ):
@@ -131,7 +131,7 @@ def get_item_state(
     return item_states[item_id]
 
 
-def get_item_state_snapshot(
+def getItemStateSnapshot(
     game_state,
     item_id,
 ):
@@ -158,7 +158,7 @@ def get_item_state_snapshot(
     )
 
 
-def state_matches(
+def stateMatches(
     current_state,
     required_state,
 ):
@@ -169,7 +169,7 @@ def state_matches(
     return True
 
 
-def game_state_requirements_met(
+def requirementsMet(
     requirements,
     game_state,
 ):
@@ -181,7 +181,7 @@ def game_state_requirements_met(
 
     player_state = game_state["player"]
 
-    if not state_matches(
+    if not stateMatches(
         player_state,
         requirements.get(
             "player",
@@ -214,7 +214,7 @@ def game_state_requirements_met(
         if item_id not in itemRegistry or item_id not in equipped:
             return False
 
-    if not state_matches(
+    if not stateMatches(
         game_state["flags"],
         requirements.get(
             "flags",
@@ -228,7 +228,7 @@ def game_state_requirements_met(
         current_location,
         {},
     )
-    location_state = get_current_location_state(
+    location_state = currentLocation(
         game_state,
     )
 
@@ -242,12 +242,12 @@ def game_state_requirements_met(
         ):
             return False
 
-        scenery_state = get_scenery_state(
+        scenery_state = getSceneryState(
             location_state,
             scenery_id,
         )
 
-        if not state_matches(
+        if not stateMatches(
             scenery_state,
             required_state,
         ):
@@ -260,12 +260,12 @@ def game_state_requirements_met(
         if item_id not in itemRegistry:
             return False
 
-        item_state = get_item_state(
+        item_state = getItemState(
             game_state,
             item_id,
         )
 
-        if not state_matches(
+        if not stateMatches(
             item_state,
             required_state,
         ):
@@ -274,7 +274,7 @@ def game_state_requirements_met(
     return True
 
 
-def get_location_description(
+def locationText(
     location_data,
     game_state,
 ):
@@ -282,7 +282,7 @@ def get_location_description(
         "stateDescriptions",
         [],
     ):
-        if game_state_requirements_met(
+        if requirementsMet(
             state_description.get(
                 "requires",
                 {},
@@ -302,7 +302,7 @@ def get_location_description(
     )
 
 
-def apply_state_changes(
+def applyChanges(
     current_state,
     changes,
 ):

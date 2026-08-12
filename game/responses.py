@@ -12,13 +12,13 @@ class CommandFailure:
         self.response = response
 
 
-def command_failure(response):
+def commandFailure(response):
     return CommandFailure(
         response,
     )
 
 
-def is_valid_response_message(
+def isValidResponseMessage(
     message,
     allow_empty_text=False,
 ):
@@ -41,7 +41,7 @@ def is_valid_response_message(
     return allow_empty_text or bool(text.strip())
 
 
-def is_valid_response(
+def isValidResponse(
     response,
     allow_empty_list=False,
     allow_empty_text=False,
@@ -50,7 +50,7 @@ def is_valid_response(
         return allow_empty_text or bool(response.strip())
 
     if isinstance(response, dict):
-        return is_valid_response_message(
+        return isValidResponseMessage(
             response,
             allow_empty_text,
         )
@@ -60,7 +60,7 @@ def is_valid_response(
             return False
 
         return all(
-            is_valid_response_message(
+            isValidResponseMessage(
                 message,
                 allow_empty_text,
             )
@@ -70,13 +70,13 @@ def is_valid_response(
     return False
 
 
-def normalize_response_messages(
+def normalizeResponseMessages(
     response,
     default_speaker="narrator",
     allow_empty_list=False,
     allow_empty_text=False,
 ):
-    if not is_valid_response(
+    if not isValidResponse(
         response,
         allow_empty_list,
         allow_empty_text,

@@ -1,19 +1,19 @@
 from game.handlers.common import (
-    apply_state_changes,
-    append_item_quantity_description,
-    command_failure,
-    find_scenery,
-    get_current_location_state,
-    get_item_state_snapshot,
-    get_scenery_state,
-    get_visible_item_ids,
-    resolve_item,
-    state_matches,
+    applyChanges,
+    addQuantityText,
+    commandFailure,
+    findScenery,
+    currentLocation,
+    getItemStateSnapshot,
+    getSceneryState,
+    visibleItemIds,
+    resolveItem,
+    stateMatches,
 )
-from items.itemRegistry import itemRegistry
+from items.registry import itemRegistry
 
 
-def requirements_met(
+def requirementsMet(
     requirements,
     game_state,
     scenery_state,
@@ -29,7 +29,7 @@ def requirements_met(
         {},
     )
 
-    if not state_matches(
+    if not stateMatches(
         scenery_state,
         required_scenery_state,
     ):
@@ -58,7 +58,7 @@ def requirements_met(
     )
 
     if required_flags:
-        if not state_matches(
+        if not stateMatches(
             game_state["flags"],
             required_flags,
         ):
@@ -67,13 +67,13 @@ def requirements_met(
     return True
 
 
-def resolve_accessible_item_target(
+def resolveAccessibleItemTarget(
     target,
     location_definition,
     game_state,
 ):
     accessible_item_ids = (
-        get_visible_item_ids(
+        visibleItemIds(
             location_definition,
             game_state,
         )
@@ -81,25 +81,25 @@ def resolve_accessible_item_target(
         + game_state["player"]["equipped"]
     )
 
-    return resolve_item(
+    return resolveItem(
         target,
         accessible_item_ids,
     )
 
 
-def handle_open_item(
+def handleOpenItem(
     target,
     location_definition,
     game_state,
 ):
-    item_id, clarification = resolve_accessible_item_target(
+    item_id, clarification = resolveAccessibleItemTarget(
         target,
         location_definition,
         game_state,
     )
 
     if clarification:
-        return command_failure(
+        return commandFailure(
             clarification,
         )
 
@@ -108,7 +108,7 @@ def handle_open_item(
     )
 
     if not item:
-        return command_failure(
+        return commandFailure(
             f"I don't see a {target} here.",
         )
 
@@ -116,14 +116,14 @@ def handle_open_item(
         "openable",
         False,
     ):
-        return command_failure(
+        return commandFailure(
             item.get(
                 "openFailResponse",
                 f"You can't open the {target}.",
             )
         )
 
-    item_state = get_item_state_snapshot(
+    item_state = getItemStateSnapshot(
         game_state,
         item_id,
     )
@@ -132,7 +132,7 @@ def handle_open_item(
         "isLocked",
         False,
     ):
-        return command_failure(
+        return commandFailure(
             item.get(
                 "lockedResponse",
                 f"The {target} is locked.",
@@ -143,14 +143,14 @@ def handle_open_item(
         "isOpen",
         False,
     ):
-        return command_failure(
+        return commandFailure(
             item.get(
                 "alreadyOpenResponse",
                 f"The {target} is already open.",
             )
         )
 
-    if not requirements_met(
+    if not requirementsMet(
         item.get(
             "openRequires",
             {},
@@ -158,7 +158,7 @@ def handle_open_item(
         game_state,
         item_state,
     ):
-        return command_failure(
+        return commandFailure(
             item.get(
                 "openBlockedResponse",
                 f"You can't open the {target} right now.",
@@ -166,7 +166,7 @@ def handle_open_item(
         )
 
     item_state["isOpen"] = True
-    apply_state_changes(
+    applyChanges(
         item_state,
         item.get(
             "openEffects",
@@ -179,26 +179,26 @@ def handle_open_item(
         f"You open the {target}.",
     )
 
-    return append_item_quantity_description(
+    return addQuantityText(
         response,
         item,
         item_state,
     )
 
 
-def handle_close_item(
+def handleCloseItem(
     target,
     location_definition,
     game_state,
 ):
-    item_id, clarification = resolve_accessible_item_target(
+    item_id, clarification = resolveAccessibleItemTarget(
         target,
         location_definition,
         game_state,
     )
 
     if clarification:
-        return command_failure(
+        return commandFailure(
             clarification,
         )
 
@@ -207,7 +207,7 @@ def handle_close_item(
     )
 
     if not item:
-        return command_failure(
+        return commandFailure(
             f"I don't see a {target} here.",
         )
 
@@ -215,14 +215,14 @@ def handle_close_item(
         "closeable",
         False,
     ):
-        return command_failure(
+        return commandFailure(
             item.get(
                 "closeFailResponse",
                 f"You can't close the {target}.",
             )
         )
 
-    item_state = get_item_state_snapshot(
+    item_state = getItemStateSnapshot(
         game_state,
         item_id,
     )
@@ -231,14 +231,14 @@ def handle_close_item(
         "isOpen",
         False,
     ):
-        return command_failure(
+        return commandFailure(
             item.get(
                 "alreadyClosedResponse",
                 f"The {target} is already closed.",
             )
         )
 
-    if not requirements_met(
+    if not requirementsMet(
         item.get(
             "closeRequires",
             {},
@@ -246,7 +246,7 @@ def handle_close_item(
         game_state,
         item_state,
     ):
-        return command_failure(
+        return commandFailure(
             item.get(
                 "closeBlockedResponse",
                 f"You can't close the {target} right now.",
@@ -254,7 +254,7 @@ def handle_close_item(
         )
 
     item_state["isOpen"] = False
-    apply_state_changes(
+    applyChanges(
         item_state,
         item.get(
             "closeEffects",
@@ -268,7 +268,7 @@ def handle_close_item(
     )
 
 
-def _handle_open_scenery(
+def _handleOpenScenery(
     scenery_id,
     scenery_data,
     game_state,
@@ -277,18 +277,18 @@ def _handle_open_scenery(
         "openable",
         False,
     ):
-        return command_failure(
+        return commandFailure(
             scenery_data.get(
                 "openFailResponse",
                 f"You can't open the {scenery_id}.",
             )
         )
 
-    location_state = get_current_location_state(
+    location_state = currentLocation(
         game_state,
     )
 
-    scenery_state = get_scenery_state(
+    scenery_state = getSceneryState(
         location_state,
         scenery_id,
     )
@@ -298,7 +298,7 @@ def _handle_open_scenery(
         "isBroken",
         False,
     ):
-        return command_failure(
+        return commandFailure(
             scenery_data.get(
                 "brokenOpenResponse",
                 f"The {scenery_id} is already broken open.",
@@ -310,7 +310,7 @@ def _handle_open_scenery(
         "isLocked",
         False,
     ):
-        return command_failure(
+        return commandFailure(
             scenery_data.get(
                 "lockedResponse",
                 f"The {scenery_id} is locked.",
@@ -321,7 +321,7 @@ def _handle_open_scenery(
         "isOpen",
         False,
     ):
-        return command_failure(
+        return commandFailure(
             scenery_data.get(
                 "alreadyOpenResponse",
                 f"The {scenery_id} is already open.",
@@ -334,12 +334,12 @@ def _handle_open_scenery(
         {},
     )
 
-    if not requirements_met(
+    if not requirementsMet(
         requirements,
         game_state,
         scenery_state,
     ):
-        return command_failure(
+        return commandFailure(
             scenery_data.get(
                 "openBlockedResponse",
                 f"You can't open the {scenery_id} right now.",
@@ -349,7 +349,7 @@ def _handle_open_scenery(
     scenery_state["isOpen"] = True
 
     # Optional extra state changes caused by opening.
-    apply_state_changes(
+    applyChanges(
         scenery_state,
         scenery_data.get(
             "openEffects",
@@ -362,7 +362,7 @@ def _handle_open_scenery(
     )
 
 
-def _handle_close_scenery(
+def _handleCloseScenery(
     scenery_id,
     scenery_data,
     game_state,
@@ -371,18 +371,18 @@ def _handle_close_scenery(
         "closeable",
         False,
     ):
-        return command_failure(
+        return commandFailure(
             scenery_data.get(
                 "closeFailResponse",
                 f"You can't close the {scenery_id}.",
             )
         )
 
-    location_state = get_current_location_state(
+    location_state = currentLocation(
         game_state,
     )
 
-    scenery_state = get_scenery_state(
+    scenery_state = getSceneryState(
         location_state,
         scenery_id,
     )
@@ -392,7 +392,7 @@ def _handle_close_scenery(
         "isBroken",
         False,
     ):
-        return command_failure(
+        return commandFailure(
             scenery_data.get(
                 "brokenCloseResponse",
                 f"The {scenery_id} is broken and can't be closed.",
@@ -403,7 +403,7 @@ def _handle_close_scenery(
         "isOpen",
         False,
     ):
-        return command_failure(
+        return commandFailure(
             scenery_data.get(
                 "alreadyClosedResponse",
                 f"The {scenery_id} is already closed.",
@@ -416,12 +416,12 @@ def _handle_close_scenery(
         {},
     )
 
-    if not requirements_met(
+    if not requirementsMet(
         requirements,
         game_state,
         scenery_state,
     ):
-        return command_failure(
+        return commandFailure(
             scenery_data.get(
                 "closeBlockedResponse",
                 f"You can't close the {scenery_id} right now.",
@@ -431,7 +431,7 @@ def _handle_close_scenery(
     scenery_state["isOpen"] = False
 
     # Optional extra state changes caused by closing.
-    apply_state_changes(
+    applyChanges(
         scenery_state,
         scenery_data.get(
             "closeEffects",
@@ -444,54 +444,54 @@ def _handle_close_scenery(
     )
 
 
-def handle_open(command, location_definition, game_state):
+def handleOpen(command, location_definition, game_state):
     target = command["object"] or command["target"]
 
     if not target:
-        return command_failure(
+        return commandFailure(
             "I don't know what I want to open.",
         )
 
-    scenery_id, scenery_data = find_scenery(
+    scenery_id, scenery_data = findScenery(
         target,
         location_definition,
     )
 
     if not scenery_data:
-        return handle_open_item(
+        return handleOpenItem(
             target,
             location_definition,
             game_state,
         )
 
-    return _handle_open_scenery(
+    return _handleOpenScenery(
         scenery_id,
         scenery_data,
         game_state,
     )
 
 
-def handle_close(command, location_definition, game_state):
+def handleClose(command, location_definition, game_state):
     target = command["object"] or command["target"]
 
     if not target:
-        return command_failure(
+        return commandFailure(
             "I don't know what I want to close.",
         )
 
-    scenery_id, scenery_data = find_scenery(
+    scenery_id, scenery_data = findScenery(
         target,
         location_definition,
     )
 
     if not scenery_data:
-        return handle_close_item(
+        return handleCloseItem(
             target,
             location_definition,
             game_state,
         )
 
-    return _handle_close_scenery(
+    return _handleCloseScenery(
         scenery_id,
         scenery_data,
         game_state,

@@ -1,5 +1,5 @@
 from game.responses import VALID_RESPONSE_SPEAKERS
-from items.itemRegistry import itemRegistry
+from items.registry import itemRegistry
 
 
 ACTION_EFFECT_KEYS = {
@@ -10,7 +10,7 @@ ACTION_EFFECT_KEYS = {
 }
 
 
-def add_message_errors(
+def checkMessage(
     message,
     definition_path,
     errors,
@@ -53,7 +53,7 @@ def add_message_errors(
         )
 
 
-def add_response_errors(
+def checkResponse(
     response,
     definition_path,
     errors,
@@ -66,7 +66,7 @@ def add_response_errors(
         return
 
     if isinstance(response, dict):
-        add_message_errors(
+        checkMessage(
             response,
             definition_path,
             errors,
@@ -81,7 +81,7 @@ def add_response_errors(
             return
 
         for index, message in enumerate(response):
-            add_message_errors(
+            checkMessage(
                 message,
                 f"{definition_path}[{index}]",
                 errors,
@@ -93,7 +93,7 @@ def add_response_errors(
     )
 
 
-def add_intro_response_errors(
+def checkIntroResponse(
     response,
     definition_path,
     errors,
@@ -102,7 +102,7 @@ def add_intro_response_errors(
         return
 
     if isinstance(response, dict):
-        add_message_errors(
+        checkMessage(
             response,
             definition_path,
             errors,
@@ -112,7 +112,7 @@ def add_intro_response_errors(
 
     if isinstance(response, list):
         for index, message in enumerate(response):
-            add_message_errors(
+            checkMessage(
                 message,
                 f"{definition_path}[{index}]",
                 errors,
@@ -125,7 +125,7 @@ def add_intro_response_errors(
     )
 
 
-def add_definition_source_errors(
+def checkDefSource(
     definitions_by_area,
     definition_label,
     source_label,
@@ -180,7 +180,7 @@ def add_definition_source_errors(
             definition_sources[definition_id] = area_id
 
 
-def add_local_state_description_errors(
+def checkLocalStateText(
     state_descriptions,
     definition_path,
     errors,
@@ -220,7 +220,7 @@ def add_local_state_description_errors(
             )
 
 
-def add_throw_action_errors(
+def checkThrow(
     throw_action,
     definition_path,
     errors,
@@ -231,7 +231,7 @@ def add_throw_action_errors(
         )
         return
 
-    add_response_errors(
+    checkResponse(
         throw_action.get(
             "response",
         ),
@@ -248,7 +248,7 @@ def add_throw_action_errors(
         )
 
 
-def add_item_reference_errors(
+def checkItemRefs(
     item_ids,
     definition_path,
     errors,
@@ -266,7 +266,7 @@ def add_item_reference_errors(
             )
 
 
-def add_requirement_errors(
+def checkRequirements(
     requirements,
     definition_path,
     errors,
@@ -291,7 +291,7 @@ def add_requirement_errors(
         "equipped",
     ]:
         if item_list_key in requirements:
-            add_item_reference_errors(
+            checkItemRefs(
                 requirements[item_list_key],
                 f"{definition_path}.{item_list_key}",
                 errors,
@@ -354,7 +354,7 @@ def add_requirement_errors(
                 )
 
 
-def add_effect_errors(
+def checkEffects(
     effects,
     definition_path,
     errors,
@@ -394,7 +394,7 @@ def add_effect_errors(
         )
 
 
-def add_integer_map_errors(
+def checkIntegerMap(
     values,
     definition_path,
     errors,

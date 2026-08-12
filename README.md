@@ -176,14 +176,19 @@ areas/
 ├── a1_fallen_nursery.py
 ├── a1_house_1.py
 ├── ...
-└── locationRegistry.py
+└── registry.py
 
 game/
-├── commandParser.py
-├── definitionValidator.py
+├── commands.py
+├── compCommands.py
 ├── failedActions.py
+├── invActions.py
+├── itemAccess.py
+├── itemDisplay.py
 ├── movement.py
-├── parserUtils.py
+├── parsing.py
+├── useActions.py
+├── validators/
 └── handlers/
     ├── common.py
     ├── drop.py
@@ -198,10 +203,12 @@ game/
 
 items/
 ├── area1.py
-└── itemRegistry.py
+└── registry.py
 
 states/
-└── gameState.py
+├── game.py
+├── model.py
+└── validator.py
 
 static/
 ├── game.js

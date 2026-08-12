@@ -1,24 +1,24 @@
 from game.handlers.common import (
     WORLD_ITEM_PLACEMENT,
-    append_item_quantity_description,
-    can_access_scenery_contents,
-    find_scenery,
-    format_item_names,
-    get_current_location_state,
-    get_item_display_name,
-    get_item_state_snapshot,
-    get_items_in_item_container,
-    get_items_in_scenery,
-    get_scenery_state,
-    get_visible_item_ids,
-    normalize_response_messages,
-    resolve_item,
-    state_matches,
+    addQuantityText,
+    canAccessSceneryContents,
+    findScenery,
+    formatNames,
+    currentLocation,
+    displayName,
+    getItemStateSnapshot,
+    containerItems,
+    sceneryItems,
+    getSceneryState,
+    visibleItemIds,
+    normalizeResponseMessages,
+    resolveItem,
+    stateMatches,
 )
-from items.itemRegistry import itemRegistry
+from items.registry import itemRegistry
 
 
-def format_search_results(search_results):
+def formatSearchResults(search_results):
     # Clean ending punctuation from each fragment so
     # SEARCH can build one properly formatted sentence.
     cleaned_results = []
@@ -52,7 +52,7 @@ def format_search_results(search_results):
     return ", ".join(cleaned_results[:-1]) + f", and {cleaned_results[-1]}"
 
 
-def _search_item(
+def _searchItem(
     target,
     item_id,
     item,
@@ -68,7 +68,7 @@ def _search_item(
             f"You don't find anything useful in the {target}.",
         )
 
-    item_state = get_item_state_snapshot(
+    item_state = getItemStateSnapshot(
         game_state,
         item_id,
     )
@@ -82,7 +82,7 @@ def _search_item(
             f"The {target} is closed.",
         )
 
-    if not state_matches(
+    if not stateMatches(
         item_state,
         item.get(
             "contentsRequiresState",
@@ -96,21 +96,21 @@ def _search_item(
 
     item_state["isSearched"] = True
     game_state["itemStates"][item_id] = item_state
-    contained_item_ids = get_items_in_item_container(
+    contained_item_ids = containerItems(
         location_state,
         item_id,
     )
 
     if contained_item_ids:
         contained_item_names = [
-            get_item_display_name(
+            displayName(
                 itemRegistry[contained_item_id],
             )
             for contained_item_id in contained_item_ids
         ]
         response = (
             f"You search the {target} and find "
-            f"{format_item_names(contained_item_names)}."
+            f"{formatNames(contained_item_names)}."
         )
     else:
         response = item.get(
@@ -118,14 +118,14 @@ def _search_item(
             f"You search the {target} but find nothing useful.",
         )
 
-    return append_item_quantity_description(
+    return addQuantityText(
         response,
         item,
         item_state,
     )
 
 
-def _search_scenery(
+def _searchScenery(
     scenery_id,
     scenery_data,
     location_state,
@@ -139,7 +139,7 @@ def _search_scenery(
             f"You don't find anything useful in the {scenery_id}.",
         )
 
-    scenery_state = get_scenery_state(
+    scenery_state = getSceneryState(
         location_state,
         scenery_id,
     )
@@ -156,7 +156,7 @@ def _search_scenery(
 
     # Other scenery conditions may also block
     # access to its contents.
-    if not can_access_scenery_contents(
+    if not canAccessSceneryContents(
         scenery_data,
         scenery_state,
     ):
@@ -165,7 +165,7 @@ def _search_scenery(
             f"You can't search the {scenery_id} right now.",
         )
 
-    item_ids = get_items_in_scenery(
+    item_ids = sceneryItems(
         location_state,
         scenery_id,
     )
@@ -187,7 +187,7 @@ def _search_scenery(
 
         if item:
             item_names.append(
-                get_item_display_name(
+                displayName(
                     item,
                 )
             )
@@ -198,7 +198,7 @@ def _search_scenery(
             f"You search the {scenery_id} but find nothing useful.",
         )
 
-    item_list = format_item_names(
+    item_list = formatNames(
         item_names,
     )
 
@@ -229,33 +229,33 @@ def _search_scenery(
     return f"You search inside the {scenery_id} " f"and find {item_list}."
 
 
-def _search_target(
+def _searchTarget(
     target,
     location_definition,
     location_state,
     game_state,
 ):
-    scenery_id, scenery_data = find_scenery(
+    scenery_id, scenery_data = findScenery(
         target,
         location_definition,
     )
 
     if scenery_data:
-        return _search_scenery(
+        return _searchScenery(
             scenery_id,
             scenery_data,
             location_state,
         )
 
     accessible_items = (
-        get_visible_item_ids(
+        visibleItemIds(
             location_definition,
             game_state,
         )
         + game_state["player"]["inventory"]
         + game_state["player"]["equipped"]
     )
-    item_id, clarification = resolve_item(
+    item_id, clarification = resolveItem(
         target,
         accessible_items,
     )
@@ -270,7 +270,7 @@ def _search_target(
     if not item:
         return f"I don't see a {target} here."
 
-    return _search_item(
+    return _searchItem(
         target,
         item_id,
         item,
@@ -279,7 +279,7 @@ def _search_target(
     )
 
 
-def _search_area(
+def _searchArea(
     location_definition,
     location_state,
 ):
@@ -302,7 +302,7 @@ def _search_area(
                 "worldDescription",
                 item.get(
                     "description",
-                    get_item_display_name(
+                    displayName(
                         item,
                     ),
                 ),
@@ -322,7 +322,7 @@ def _search_area(
                     "worldDescription",
                     item.get(
                         "description",
-                        get_item_display_name(
+                        displayName(
                             item,
                         ),
                     ),
@@ -346,7 +346,7 @@ def _search_area(
         if not scenery_data:
             continue
 
-        scenery_state = get_scenery_state(
+        scenery_state = getSceneryState(
             location_state,
             placement,
         )
@@ -362,7 +362,7 @@ def _search_area(
 
         # Other state requirements may also hide or
         # block access to an attached item.
-        if not can_access_scenery_contents(
+        if not canAccessSceneryContents(
             scenery_data,
             scenery_state,
         ):
@@ -383,7 +383,7 @@ def _search_area(
                 "worldDescription",
                 item.get(
                     "description",
-                    get_item_display_name(
+                    displayName(
                         item,
                     ),
                 ),
@@ -396,7 +396,7 @@ def _search_area(
     if not search_results:
         return "You don't find anything useful here."
 
-    formatted_results = format_search_results(
+    formatted_results = formatSearchResults(
         search_results,
     )
 
@@ -409,7 +409,7 @@ def _search_area(
     if not search_voice:
         return narrator_text
 
-    search_voice_messages = normalize_response_messages(
+    search_voice_messages = normalizeResponseMessages(
         search_voice,
         default_speaker="voice",
     )
@@ -423,22 +423,22 @@ def _search_area(
     ]
 
 
-def handle_search(command, location_definition, game_state):
+def handleSearch(command, location_definition, game_state):
     target = command["target"] or command["object"]
 
-    location_state = get_current_location_state(
+    location_state = currentLocation(
         game_state,
     )
 
     if target:
-        return _search_target(
+        return _searchTarget(
             target,
             location_definition,
             location_state,
             game_state,
         )
 
-    return _search_area(
+    return _searchArea(
         location_definition,
         location_state,
     )

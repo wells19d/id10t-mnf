@@ -1,19 +1,19 @@
-from areas.locationRegistry import (
+from areas.registry import (
     locationDefinitionsByArea,
     locationRegistry,
 )
-from game.definitionValidationCommon import (
-    add_definition_source_errors,
-    add_effect_errors,
-    add_intro_response_errors,
-    add_item_reference_errors,
-    add_local_state_description_errors,
-    add_requirement_errors,
-    add_response_errors,
-    add_throw_action_errors,
+from game.validators.common import (
+    checkDefSource,
+    checkEffects,
+    checkIntroResponse,
+    checkItemRefs,
+    checkLocalStateText,
+    checkRequirements,
+    checkResponse,
+    checkThrow,
 )
-from items.itemRegistry import itemRegistry
-from states.gameState import GAME_STATE_REQUIREMENT_KEYS
+from items.registry import itemRegistry
+from states.game import GAME_STATE_REQUIREMENT_KEYS
 
 
 DIRECTIONS = {
@@ -60,7 +60,7 @@ SCENERY_RESPONSE_KEYS = {
 }
 
 
-def add_scenery_errors(
+def checkScenery(
     location_path,
     scenery,
     errors,
@@ -117,7 +117,7 @@ def add_scenery_errors(
                 )
 
         for response_key in SCENERY_RESPONSE_KEYS.intersection(scenery_data):
-            add_response_errors(
+            checkResponse(
                 scenery_data[response_key],
                 f"{scenery_path}.{response_key}",
                 errors,
@@ -132,7 +132,7 @@ def add_scenery_errors(
             )
 
         if "stateDescriptions" in scenery_data:
-            add_local_state_description_errors(
+            checkLocalStateText(
                 scenery_data["stateDescriptions"],
                 f"{scenery_path}.stateDescriptions",
                 errors,
@@ -182,7 +182,7 @@ def add_scenery_errors(
             [],
         )
         item_path = f"{scenery_path}.items"
-        add_item_reference_errors(
+        checkItemRefs(
             scenery_items,
             item_path,
             errors,
@@ -235,14 +235,14 @@ def add_scenery_errors(
                         "failResponse",
                     ]:
                         if response_key in interaction:
-                            add_response_errors(
+                            checkResponse(
                                 interaction[response_key],
                                 f"{interaction_path}.{response_key}",
                                 errors,
                             )
 
                     if "requires" in interaction:
-                        add_requirement_errors(
+                        checkRequirements(
                             interaction["requires"],
                             f"{interaction_path}.requires",
                             errors,
@@ -250,13 +250,13 @@ def add_scenery_errors(
                         )
 
                     if "effects" in interaction:
-                        add_effect_errors(
+                        checkEffects(
                             interaction["effects"],
                             f"{interaction_path}.effects",
                             errors,
                         )
                 else:
-                    add_throw_action_errors(
+                    checkThrow(
                         interaction,
                         interaction_path,
                         errors,
@@ -267,7 +267,7 @@ def add_scenery_errors(
             "closeRequires",
         ]:
             if requirement_key in scenery_data:
-                add_requirement_errors(
+                checkRequirements(
                     scenery_data[requirement_key],
                     f"{scenery_path}.{requirement_key}",
                     errors,
@@ -275,7 +275,7 @@ def add_scenery_errors(
                 )
 
 
-def add_exit_errors(
+def checkExit(
     location_path,
     exits,
     scenery_ids,
@@ -325,7 +325,7 @@ def add_exit_errors(
             )
 
             if "requires" in exit_data:
-                add_requirement_errors(
+                checkRequirements(
                     exit_data["requires"],
                     f"{exit_path}.requires",
                     errors,
@@ -335,7 +335,7 @@ def add_exit_errors(
                 )
 
             if "blockedResponse" in exit_data:
-                add_response_errors(
+                checkResponse(
                     exit_data["blockedResponse"],
                     f"{exit_path}.blockedResponse",
                     errors,
@@ -355,7 +355,7 @@ def add_exit_errors(
             )
 
 
-def add_room_exit_errors(
+def checkRoomExit(
     location_path,
     room_exits,
     errors,
@@ -384,7 +384,7 @@ def add_room_exit_errors(
             )
 
 
-def add_state_description_errors(
+def checkStateText(
     location_path,
     state_descriptions,
     scenery_ids,
@@ -414,7 +414,7 @@ def add_state_description_errors(
                 f"{state_path}.description must be a non-empty string."
             )
 
-        add_requirement_errors(
+        checkRequirements(
             state_description.get(
                 "requires",
                 {},
@@ -427,11 +427,11 @@ def add_state_description_errors(
         )
 
 
-def get_location_definition_errors():
+def getErrors():
     errors = []
     initial_item_placements = {}
 
-    add_definition_source_errors(
+    checkDefSource(
         locationDefinitionsByArea,
         "Location",
         "locationDefinitionsByArea",
@@ -466,14 +466,14 @@ def get_location_definition_errors():
                 )
 
         if "intro" in location_data:
-            add_intro_response_errors(
+            checkIntroResponse(
                 location_data["intro"],
                 f"{location_path}.intro",
                 errors,
             )
 
         if "searchVoice" in location_data:
-            add_response_errors(
+            checkResponse(
                 location_data["searchVoice"],
                 f"{location_path}.searchVoice",
                 errors,
@@ -484,7 +484,7 @@ def get_location_definition_errors():
             [],
         )
         item_path = f"{location_path}.items"
-        add_item_reference_errors(
+        checkItemRefs(
             location_items,
             item_path,
             errors,
@@ -581,7 +581,7 @@ def get_location_definition_errors():
                         "top-level location items."
                     )
 
-                add_item_reference_errors(
+                checkItemRefs(
                     contained_item_ids,
                     contents_path,
                     errors,
@@ -631,13 +631,13 @@ def get_location_definition_errors():
                                 contents_path
                             )
 
-        add_scenery_errors(
+        checkScenery(
             location_path,
             scenery,
             errors,
             initial_item_placements,
         )
-        add_exit_errors(
+        checkExit(
             location_path,
             location_data.get(
                 "exits",
@@ -646,12 +646,12 @@ def get_location_definition_errors():
             errors,
         )
         if "roomExits" in location_data:
-            add_room_exit_errors(
+            checkRoomExit(
                 location_path,
                 location_data["roomExits"],
                 errors,
             )
-        add_state_description_errors(
+        checkStateText(
             location_path,
             location_data.get(
                 "stateDescriptions",
@@ -720,7 +720,7 @@ def get_location_definition_errors():
                         "onSuccess",
                         "onFail",
                     ]:
-                        add_response_errors(
+                        checkResponse(
                             interaction.get(
                                 response_key,
                             ),
@@ -732,7 +732,7 @@ def get_location_definition_errors():
                         "effects",
                     )
 
-                    add_effect_errors(
+                    checkEffects(
                         effects,
                         f"{interaction_path}.effects",
                         errors,

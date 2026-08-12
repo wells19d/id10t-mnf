@@ -1,42 +1,42 @@
 from game.handlers.common import (
-    command_failure,
-    find_scenery,
-    get_current_location_state,
-    get_item_display_name,
-    resolve_item,
+    commandFailure,
+    findScenery,
+    currentLocation,
+    displayName,
+    resolveItem,
 )
-from items.itemRegistry import itemRegistry
+from items.registry import itemRegistry
 
 
-def handle_throw(command, location_definition, game_state):
+def handleThrow(command, location_definition, game_state):
     item_name = command["object"]
     target = command["target"]
 
     if not item_name:
-        return command_failure(
+        return commandFailure(
             "I don't know what I want to throw.",
         )
 
     inventory = game_state["player"]["inventory"]
 
-    item_id, clarification = resolve_item(
+    item_id, clarification = resolveItem(
         item_name,
         inventory,
     )
 
     if clarification:
-        return command_failure(
+        return commandFailure(
             clarification,
         )
 
     if not item_id:
-        return command_failure(
+        return commandFailure(
             f"You aren't carrying {item_name}.",
         )
 
     item = itemRegistry[item_id]
 
-    display_name = get_item_display_name(
+    display_name = displayName(
         item,
     )
 
@@ -51,13 +51,13 @@ def handle_throw(command, location_definition, game_state):
 
     # THROW <item> AT <target>
     if target:
-        scenery_id, scenery_data = find_scenery(
+        scenery_id, scenery_data = findScenery(
             target,
             location_definition,
         )
 
         if not scenery_data:
-            return command_failure(
+            return commandFailure(
                 f"I don't see a {target} here.",
             )
 
@@ -81,7 +81,7 @@ def handle_throw(command, location_definition, game_state):
         )
 
     if not throw_action:
-        return command_failure(
+        return commandFailure(
             f"You can't throw the {display_name}.",
         )
 
@@ -93,7 +93,7 @@ def handle_throw(command, location_definition, game_state):
         "destroyItem",
         False,
     ):
-        location_state = get_current_location_state(
+        location_state = currentLocation(
             game_state,
         )
 

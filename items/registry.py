@@ -5,7 +5,7 @@ itemDefinitionsByArea = {
 }
 
 
-def build_item_registry(definitions_by_area):
+def buildItemRegistry(definitions_by_area):
     if not isinstance(definitions_by_area, dict):
         raise ValueError(
             "Item definitions must be grouped in a dictionary."
@@ -63,6 +63,6 @@ def build_item_registry(definitions_by_area):
     return registry
 
 
-itemRegistry = build_item_registry(
+itemRegistry = buildItemRegistry(
     itemDefinitionsByArea,
 )

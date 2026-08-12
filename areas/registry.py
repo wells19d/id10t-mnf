@@ -31,7 +31,7 @@ locationDefinitionsByArea = {
 }
 
 
-def build_location_registry(definitions_by_area):
+def buildLocationRegistry(definitions_by_area):
     if not isinstance(definitions_by_area, dict):
         raise ValueError(
             "Location definitions must be grouped in a dictionary."
@@ -89,6 +89,6 @@ def build_location_registry(definitions_by_area):
     return registry
 
 
-locationRegistry = build_location_registry(
+locationRegistry = buildLocationRegistry(
     locationDefinitionsByArea,
 )

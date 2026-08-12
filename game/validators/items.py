@@ -1,16 +1,16 @@
-from game.definitionValidationCommon import (
-    add_definition_source_errors,
-    add_integer_map_errors,
-    add_local_state_description_errors,
-    add_requirement_errors,
-    add_response_errors,
-    add_throw_action_errors,
+from game.validators.common import (
+    checkDefSource,
+    checkIntegerMap,
+    checkLocalStateText,
+    checkRequirements,
+    checkResponse,
+    checkThrow,
 )
-from items.itemRegistry import (
+from items.registry import (
     itemDefinitionsByArea,
     itemRegistry,
 )
-from states.gameState import EQUIPMENT_SLOTS
+from states.game import EQUIPMENT_SLOTS
 
 
 ITEM_INTERACTION_REQUIREMENT_KEYS = {
@@ -62,10 +62,10 @@ ITEM_RESPONSE_KEYS = {
 }
 
 
-def get_item_definition_errors():
+def getErrors():
     errors = []
 
-    add_definition_source_errors(
+    checkDefSource(
         itemDefinitionsByArea,
         "Item",
         "itemDefinitionsByArea",
@@ -227,7 +227,7 @@ def get_item_definition_errors():
                 )
 
         for response_key in ITEM_RESPONSE_KEYS.intersection(item_data):
-            add_response_errors(
+            checkResponse(
                 item_data[response_key],
                 f"{item_path}.{response_key}",
                 errors,
@@ -242,7 +242,7 @@ def get_item_definition_errors():
             )
 
         if "stateDescriptions" in item_data:
-            add_local_state_description_errors(
+            checkLocalStateText(
                 item_data["stateDescriptions"],
                 f"{item_path}.stateDescriptions",
                 errors,
@@ -338,7 +338,7 @@ def get_item_definition_errors():
                                 f"{use_path}.resource.{resource_key} must be a positive integer."
                             )
 
-                add_response_errors(
+                checkResponse(
                     provided_use.get(
                         "failResponse",
                     ),
@@ -435,7 +435,7 @@ def get_item_definition_errors():
                         f"{source_id!r}."
                     )
 
-                add_item_interaction_errors(
+                checkInteraction(
                     interaction,
                     interaction_path,
                     errors,
@@ -463,7 +463,7 @@ def get_item_definition_errors():
                             f"{action_id!r}; item onThrow only supports 'default'."
                         )
 
-                    add_throw_action_errors(
+                    checkThrow(
                         throw_action,
                         action_path,
                         errors,
@@ -472,7 +472,7 @@ def get_item_definition_errors():
     return errors
 
 
-def add_item_interaction_errors(
+def checkInteraction(
     interaction,
     definition_path,
     errors,
@@ -492,7 +492,7 @@ def add_item_interaction_errors(
         "targetDefinitionFailResponse",
     ]:
         if response_key in interaction:
-            add_response_errors(
+            checkResponse(
                 interaction[response_key],
                 f"{definition_path}.{response_key}",
                 errors,
@@ -502,7 +502,7 @@ def add_item_interaction_errors(
         "requires",
         {},
     )
-    add_requirement_errors(
+    checkRequirements(
         requirements,
         f"{definition_path}.requires",
         errors,
@@ -527,7 +527,7 @@ def add_item_interaction_errors(
             "targetItemStateMinimums",
         ]:
             if minimum_key in requirements:
-                add_integer_map_errors(
+                checkIntegerMap(
                     requirements[minimum_key],
                     f"{definition_path}.requires.{minimum_key}",
                     errors,
@@ -587,7 +587,7 @@ def add_item_interaction_errors(
         "targetItemStateDeltas",
     ]:
         if delta_key in effects:
-            add_integer_map_errors(
+            checkIntegerMap(
                 effects[delta_key],
                 f"{definition_path}.effects.{delta_key}",
                 errors,

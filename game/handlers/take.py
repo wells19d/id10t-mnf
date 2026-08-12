@@ -1,44 +1,44 @@
 from game.handlers.common import (
-    can_access_item_contents,
-    can_access_scenery_contents,
-    command_failure,
-    find_scenery,
-    get_carry_overflow_count,
-    get_current_location_state,
-    get_item_display_name,
-    get_item_state_snapshot,
-    get_items_in_item_container,
-    get_items_in_scenery,
-    get_pending_action_prompt,
-    get_scenery_state,
-    get_visible_item_ids,
-    resolve_item,
+    canAccessItemContents,
+    canAccessSceneryContents,
+    commandFailure,
+    findScenery,
+    overflowCount,
+    currentLocation,
+    displayName,
+    getItemStateSnapshot,
+    containerItems,
+    sceneryItems,
+    pendingPrompt,
+    getSceneryState,
+    visibleItemIds,
+    resolveItem,
 )
-from items.itemRegistry import itemRegistry
+from items.registry import itemRegistry
 
 
-def handle_take(command, location_definition, game_state):
+def handleTake(command, location_definition, game_state):
     item_name = command["object"]
     source_name = command["target"]
 
     if not item_name:
-        return command_failure(
+        return commandFailure(
             "I don't know what I want to take.",
         )
 
-    location_state = get_current_location_state(
+    location_state = currentLocation(
         game_state,
     )
 
     # TAKE <item> FROM <scenery>
     if source_name:
-        scenery_id, scenery_data = find_scenery(
+        scenery_id, scenery_data = findScenery(
             source_name,
             location_definition,
         )
 
         if scenery_data:
-            scenery_state = get_scenery_state(
+            scenery_state = getSceneryState(
                 location_state,
                 scenery_id,
             )
@@ -48,7 +48,7 @@ def handle_take(command, location_definition, game_state):
                 "isOpen",
                 False,
             ):
-                return command_failure(
+                return commandFailure(
                     scenery_data.get(
                         "takeClosedResponse",
                         f"The {scenery_id} is closed.",
@@ -57,37 +57,37 @@ def handle_take(command, location_definition, game_state):
 
             # Other scenery conditions may also block
             # access to its contents.
-            if not can_access_scenery_contents(
+            if not canAccessSceneryContents(
                 scenery_data,
                 scenery_state,
             ):
-                return command_failure(
+                return commandFailure(
                     scenery_data.get(
                         "takeBlockedResponse",
                         f"You can't reach anything in the {scenery_id} right now.",
                     )
                 )
 
-            available_items = get_items_in_scenery(
+            available_items = sceneryItems(
                 location_state,
                 scenery_id,
             )
         else:
             accessible_items = (
-                get_visible_item_ids(
+                visibleItemIds(
                     location_definition,
                     game_state,
                 )
                 + game_state["player"]["inventory"]
                 + game_state["player"]["equipped"]
             )
-            container_item_id, clarification = resolve_item(
+            container_item_id, clarification = resolveItem(
                 source_name,
                 accessible_items,
             )
 
             if clarification:
-                return command_failure(
+                return commandFailure(
                     clarification,
                 )
 
@@ -99,75 +99,75 @@ def handle_take(command, location_definition, game_state):
                 "container",
                 False,
             ):
-                return command_failure(
+                return commandFailure(
                     f"I don't see a {source_name} here.",
                 )
 
-            container_state = get_item_state_snapshot(
+            container_state = getItemStateSnapshot(
                 game_state,
                 container_item_id,
             )
 
-            if not can_access_item_contents(
+            if not canAccessItemContents(
                 container_item,
                 container_state,
             ):
-                return command_failure(
+                return commandFailure(
                     container_item.get(
                         "takeBlockedResponse",
                         f"You can't reach anything in the {source_name} right now.",
                     )
                 )
 
-            available_items = get_items_in_item_container(
+            available_items = containerItems(
                 location_state,
                 container_item_id,
             )
 
     # TAKE <item>
     else:
-        available_items = get_visible_item_ids(
+        available_items = visibleItemIds(
             location_definition,
             game_state,
         )
 
-    item_id, clarification = resolve_item(
+    item_id, clarification = resolveItem(
         item_name,
         available_items,
     )
 
     if clarification:
-        return command_failure(
+        return commandFailure(
             clarification,
         )
 
     if not item_id:
-        scenery_id, scenery_data = find_scenery(
+        scenery_id, scenery_data = findScenery(
             item_name,
             location_definition,
         )
 
         if scenery_data:
-            return command_failure(
+            return commandFailure(
                 scenery_data.get(
                     "takeFail",
                     f"You can't take the {scenery_id}.",
                 )
             )
 
-        return command_failure(
+        return commandFailure(
             f"I don't see a {item_name} here.",
         )
 
     item = itemRegistry[item_id]
 
-    display_name = get_item_display_name(item)
+    display_name = displayName(item)
 
     if not item.get(
         "takeable",
         False,
     ):
-        return command_failure(
+        return commandFailure(
             item.get(
                 "takeFail",
                 f"I can't take the {display_name}.",
@@ -182,7 +182,7 @@ def handle_take(command, location_definition, game_state):
         "transferContentsOnTake",
         False,
     ):
-        contained_item_ids = get_items_in_item_container(
+        contained_item_ids = containerItems(
             location_state,
             item_id,
         )
@@ -196,7 +196,7 @@ def handle_take(command, location_definition, game_state):
         *acquired_item_ids,
     ]
 
-    overflow_count = get_carry_overflow_count(
+    overflow_count = overflowCount(
         player_state,
         final_inventory,
     )
@@ -209,12 +209,12 @@ def handle_take(command, location_definition, game_state):
             "locationId": player_state["currentLocation"],
         }
 
-        return get_pending_action_prompt(
+        return pendingPrompt(
             game_state,
         )
 
     if overflow_count:
-        return command_failure(
+        return commandFailure(
             "You can't carry anything else.",
         )
 

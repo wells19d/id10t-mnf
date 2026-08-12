@@ -79,7 +79,7 @@ pronouns = {
 }
 
 
-def normalize_command(player_command):
+def normalizeCommand(player_command):
     command = player_command.lower().strip()
     command = command.replace(",", " ")
     command = " ".join(command.split())
@@ -87,8 +87,8 @@ def normalize_command(player_command):
     return command
 
 
-def parse_command_parts(player_command):
-    command = normalize_command(
+def parseParts(player_command):
+    command = normalizeCommand(
         player_command,
     )
 
@@ -165,7 +165,7 @@ def parse_command_parts(player_command):
     }
 
 
-def starts_with_command(command):
+def startsWithCommand(command):
     words = command.split()
 
     if not words:
@@ -188,7 +188,7 @@ def starts_with_command(command):
     return verb in commandVerbs
 
 
-def rebuild_command(command):
+def rebuildCommand(command):
     verb = command["verb"]
 
     # Movement commands do not have objects.
@@ -221,8 +221,8 @@ def rebuild_command(command):
     return rebuilt
 
 
-def parse_compound_commands(player_command):
-    command = normalize_command(
+def parseCompound(player_command):
+    command = normalizeCommand(
         player_command,
     )
 
@@ -255,14 +255,14 @@ def parse_compound_commands(player_command):
         #
         # "branch" has no verb, so it inherits "take".
         if (
-            not starts_with_command(
+            not startsWithCommand(
                 segment,
             )
             and previous_verb
         ):
             segment = f"{previous_verb} " f"{segment}"
 
-        parsed = parse_command_parts(
+        parsed = parseParts(
             segment,
         )
 
@@ -293,7 +293,7 @@ def parse_compound_commands(player_command):
         ):
             parsed["object"] = previous_object
 
-        rebuilt_command = rebuild_command(
+        rebuilt_command = rebuildCommand(
             parsed,
         )
 

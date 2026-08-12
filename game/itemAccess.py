@@ -1,15 +1,15 @@
-from game.itemPresentation import get_item_display_name
+from game.itemDisplay import displayName
 from game.worldState import (
-    get_current_location_state,
-    get_item_state_snapshot,
-    get_scenery_state,
-    state_matches,
+    currentLocation,
+    getItemStateSnapshot,
+    getSceneryState,
+    stateMatches,
 )
-from items.itemRegistry import itemRegistry
-from states.gameState import WORLD_ITEM_PLACEMENT
+from items.registry import itemRegistry
+from states.game import WORLD_ITEM_PLACEMENT
 
 
-def find_scenery(
+def findScenery(
     target,
     location_definition,
 ):
@@ -31,7 +31,7 @@ def find_scenery(
     return None, None
 
 
-def find_items(
+def findItems(
     item_name,
     item_ids,
 ):
@@ -71,12 +71,12 @@ def find_items(
     return matches
 
 
-def resolve_item(
+def resolveItem(
     item_name,
     item_ids,
     include_match_names=False,
 ):
-    matches = find_items(
+    matches = findItems(
         item_name,
         item_ids,
     )
@@ -87,7 +87,7 @@ def resolve_item(
     if len(matches) > 1:
         if include_match_names:
             match_names = [
-                get_item_display_name(
+                displayName(
                     itemRegistry[item_id],
                 )
                 for item_id in matches
@@ -113,7 +113,7 @@ def resolve_item(
     return matches[0], None
 
 
-def get_items_in_scenery(
+def sceneryItems(
     location_state,
     scenery_id,
 ):
@@ -124,7 +124,7 @@ def get_items_in_scenery(
     ]
 
 
-def get_items_in_item_container(
+def containerItems(
     location_state,
     container_item_id,
 ):
@@ -135,7 +135,7 @@ def get_items_in_item_container(
     ]
 
 
-def can_access_item_contents(
+def canAccessItemContents(
     item,
     item_state,
 ):
@@ -157,7 +157,7 @@ def can_access_item_contents(
     ):
         return False
 
-    return state_matches(
+    return stateMatches(
         item_state,
         item.get(
             "contentsRequiresState",
@@ -166,13 +166,13 @@ def can_access_item_contents(
     )
 
 
-def is_world_item_accessible(
+def canReachItem(
     item_id,
     location_definition,
     game_state,
     checked_item_ids=None,
 ):
-    location_state = get_current_location_state(
+    location_state = currentLocation(
         game_state,
     )
     placement = location_state["items"].get(
@@ -193,12 +193,12 @@ def is_world_item_accessible(
     )
 
     if scenery_data:
-        scenery_state = get_scenery_state(
+        scenery_state = getSceneryState(
             location_state,
             placement,
         )
 
-        return can_access_scenery_contents(
+        return canAccessSceneryContents(
             scenery_data,
             scenery_state,
         )
@@ -221,7 +221,7 @@ def is_world_item_accessible(
         item_id,
     )
 
-    if not is_world_item_accessible(
+    if not canReachItem(
         placement,
         location_definition,
         game_state,
@@ -229,18 +229,18 @@ def is_world_item_accessible(
     ):
         return False
 
-    container_state = get_item_state_snapshot(
+    container_state = getItemStateSnapshot(
         game_state,
         placement,
     )
 
-    return can_access_item_contents(
+    return canAccessItemContents(
         container_item,
         container_state,
     )
 
 
-def can_access_scenery_contents(
+def canAccessSceneryContents(
     scenery_data,
     scenery_state,
 ):
@@ -257,7 +257,7 @@ def can_access_scenery_contents(
         {},
     )
 
-    if not state_matches(
+    if not stateMatches(
         scenery_state,
         required_state,
     ):
@@ -266,18 +266,18 @@ def can_access_scenery_contents(
     return True
 
 
-def get_visible_item_ids(
+def visibleItemIds(
     location_definition,
     game_state,
 ):
-    location_state = get_current_location_state(
+    location_state = currentLocation(
         game_state,
     )
 
     visible_items = []
 
     for item_id in location_state["items"]:
-        if is_world_item_accessible(
+        if canReachItem(
             item_id,
             location_definition,
             game_state,

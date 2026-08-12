@@ -1,20 +1,20 @@
 from html import escape
 
 from game.handlers.common import (
-    get_item_display_name,
-    normalize_response_messages,
+    displayName,
+    normalizeResponseMessages,
 )
-from items.itemRegistry import itemRegistry
-from states.gameState import (
+from items.registry import itemRegistry
+from states.game import (
     EQUIPMENT_SLOT_ORDER,
-    get_total_carry_capacity,
+    carryLimit,
 )
 
 
-def handle_inventory(game_state):
+def handleInventory(game_state):
     player_state = game_state["player"]
     inventory = player_state["inventory"]
-    total_capacity = get_total_carry_capacity(
+    total_capacity = carryLimit(
         player_state,
     )
     capacity_text = (
@@ -37,7 +37,7 @@ def handle_inventory(game_state):
         item = itemRegistry.get(item_id)
 
         if item:
-            item_names.append(get_item_display_name(item))
+            item_names.append(displayName(item))
 
     inventory_items = "".join(
         f"<div class='inventory-item'>{item_name}</div>" for item_name in item_names
@@ -54,7 +54,7 @@ def handle_inventory(game_state):
     if not inventory_voice:
         return narrator_text
 
-    inventory_voice_messages = normalize_response_messages(
+    inventory_voice_messages = normalizeResponseMessages(
         inventory_voice,
         default_speaker="voice",
     )
@@ -68,7 +68,7 @@ def handle_inventory(game_state):
     ]
 
 
-def handle_player_status(game_state):
+def handlePlayerStatus(game_state):
     player_state = game_state["player"]
     equipped = player_state["equipped"]
 
@@ -91,7 +91,7 @@ def handle_player_status(game_state):
         item = equipped_by_slot.get(slot)
 
         if item:
-            item_name = get_item_display_name(item)
+            item_name = displayName(item)
 
             carry_capacity = item.get(
                 "carryCapacity",

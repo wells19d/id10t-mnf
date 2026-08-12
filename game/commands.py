@@ -1,60 +1,55 @@
-# game/commandParser.py
+# game/commands.py
 
-from areas.locationRegistry import locationRegistry
-from game.compoundCommands import (
-    build_aggregate_response,
-    execute_compound_commands,
-    format_compound_item_names,
-    get_aggregate_candidate,
-)
+from areas.registry import locationRegistry
+from game.compCommands import runCompound
 from game.failedActions import failedActions
 from game.movement import (
-    move_player,
-    move_player_to_room,
+    movePlayer,
+    movePlayerToRoom,
 )
-from game.parserUtils import (
-    parse_command_parts,
-    parse_compound_commands,
+from game.parsing import (
+    parseParts,
+    parseCompound,
 )
 
 from game.handlers.common import (
     CommandFailure,
-    command_failure,
-    execute_pending_action,
-    get_current_location_state,
-    get_location_description,
-    get_pending_action_prompt,
-    normalize_response_messages,
+    commandFailure,
+    runPending,
+    currentLocation,
+    locationText,
+    pendingPrompt,
+    normalizeResponseMessages,
 )
-from game.handlers.drop import handle_drop
+from game.handlers.drop import handleDrop
 from game.handlers.inventory import (
-    handle_inventory,
-    handle_player_status,
+    handleInventory,
+    handlePlayerStatus,
 )
-from game.handlers.look import handle_look
+from game.handlers.look import handleLook
 from game.handlers.open_close import (
-    handle_close,
-    handle_open,
+    handleClose,
+    handleOpen,
 )
-from game.handlers.search import handle_search
-from game.handlers.take import handle_take
-from game.handlers.throw import handle_throw
-from game.handlers.use import handle_use
+from game.handlers.search import handleSearch
+from game.handlers.take import handleTake
+from game.handlers.throw import handleThrow
+from game.handlers.use import handleUse
 from game.handlers.wear import (
-    handle_remove,
-    handle_wear,
+    handleRemove,
+    handleWear,
 )
 from game.help import helpResponse
 
 
-def get_movement_response(
+def movementResponse(
     movement_result,
     game_state,
 ):
     if movement_result.destination:
         new_location_definition = locationRegistry[movement_result.destination]
 
-        new_location_state = get_current_location_state(
+        new_location_state = currentLocation(
             game_state,
         )
 
@@ -66,7 +61,7 @@ def get_movement_response(
                 [],
             )
 
-            intro_messages = normalize_response_messages(
+            intro_messages = normalizeResponseMessages(
                 intro_response,
                 allow_empty_list=True,
                 allow_empty_text=True,
@@ -83,17 +78,17 @@ def get_movement_response(
             if has_intro_text:
                 return intro_messages
 
-        return get_location_description(
+        return locationText(
             new_location_definition,
             game_state,
         )
 
-    return command_failure(
+    return commandFailure(
         movement_result.response,
     )
 
 
-def execute_single_command(player_command, game_state):
+def runOne(player_command, game_state):
     player_state = game_state["player"]
 
     if player_command in [
@@ -107,7 +102,7 @@ def execute_single_command(player_command, game_state):
     location_definition = locationRegistry[current_location]
 
     # Movement is checked before normal command parsing.
-    movement_result = move_player(
+    movement_result = movePlayer(
         player_command,
         location_definition,
         player_state,
@@ -115,19 +110,19 @@ def execute_single_command(player_command, game_state):
     )
 
     if movement_result:
-        return get_movement_response(
+        return movementResponse(
             movement_result,
             game_state,
         )
 
-    command = parse_command_parts(
+    command = parseParts(
         player_command,
     )
 
     command_verb = command["verb"]
 
     if not command_verb:
-        return command_failure(
+        return commandFailure(
             failedActions["default"].format(
                 target=player_command,
             )
@@ -136,89 +131,89 @@ def execute_single_command(player_command, game_state):
     if command_verb == "go":
         room_name = command["target"] or command["object"]
 
-        movement_result = move_player_to_room(
+        movement_result = movePlayerToRoom(
             room_name,
             location_definition,
             player_state,
         )
 
-        return get_movement_response(
+        return movementResponse(
             movement_result,
             game_state,
         )
 
     if command_verb == "look":
-        return handle_look(
+        return handleLook(
             command,
             location_definition,
             game_state,
         )
 
     if command_verb == "search":
-        return handle_search(
+        return handleSearch(
             command,
             location_definition,
             game_state,
         )
 
     if command_verb == "open":
-        return handle_open(
+        return handleOpen(
             command,
             location_definition,
             game_state,
         )
 
     if command_verb == "close":
-        return handle_close(
+        return handleClose(
             command,
             location_definition,
             game_state,
         )
 
     if command_verb in ["inventory", "inv", "bag", "i"]:
-        return handle_inventory(
+        return handleInventory(
             game_state,
         )
 
     if command_verb in ["player", "p"]:
-        return handle_player_status(
+        return handlePlayerStatus(
             game_state,
         )
 
     if command_verb == "take":
-        return handle_take(
+        return handleTake(
             command,
             location_definition,
             game_state,
         )
 
     if command_verb == "drop":
-        return handle_drop(
+        return handleDrop(
             command,
             game_state,
         )
 
     if command_verb == "throw":
-        return handle_throw(
+        return handleThrow(
             command,
             location_definition,
             game_state,
         )
 
     if command_verb == "wear":
-        return handle_wear(
+        return handleWear(
             command,
             game_state,
         )
 
     if command_verb == "remove":
-        return handle_remove(
+        return handleRemove(
             command,
             game_state,
         )
 
     if command_verb == "use":
-        return handle_use(
+        return handleUse(
             command,
             location_definition,
             game_state,
@@ -229,7 +224,7 @@ def execute_single_command(player_command, game_state):
     )
 
     if not failed_action:
-        return command_failure(
+        return commandFailure(
             failedActions["default"].format(
                 target=player_command,
             )
@@ -238,25 +233,25 @@ def execute_single_command(player_command, game_state):
     command_target = command["object"]
 
     if command_target:
-        return command_failure(
+        return commandFailure(
             failed_action["invalidTarget"].format(
                 target=command_target,
             )
         )
 
-    return command_failure(
+    return commandFailure(
         failed_action["missingTarget"],
     )
 
 
-def parse_command(player_command, game_state):
+def parseCommand(player_command, game_state):
     if game_state.get(
         "pendingAction",
     ):
         confirmation = player_command.strip().lower()
 
         if confirmation in ["yes", "y"]:
-            return execute_pending_action(
+            return runPending(
                 game_state,
             )
 
@@ -265,11 +260,11 @@ def parse_command(player_command, game_state):
 
             return "You decide not to continue."
 
-        return get_pending_action_prompt(
+        return pendingPrompt(
             game_state,
         )
 
-    commands = parse_compound_commands(
+    commands = parseCompound(
         player_command,
     )
 
@@ -281,7 +276,7 @@ def parse_command(player_command, game_state):
     # Normal single command keeps the exact same
     # response behavior as before.
     if len(commands) == 1:
-        response = execute_single_command(
+        response = runOne(
             commands[0],
             game_state,
         )
@@ -294,8 +289,8 @@ def parse_command(player_command, game_state):
 
         return response
 
-    return execute_compound_commands(
+    return runCompound(
         commands,
         game_state,
-        execute_single_command,
+        runOne,
     )

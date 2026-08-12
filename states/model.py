@@ -1,7 +1,7 @@
 from copy import deepcopy
 
-from areas.locationRegistry import locationRegistry
-from items.itemRegistry import itemRegistry
+from areas.registry import locationRegistry
+from items.registry import itemRegistry
 
 
 SAVE_VERSION = 1
@@ -67,7 +67,7 @@ initialState = {
 }
 
 
-def build_initial_item_locations():
+def buildInitialItemLocations():
     initial_item_locations = {}
 
     for location_id, location_definition in locationRegistry.items():
@@ -97,10 +97,10 @@ def build_initial_item_locations():
     return initial_item_locations
 
 
-INITIAL_ITEM_LOCATIONS = build_initial_item_locations()
+INITIAL_ITEM_LOCATIONS = buildInitialItemLocations()
 
 
-def merge_state(
+def mergeState(
     default_state,
     saved_state,
 ):
@@ -114,7 +114,7 @@ def merge_state(
         )
 
         if isinstance(default_value, dict) and isinstance(saved_value, dict):
-            merged_state[key] = merge_state(
+            merged_state[key] = mergeState(
                 default_value,
                 saved_value,
             )
@@ -126,13 +126,13 @@ def merge_state(
     return merged_state
 
 
-def create_game_state():
+def newGame():
     return deepcopy(
         initialState,
     )
 
 
-def get_total_carry_capacity(player_state):
+def carryLimit(player_state):
     total_capacity = BASE_CARRY_LIMIT
 
     for item_id in player_state.get(
