@@ -7,10 +7,9 @@ a1_massive_tree = {
         },
     ],
     "description": (
-        "You are standing in a clearing against a <em><span class='area-highlight'>Massive Tree</span></em>, its thick trunk and sprawling branches "
-        "stretching high into the sky. The bark is rough and weathered, and the "
-        "leaves rustle gently in the breeze. There appears to be "
-        "no other direction to go except back the way you came."
+        "You stand in a clearing beside a Massive Tree, its thick trunk and branches spreading "
+        "high overhead. The bark is rough, deeply grooved, and weathered gray with age. "
+        "There's no direction to go except back the way you came."
     ),
     "items": [],
     "scenery": {
@@ -20,23 +19,19 @@ a1_massive_tree = {
                 "tree",
             ],
             "description": (
-                "A massive tree towers above you, its thick trunk and sprawling branches "
-                "stretching high into the sky. The bark is rough and weathered, and the "
-                "leaves rustle gently in the breeze."
+                "Up close, the trunk is wide enough that your arms wouldn't reach halfway around it. "
+                "Deep grooves run through the bark, and the lowest branches sit well out of reach."
             ),
             "takeFail": [
                 {
                     "speaker": "narrator",
                     "text": (
-                        "You can't take the massive tree with you. It's far too large and rooted "
-                        "deeply in the ground."
+                        "You can't take the massive tree with you. It's too large and deeply rooted in the ground."
                     ),
                 },
                 {
                     "speaker": "voice",
-                    "text": (
-                        "...really? You think you can just pick up massive trees now?"
-                    ),
+                    "text": "Sure, let me just tuck a forest into my pocket real quick.",
                 },
             ],
             "items": ["a1_rusty_axe", "a1_wornout_work_gloves"],
@@ -47,13 +42,12 @@ a1_massive_tree = {
                         {
                             "speaker": "narrator",
                             "text": (
-                                "You throw the axe. With dumb luck, it sticks into the tree, "
-                                "leaving it embedded in the trunk."
+                                "You throw the axe. It embeds itself in the trunk."
                             ),
                         },
                         {
                             "speaker": "voice",
-                            "text": "Well... that worked.",
+                            "text": "Well. That's one skill confirmed...",
                         },
                     ],
                 },
