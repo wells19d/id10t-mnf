@@ -1,3 +1,6 @@
+import re
+
+
 verbAliases = {
     "grab": "take",
     "get": "take",
@@ -221,7 +224,61 @@ def rebuildCommand(command):
     return rebuilt
 
 
+def normalizeItemSeparators(player_command):
+    segments = re.split(
+        r"\s+and\s+",
+        player_command,
+        flags=re.IGNORECASE,
+    )
+
+    normalized_segments = []
+    previous_verb = None
+
+    for segment in segments:
+        segment = segment.strip()
+
+        if not segment:
+            continue
+
+        starts_with_command = startsWithCommand(
+            segment,
+        )
+
+        if starts_with_command:
+            previous_verb = parseParts(
+                segment,
+            )["verb"]
+
+        if previous_verb in [
+            "take",
+            "drop",
+        ]:
+            segment = re.sub(
+                r"\s*,\s*$",
+                "",
+                segment,
+            )
+            segment = re.sub(
+                r"\s*,\s*(?:and\b\s*)?",
+                " and ",
+                segment,
+                flags=re.IGNORECASE,
+            )
+
+        normalized_segments.append(
+            segment,
+        )
+
+    return " and ".join(
+        normalized_segments,
+    )
+
+
 def parseCompound(player_command):
+    player_command = normalizeItemSeparators(
+        player_command,
+    )
+
     command = normalizeCommand(
         player_command,
     )

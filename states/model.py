@@ -3,7 +3,6 @@ from copy import deepcopy
 from areas.registry import locationRegistry
 from items.registry import itemRegistry
 
-
 SAVE_VERSION = 1
 
 
@@ -53,9 +52,9 @@ initialState = {
         "lastShortDirection": None,
         "inventory": [],
         "equipped": [
-            "a1_light_blue_dress_shirt",
-            "a1_loose_fit_blue_jeans",
-            "a1_grey_casual_shoes",
+            "st_light_blue_dress_shirt",
+            "st_loose_fit_blue_jeans",
+            "st_grey_casual_shoes",
         ],
         "health": "Medium",
         "healthStatus": "You are slightly wounded. You have a small cut on your head, but the bleeding has stopped.",

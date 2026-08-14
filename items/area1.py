@@ -1,97 +1,5 @@
 area1Items = [
     (
-        "a1_light_blue_dress_shirt",
-        {
-            "name": "Light Blue Dress Shirt",
-            "aliases": [
-                "light blue dress shirt",
-                "blue dress shirt",
-                "dress shirt",
-                "shirt",
-            ],
-            "description": (
-                "A light blue dress shirt, rumpled and marked with the dirt "
-                "of the forest floor."
-            ),
-            "looseDescription": (
-                "a <em><span class='equipment-highlight'>light blue dress shirt</span></em> "
-                "lying on the ground."
-            ),
-            "takeable": True,
-            "wearable": True,
-            "slot": "chest",
-            "onThrow": {
-                "default": {
-                    "response": (
-                        "You throw the shirt. It lands in a rumpled heap on the ground."
-                    ),
-                    "destroyItem": False,
-                },
-            },
-        },
-    ),
-    (
-        "a1_loose_fit_blue_jeans",
-        {
-            "name": "Loose-Fit Blue Jeans",
-            "aliases": [
-                "loose-fit blue jeans",
-                "loose fit blue jeans",
-                "blue jeans",
-                "jeans",
-                "pants",
-            ],
-            "description": (
-                "A pair of loose-fit blue jeans, worn soft and streaked with dirt."
-            ),
-            "looseDescription": (
-                "a pair of <em><span class='equipment-highlight'>loose-fit blue jeans</span></em> "
-                "lying on the ground."
-            ),
-            "takeable": True,
-            "wearable": True,
-            "slot": "legs",
-            "onThrow": {
-                "default": {
-                    "response": (
-                        "You throw the jeans. They land in a crumpled heap on the ground."
-                    ),
-                    "destroyItem": False,
-                },
-            },
-        },
-    ),
-    (
-        "a1_grey_casual_shoes",
-        {
-            "name": "Grey Casual Shoes",
-            "aliases": [
-                "grey casual shoes",
-                "gray casual shoes",
-                "casual shoes",
-                "grey shoes",
-                "gray shoes",
-                "shoes",
-            ],
-            "description": (
-                "A pair of grey casual shoes, scuffed and dusted with dry soil."
-            ),
-            "looseDescription": (
-                "a pair of <em><span class='equipment-highlight'>grey casual shoes</span></em> "
-                "lying on the ground."
-            ),
-            "takeable": True,
-            "wearable": True,
-            "slot": "feet",
-            "onThrow": {
-                "default": {
-                    "response": ("You throw the shoes. They tumble to the ground."),
-                    "destroyItem": False,
-                },
-            },
-        },
-    ),
-    (
         "a1_fallen_branch",
         {
             "name": "Fallen Branch",
@@ -101,6 +9,16 @@ area1Items = [
                 "stick",
             ],
             "description": "A fallen branch from a nearby tree.",
+            "inspect": [
+                {
+                    "speaker": "narrator",
+                    "text": "A simple tree branch. It could be used to start a fire.",
+                },
+                {
+                    "speaker": "voice",
+                    "text": "Nice... some kindling material. Now if only I had some way to light it...",
+                },
+            ],
             "worldDescription": (
                 "a <em><span class='item-highlight'>fallen branch</span></em> "
                 "lying on the ground."
@@ -125,10 +43,19 @@ area1Items = [
                         "You need to put the branch on the ground before trying "
                         "to set it on fire."
                     ),
-                    "response": (
-                        "You strike a match and hold it beneath the fallen branch. "
-                        "The dry wood catches, burns rapidly, and collapses into ash."
-                    ),
+                    "response": [
+                        {
+                            "speaker": "narrator",
+                            "text": (
+                                "You strike a match and hold it beneath the fallen branch. "
+                                "The dry wood catches, burns rapidly, and collapses into ash."
+                            ),
+                        },
+                        {
+                            "speaker": "voice",
+                            "text": "Well... That was a bit of a waste of a match, but at least the branch is gone now.",
+                        },
+                    ],
                 },
                 "a1_disposable_lighter": {
                     "requires": {
@@ -151,11 +78,20 @@ area1Items = [
                         "You need to put the branch on the ground before trying "
                         "to set it on fire."
                     ),
-                    "response": (
-                        "You flick the lighter and hold its flame beneath the fallen "
-                        "branch. The dry wood catches, burns rapidly, and collapses "
-                        "into ash."
-                    ),
+                    "response": [
+                        {
+                            "speaker": "narrator",
+                            "text": (
+                                "You flick the lighter and hold its flame beneath the fallen "
+                                "branch. The dry wood catches, burns rapidly, and collapses "
+                                "into ash."
+                            ),
+                        },
+                        {
+                            "speaker": "voice",
+                            "text": "Well... That was a bit of a waste of some lighter fluid, but at least the branch is gone now.",
+                        },
+                    ],
                 },
             },
             "onThrow": {
@@ -178,6 +114,16 @@ area1Items = [
                 "hatchet",
             ],
             "description": "A rusty axe with a worn wooden handle.",
+            "inspect": [
+                {
+                    "speaker": "narrator",
+                    "text": "A rusty axe. The blade is dulled and the handle is worn from years of use.",
+                },
+                {
+                    "speaker": "voice",
+                    "text": "It's seen better days, but it could still be useful...",
+                },
+            ],
             "worldDescription": (
                 "a <em><span class='item-highlight'>rusty axe</span></em> "
                 "embedded into the base of the massive tree, its blade dulled and handle worn from years of use."
@@ -206,7 +152,17 @@ area1Items = [
                 "work gloves",
                 "gloves",
             ],
-            "description": "A pair of heavily used, worn out work gloves with holes and tears. They are practically useless for any protection.",
+            "description": "A pair of heavily used, worn out work gloves.",
+            "inspect": [
+                {
+                    "speaker": "narrator",
+                    "text": "A pair of heavily used, worn out work gloves. They have several holes and rips, but they won't offer much protection.",
+                },
+                {
+                    "speaker": "voice",
+                    "text": "Well... they might still be useful for something...",
+                },
+            ],
             "worldDescription": (
                 "a pair of worn out <em><span class='item-highlight'>work gloves</span></em> "
                 "lying next to the tree base."
@@ -251,6 +207,16 @@ area1Items = [
                 "A weathered canvas backpack with several faded patches and "
                 "surprisingly sturdy straps."
             ),
+            "inspect": [
+                {
+                    "speaker": "narrator",
+                    "text": "A backpack with some wear and tear, but it still appears to be in fair condition.",
+                },
+                {
+                    "speaker": "voice",
+                    "text": "I bet we could still use it. It looks like it could still hold a decent amount of <em><span class='item-highlight'>items</span></em>",
+                },
+            ],
             "worldDescription": (
                 "a weathered <em><span class='equipment-highlight'>backpack</span></em> "
                 "resting against a tree."
@@ -289,11 +255,20 @@ area1Items = [
             "name": "House Key",
             "aliases": [
                 "house key",
+                "brass key",
                 "key",
             ],
-            "description": (
-                "A tarnished brass key stamped with the outline of a small house."
-            ),
+            "description": "A tarnished brass key.",
+            "inspect": [
+                {
+                    "speaker": "narrator",
+                    "text": "A tarnished, old fashioned, brass key. It looks sturdy enough to still work...",
+                },
+                {
+                    "speaker": "voice",
+                    "text": "This could come in handy. I wonder what it unlocks...",
+                },
+            ],
             "looseDescription": (
                 "a tarnished <em><span class='item-highlight'>house key</span></em> "
                 "lying on the ground."

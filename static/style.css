@@ -140,6 +140,10 @@ main {
   color: #e27676;
 }
 
+.area-highlight {
+  color: #81dd81;
+}
+
 .inventory-capacity {
   margin: 10px 0 15px;
   font-family: monospace;

@@ -90,9 +90,7 @@ function isValidCommandMessage(message) {
 }
 
 function isValidMessageList(messages) {
-  return (
-    Array.isArray(messages) && messages.every(isValidCommandMessage)
-  );
+  return Array.isArray(messages) && messages.every(isValidCommandMessage);
 }
 
 function isValidGameState(state) {
@@ -673,9 +671,7 @@ commandForm.addEventListener('submit', async (event) => {
       const data = await readJsonResponse(response);
 
       if (!response.ok) {
-        console.error(
-          `Command request failed with status ${response.status}.`,
-        );
+        console.error(`Command request failed with status ${response.status}.`);
 
         if (
           response.status === 400 &&

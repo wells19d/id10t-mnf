@@ -38,6 +38,7 @@ ITEM_INTERACTION_EFFECT_KEYS = {
 
 
 ITEM_RESPONSE_KEYS = {
+    "inspect",
     "takeFail",
     "takeResponse",
     "dropResponse",

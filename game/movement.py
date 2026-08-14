@@ -45,6 +45,13 @@ directionAliases = {
     "west": "west",
 }
 
+fullDirections = {
+    "north",
+    "south",
+    "east",
+    "west",
+}
+
 
 def exitRequirementsMet(
     exit_data,

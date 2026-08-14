@@ -7,7 +7,7 @@ a1_massive_tree = {
         },
     ],
     "description": (
-        "You are standing in a clearing against a massive tree, its thick trunk and sprawling branches "
+        "You are standing in a clearing against a <em><span class='area-highlight'>Massive Tree</span></em>, its thick trunk and sprawling branches "
         "stretching high into the sky. The bark is rough and weathered, and the "
         "leaves rustle gently in the breeze. There appears to be "
         "no other direction to go except back the way you came."

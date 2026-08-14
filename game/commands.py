@@ -4,6 +4,7 @@ from areas.registry import locationRegistry
 from game.compCommands import runCompound
 from game.failedActions import failedActions
 from game.movement import (
+    fullDirections,
     movePlayer,
     movePlayerToRoom,
 )
@@ -131,11 +132,19 @@ def runOne(player_command, game_state):
     if command_verb == "go":
         room_name = command["target"] or command["object"]
 
-        movement_result = movePlayerToRoom(
-            room_name,
-            location_definition,
-            player_state,
-        )
+        if room_name in fullDirections:
+            movement_result = movePlayer(
+                room_name,
+                location_definition,
+                player_state,
+                game_state,
+            )
+        else:
+            movement_result = movePlayerToRoom(
+                room_name,
+                location_definition,
+                player_state,
+            )
 
         return movementResponse(
             movement_result,
@@ -219,28 +228,10 @@ def runOne(player_command, game_state):
             game_state,
         )
 
-    failed_action = failedActions.get(
-        command_verb,
-    )
-
-    if not failed_action:
-        return commandFailure(
-            failedActions["default"].format(
-                target=player_command,
-            )
-        )
-
-    command_target = command["object"]
-
-    if command_target:
-        return commandFailure(
-            failed_action["invalidTarget"].format(
-                target=command_target,
-            )
-        )
-
     return commandFailure(
-        failed_action["missingTarget"],
+        failedActions["default"].format(
+            target=player_command,
+        )
     )
 
 

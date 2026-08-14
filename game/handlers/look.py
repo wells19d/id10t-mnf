@@ -106,6 +106,22 @@ def handleLook(command, location_definition, game_state):
             item_id,
         )
 
+        if item_id in game_state["player"]["inventory"]:
+            inspect_response = item.get(
+                "inspect",
+            ) or item.get(
+                "description",
+            )
+
+            if inspect_response:
+                return addQuantityText(
+                    inspect_response,
+                    item,
+                    item_state,
+                )
+
+            return f"There is nothing remarkable " f"about the {target}."
+
         state_description = getStateDescription(
             item,
             item_state,

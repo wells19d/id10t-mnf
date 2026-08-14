@@ -1,15 +1,15 @@
 from items.area1 import area1Items
+from items.starting import startingItems
 
 itemDefinitionsByArea = {
+    "starting": startingItems,
     "area1": area1Items,
 }
 
 
 def buildItemRegistry(definitions_by_area):
     if not isinstance(definitions_by_area, dict):
-        raise ValueError(
-            "Item definitions must be grouped in a dictionary."
-        )
+        raise ValueError("Item definitions must be grouped in a dictionary.")
 
     registry = {}
     sources = {}
@@ -17,9 +17,7 @@ def buildItemRegistry(definitions_by_area):
 
     for area_id, area_items in definitions_by_area.items():
         if not isinstance(area_id, str) or not area_id:
-            raise ValueError(
-                "Item definition groups must use non-empty string IDs."
-            )
+            raise ValueError("Item definition groups must use non-empty string IDs.")
 
         if not isinstance(area_items, (list, tuple)):
             raise ValueError(
@@ -37,9 +35,7 @@ def buildItemRegistry(definitions_by_area):
             item_id, item_definition = entry
 
             if not isinstance(item_id, str) or not item_id:
-                raise ValueError(
-                    f"{entry_path} must use a non-empty string item ID."
-                )
+                raise ValueError(f"{entry_path} must use a non-empty string item ID.")
 
             if item_id in sources:
                 duplicate_errors.append(
@@ -54,10 +50,7 @@ def buildItemRegistry(definitions_by_area):
     if duplicate_errors:
         raise ValueError(
             "Duplicate item definitions:\n"
-            + "\n".join(
-                f"- {error}"
-                for error in duplicate_errors
-            )
+            + "\n".join(f"- {error}" for error in duplicate_errors)
         )
 
     return registry

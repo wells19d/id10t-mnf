@@ -1,5 +1,5 @@
 a1_clearing = {
-    "name": "Clearing",
+    "name": "Grassy Clearing",
     "intro": [
         {
             "speaker": "voice",
@@ -10,7 +10,7 @@ a1_clearing = {
             "text": (
                 "As your eyes slowly open, bright sunlight filters through the green leaves "
                 "above you. You blink a few times as your vision clears. You are sitting "
-                "against a large tree at the edge of a grassy clearing, surrounded by thick forest. "
+                "against a large tree at the edge of a <em><span class='area-highlight'>Grassy Clearing</span></em>, surrounded by thick forest. "
                 "Birds call from somewhere among the trees, and a light breeze moves through the leaves. "
                 "Several worn paths lead away from the clearing."
             ),
