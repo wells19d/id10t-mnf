@@ -7,15 +7,9 @@ a1_silent_grove = {
         },
     ],
     "description": ("silent grove"),
-    "items": [
-        "a1_backpack",
-    ],
-    "itemContents": {
-        "a1_backpack": [
-            "a1_house_key",
-            "a1_rain_poncho",
-        ],
-    },
+    "items": [],
+    "scenery": {},
+    "items": [],
     "exits": {
         "north": "a1_clearing",
         "south": False,

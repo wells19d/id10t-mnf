@@ -8,6 +8,7 @@ a1_house_2 = {
     ],
     "description": ("blue house"),
     "items": [],
+    "scenery": {},
     "exits": {
         "north": "a1_stone_ring",
         "south": "a1_clearing",

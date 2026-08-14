@@ -8,6 +8,7 @@ a1_lake_south = {
     ],
     "description": ("lake south"),
     "items": [],
+    "scenery": {},
     "exits": {
         "north": False,
         "south": "a1_fallen_nursery",

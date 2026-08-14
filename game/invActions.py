@@ -106,10 +106,7 @@ def pendingPrompt(game_state):
         )
 
     if pending_action["type"] == "equippedDrop":
-        return (
-            f"The {item_name} is currently equipped. "
-            "Drop it anyway? Yes or No."
-        )
+        return f"The {item_name} is currently equipped. " "Drop it anyway? Yes or No."
 
     if action == "wear":
         equipped_item_id = pending_action["equippedItemId"]
@@ -257,8 +254,7 @@ def runPending(game_state):
 
         return addNarration(
             response,
-            "To make room, you drop "
-            f"{itemList(dropped_item_ids)} on the ground.",
+            "To make room, you drop " f"{itemList(dropped_item_ids)} on the ground.",
         )
 
     if pending_action["type"] == "equippedDrop":

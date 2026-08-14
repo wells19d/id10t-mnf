@@ -1,7 +1,6 @@
 from game.responses import VALID_RESPONSE_SPEAKERS
 from items.registry import itemRegistry
 
-
 ACTION_EFFECT_KEYS = {
     "sceneryState",
     "itemState",
@@ -17,19 +16,14 @@ def checkMessage(
     allow_empty_text=False,
 ):
     if not isinstance(message, dict):
-        errors.append(
-            f"{definition_path} must be a response message dictionary."
-        )
+        errors.append(f"{definition_path} must be a response message dictionary.")
         return
 
     speaker = message.get(
         "speaker",
     )
 
-    if (
-        not isinstance(speaker, str)
-        or speaker not in VALID_RESPONSE_SPEAKERS
-    ):
+    if not isinstance(speaker, str) or speaker not in VALID_RESPONSE_SPEAKERS:
         errors.append(
             f"{definition_path}.speaker must be one of: "
             f"{', '.join(sorted(VALID_RESPONSE_SPEAKERS))}."
@@ -39,18 +33,9 @@ def checkMessage(
         "text",
     )
 
-    if not isinstance(text, str) or (
-        not allow_empty_text
-        and not text.strip()
-    ):
-        text_requirement = (
-            "a string"
-            if allow_empty_text
-            else "a non-empty string"
-        )
-        errors.append(
-            f"{definition_path}.text must be {text_requirement}."
-        )
+    if not isinstance(text, str) or (not allow_empty_text and not text.strip()):
+        text_requirement = "a string" if allow_empty_text else "a non-empty string"
+        errors.append(f"{definition_path}.text must be {text_requirement}.")
 
 
 def checkResponse(
@@ -60,9 +45,7 @@ def checkResponse(
 ):
     if isinstance(response, str):
         if not response.strip():
-            errors.append(
-                f"{definition_path} must not be empty."
-            )
+            errors.append(f"{definition_path} must not be empty.")
         return
 
     if isinstance(response, dict):
@@ -75,9 +58,7 @@ def checkResponse(
 
     if isinstance(response, list):
         if not response:
-            errors.append(
-                f"{definition_path} must not be an empty response list."
-            )
+            errors.append(f"{definition_path} must not be an empty response list.")
             return
 
         for index, message in enumerate(response):
@@ -134,18 +115,14 @@ def checkDefSource(
     definition_sources = {}
 
     if not isinstance(definitions_by_area, dict):
-        errors.append(
-            f"{source_label} must be a dictionary of definition groups."
-        )
+        errors.append(f"{source_label} must be a dictionary of definition groups.")
         return
 
     for area_id, definitions in definitions_by_area.items():
         source_path = f"{source_label}[{area_id!r}]"
 
         if not isinstance(area_id, str) or not area_id:
-            errors.append(
-                f"{source_path} must use a non-empty string group ID."
-            )
+            errors.append(f"{source_path} must use a non-empty string group ID.")
 
         if not isinstance(definitions, (list, tuple)):
             errors.append(
@@ -157,17 +134,13 @@ def checkDefSource(
             entry_path = f"{source_path}[{index}]"
 
             if not isinstance(entry, (list, tuple)) or len(entry) != 2:
-                errors.append(
-                    f"{entry_path} must contain an ID and definition."
-                )
+                errors.append(f"{entry_path} must contain an ID and definition.")
                 continue
 
             definition_id, _ = entry
 
             if not isinstance(definition_id, str) or not definition_id:
-                errors.append(
-                    f"{entry_path} must use a non-empty string ID."
-                )
+                errors.append(f"{entry_path} must use a non-empty string ID.")
                 continue
 
             if definition_id in definition_sources:
@@ -186,18 +159,14 @@ def checkLocalStateText(
     errors,
 ):
     if not isinstance(state_descriptions, list):
-        errors.append(
-            f"{definition_path} must be a list."
-        )
+        errors.append(f"{definition_path} must be a list.")
         return
 
     for index, state_description in enumerate(state_descriptions):
         state_path = f"{definition_path}[{index}]"
 
         if not isinstance(state_description, dict):
-            errors.append(
-                f"{state_path} must be a dictionary."
-            )
+            errors.append(f"{state_path} must be a dictionary.")
             continue
 
         if not isinstance(
@@ -206,18 +175,14 @@ def checkLocalStateText(
             ),
             dict,
         ):
-            errors.append(
-                f"{state_path}.requiresState must be a dictionary."
-            )
+            errors.append(f"{state_path}.requiresState must be a dictionary.")
 
         description = state_description.get(
             "description",
         )
 
         if not isinstance(description, str) or not description.strip():
-            errors.append(
-                f"{state_path}.description must be a non-empty string."
-            )
+            errors.append(f"{state_path}.description must be a non-empty string.")
 
 
 def checkThrow(
@@ -226,9 +191,7 @@ def checkThrow(
     errors,
 ):
     if not isinstance(throw_action, dict):
-        errors.append(
-            f"{definition_path} must be a dictionary."
-        )
+        errors.append(f"{definition_path} must be a dictionary.")
         return
 
     checkResponse(
@@ -243,9 +206,7 @@ def checkThrow(
         throw_action["destroyItem"],
         bool,
     ):
-        errors.append(
-            f"{definition_path}.destroyItem must be a boolean."
-        )
+        errors.append(f"{definition_path}.destroyItem must be a boolean.")
 
 
 def checkItemRefs(
@@ -254,16 +215,12 @@ def checkItemRefs(
     errors,
 ):
     if not isinstance(item_ids, list):
-        errors.append(
-            f"{definition_path} must be a list of registered item IDs."
-        )
+        errors.append(f"{definition_path} must be a list of registered item IDs.")
         return
 
     for item_id in item_ids:
         if not isinstance(item_id, str) or item_id not in itemRegistry:
-            errors.append(
-                f"{definition_path} references unknown item ID {item_id!r}."
-            )
+            errors.append(f"{definition_path} references unknown item ID {item_id!r}.")
 
 
 def checkRequirements(
@@ -275,16 +232,12 @@ def checkRequirements(
     scenery_state_is_map=False,
 ):
     if not isinstance(requirements, dict):
-        errors.append(
-            f"{definition_path} must be a dictionary."
-        )
+        errors.append(f"{definition_path} must be a dictionary.")
         return
 
     for key in requirements:
         if key not in allowed_keys:
-            errors.append(
-                f"{definition_path} uses unsupported requirement {key!r}."
-            )
+            errors.append(f"{definition_path} uses unsupported requirement {key!r}.")
 
     for item_list_key in [
         "inventory",
@@ -307,9 +260,7 @@ def checkRequirements(
 
     for key in dictionary_keys.intersection(requirements):
         if not isinstance(requirements[key], dict):
-            errors.append(
-                f"{definition_path}.{key} must be a dictionary."
-            )
+            errors.append(f"{definition_path}.{key} must be a dictionary.")
 
     item_states = requirements.get(
         "itemStates",
@@ -361,16 +312,12 @@ def checkEffects(
     allowed_keys=ACTION_EFFECT_KEYS,
 ):
     if not isinstance(effects, dict):
-        errors.append(
-            f"{definition_path} must be a dictionary."
-        )
+        errors.append(f"{definition_path} must be a dictionary.")
         return
 
     for key in effects:
         if key not in allowed_keys:
-            errors.append(
-                f"{definition_path} uses unsupported effect {key!r}."
-            )
+            errors.append(f"{definition_path} uses unsupported effect {key!r}.")
 
     for key in [
         "sceneryState",
@@ -381,17 +328,13 @@ def checkEffects(
             effects[key],
             dict,
         ):
-            errors.append(
-                f"{definition_path}.{key} must be a dictionary."
-            )
+            errors.append(f"{definition_path}.{key} must be a dictionary.")
 
     if "destroyItem" in effects and not isinstance(
         effects["destroyItem"],
         bool,
     ):
-        errors.append(
-            f"{definition_path}.destroyItem must be a boolean."
-        )
+        errors.append(f"{definition_path}.destroyItem must be a boolean.")
 
 
 def checkIntegerMap(
@@ -401,19 +344,17 @@ def checkIntegerMap(
     require_positive=False,
 ):
     if not isinstance(values, dict):
-        errors.append(
-            f"{definition_path} must be a dictionary."
-        )
+        errors.append(f"{definition_path} must be a dictionary.")
         return
 
     for state_key, value in values.items():
         if not isinstance(state_key, str) or not state_key:
-            errors.append(
-                f"{definition_path} must use non-empty string state keys."
-            )
+            errors.append(f"{definition_path} must use non-empty string state keys.")
 
         if type(value) is not int or (require_positive and value <= 0):
-            value_requirement = "a positive integer" if require_positive else "an integer"
+            value_requirement = (
+                "a positive integer" if require_positive else "an integer"
+            )
             errors.append(
                 f"{definition_path}[{state_key!r}] must be {value_requirement}."
             )

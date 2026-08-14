@@ -8,6 +8,7 @@ a1_road_access = {
     ],
     "description": ("road access"),
     "items": [],
+    "scenery": {},
     "exits": {
         "north": "a1_security_gate",
         "south": False,

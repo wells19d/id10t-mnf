@@ -409,10 +409,13 @@ def useItem(
         ),
     )
 
-    if effects.get(
-        "destroySource",
-        False,
-    ) and source_item_id:
+    if (
+        effects.get(
+            "destroySource",
+            False,
+        )
+        and source_item_id
+    ):
         removeOwnedItem(
             source_item_id,
             "inventory",
@@ -473,21 +476,25 @@ def useScenery(
         "That won't work right now.",
     )
 
-    if not stateMatches(
-        source_state,
-        requirements.get(
-            "itemState",
-            {},
-        ),
-    ) or not stateMatches(
-        scenery_state,
-        requirements.get(
-            "sceneryState",
-            {},
-        ),
-    ) or not requirementsMet(
-        requirements,
-        game_state,
+    if (
+        not stateMatches(
+            source_state,
+            requirements.get(
+                "itemState",
+                {},
+            ),
+        )
+        or not stateMatches(
+            scenery_state,
+            requirements.get(
+                "sceneryState",
+                {},
+            ),
+        )
+        or not requirementsMet(
+            requirements,
+            game_state,
+        )
     ):
         return commandFailure(
             fail_response,
@@ -530,10 +537,13 @@ def useScenery(
         ),
     )
 
-    if effects.get(
-        "destroyItem",
-        False,
-    ) and source_item_id:
+    if (
+        effects.get(
+            "destroyItem",
+            False,
+        )
+        and source_item_id
+    ):
         game_state["player"]["inventory"].remove(
             source_item_id,
         )

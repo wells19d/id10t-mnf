@@ -12,7 +12,6 @@ from items.registry import (
 )
 from states.game import EQUIPMENT_SLOTS
 
-
 ITEM_INTERACTION_REQUIREMENT_KEYS = {
     "sourceItemState",
     "sourceItemStateMinimums",
@@ -88,23 +87,17 @@ def getErrors():
             continue
 
         provided_use_ids.update(
-            use_id
-            for use_id in provided_uses
-            if isinstance(use_id, str) and use_id
+            use_id for use_id in provided_uses if isinstance(use_id, str) and use_id
         )
 
     for item_id, item_data in itemRegistry.items():
         item_path = f"itemRegistry[{item_id!r}]"
 
         if not isinstance(item_id, str) or not item_id:
-            errors.append(
-                f"{item_path} must use a non-empty string ID."
-            )
+            errors.append(f"{item_path} must use a non-empty string ID.")
 
         if not isinstance(item_data, dict):
-            errors.append(
-                f"{item_path} must be a dictionary."
-            )
+            errors.append(f"{item_path} must be a dictionary.")
             continue
 
         name = item_data.get(
@@ -112,39 +105,27 @@ def getErrors():
         )
 
         if not isinstance(name, str) or not name.strip():
-            errors.append(
-                f"{item_path}.name must be a non-empty string."
-            )
+            errors.append(f"{item_path}.name must be a non-empty string.")
 
         aliases = item_data.get(
             "aliases",
         )
 
         if not isinstance(aliases, list) or not aliases:
-            errors.append(
-                f"{item_path}.aliases must be a non-empty list."
-            )
+            errors.append(f"{item_path}.aliases must be a non-empty list.")
         else:
             for alias in aliases:
                 if not isinstance(alias, str) or not alias.strip():
-                    errors.append(
-                        f"{item_path}.aliases contains an invalid alias."
-                    )
+                    errors.append(f"{item_path}.aliases contains an invalid alias.")
                 elif alias != alias.lower():
                     errors.append(
                         f"{item_path}.aliases must use lowercase text: {alias!r}."
                     )
 
-            if (
-                all(
-                    isinstance(alias, str)
-                    for alias in aliases
-                )
-                and len(aliases) != len(set(aliases))
+            if all(isinstance(alias, str) for alias in aliases) and len(aliases) != len(
+                set(aliases)
             ):
-                errors.append(
-                    f"{item_path}.aliases contains duplicate aliases."
-                )
+                errors.append(f"{item_path}.aliases contains duplicate aliases.")
 
         for boolean_key in [
             "takeable",
@@ -161,9 +142,7 @@ def getErrors():
                 item_data[boolean_key],
                 bool,
             ):
-                errors.append(
-                    f"{item_path}.{boolean_key} must be a boolean."
-                )
+                errors.append(f"{item_path}.{boolean_key} must be a boolean.")
 
         if item_data.get(
             "wearable",
@@ -182,18 +161,10 @@ def getErrors():
         if "carryCapacity" in item_data:
             carry_capacity = item_data["carryCapacity"]
 
-            if (
-                type(carry_capacity) is not int
-                or carry_capacity <= 0
-            ):
-                errors.append(
-                    f"{item_path}.carryCapacity must be a positive integer."
-                )
+            if type(carry_capacity) is not int or carry_capacity <= 0:
+                errors.append(f"{item_path}.carryCapacity must be a positive integer.")
 
-            if (
-                not item_data.get("wearable", False)
-                or item_data.get("slot") != "back"
-            ):
+            if not item_data.get("wearable", False) or item_data.get("slot") != "back":
                 errors.append(
                     f"{item_path}.carryCapacity requires a wearable back-slot item."
                 )
@@ -223,9 +194,7 @@ def getErrors():
                 not isinstance(item_data[text_key], str)
                 or not item_data[text_key].strip()
             ):
-                errors.append(
-                    f"{item_path}.{text_key} must be a non-empty string."
-                )
+                errors.append(f"{item_path}.{text_key} must be a non-empty string.")
 
         for response_key in ITEM_RESPONSE_KEYS.intersection(item_data):
             checkResponse(
@@ -238,9 +207,7 @@ def getErrors():
             item_data["state"],
             dict,
         ):
-            errors.append(
-                f"{item_path}.state must be a dictionary."
-            )
+            errors.append(f"{item_path}.state must be a dictionary.")
 
         if "stateDescriptions" in item_data:
             checkLocalStateText(
@@ -255,33 +222,31 @@ def getErrors():
         )
 
         if not isinstance(provided_uses, dict):
-            errors.append(
-                f"{item_path}.providedUses must be a dictionary."
-            )
+            errors.append(f"{item_path}.providedUses must be a dictionary.")
         else:
             for use_id, provided_use in provided_uses.items():
                 use_path = f"{item_path}.providedUses[{use_id!r}]"
 
                 if not isinstance(use_id, str) or not use_id:
-                    errors.append(
-                        f"{use_path} must use a non-empty string ID."
-                    )
+                    errors.append(f"{use_path} must use a non-empty string ID.")
 
                 if not isinstance(provided_use, dict):
-                    errors.append(
-                        f"{use_path} must be a dictionary."
-                    )
+                    errors.append(f"{use_path} must be a dictionary.")
                     continue
 
                 aliases = provided_use.get(
                     "aliases",
                 )
 
-                if not isinstance(aliases, list) or not aliases or not all(
-                    isinstance(alias, str)
-                    and alias.strip()
-                    and alias == alias.lower()
-                    for alias in aliases
+                if (
+                    not isinstance(aliases, list)
+                    or not aliases
+                    or not all(
+                        isinstance(alias, str)
+                        and alias.strip()
+                        and alias == alias.lower()
+                        for alias in aliases
+                    )
                 ):
                     errors.append(
                         f"{use_path}.aliases must be a non-empty list of lowercase strings."
@@ -293,9 +258,7 @@ def getErrors():
                 )
 
                 if not isinstance(requires_state, dict):
-                    errors.append(
-                        f"{use_path}.requiresState must be a dictionary."
-                    )
+                    errors.append(f"{use_path}.requiresState must be a dictionary.")
 
                 resource = provided_use.get(
                     "resource",
@@ -334,7 +297,10 @@ def getErrors():
                         "minimum",
                         "consume",
                     ]:
-                        if type(resource[resource_key]) is not int or resource[resource_key] <= 0:
+                        if (
+                            type(resource[resource_key]) is not int
+                            or resource[resource_key] <= 0
+                        ):
                             errors.append(
                                 f"{use_path}.resource.{resource_key} must be a positive integer."
                             )
@@ -359,9 +325,7 @@ def getErrors():
             item_data["targetDefinitionRequires"],
             dict,
         ):
-            errors.append(
-                f"{item_path}.targetDefinitionRequires must be a dictionary."
-            )
+            errors.append(f"{item_path}.targetDefinitionRequires must be a dictionary.")
 
         quantity_display = item_data.get(
             "quantityDisplay",
@@ -371,9 +335,7 @@ def getErrors():
             quantity_path = f"{item_path}.quantityDisplay"
 
             if not isinstance(quantity_display, dict):
-                errors.append(
-                    f"{quantity_path} must be a dictionary."
-                )
+                errors.append(f"{quantity_path} must be a dictionary.")
             else:
                 state_key = quantity_display.get(
                     "stateKey",
@@ -423,9 +385,7 @@ def getErrors():
         )
 
         if not isinstance(item_interactions, dict):
-            errors.append(
-                f"{item_path}.interactions must be a dictionary."
-            )
+            errors.append(f"{item_path}.interactions must be a dictionary.")
         else:
             for source_id, interaction in item_interactions.items():
                 interaction_path = f"{item_path}.interactions[{source_id!r}]"
@@ -446,17 +406,13 @@ def getErrors():
             throw_actions = item_data["onThrow"]
 
             if not isinstance(throw_actions, dict):
-                errors.append(
-                    f"{item_path}.onThrow must be a dictionary."
-                )
+                errors.append(f"{item_path}.onThrow must be a dictionary.")
             else:
                 for action_id, throw_action in throw_actions.items():
                     action_path = f"{item_path}.onThrow[{action_id!r}]"
 
                     if not isinstance(action_id, str) or not action_id:
-                        errors.append(
-                            f"{action_path} must use a non-empty string ID."
-                        )
+                        errors.append(f"{action_path} must use a non-empty string ID.")
 
                     if action_id != "default":
                         errors.append(
@@ -479,9 +435,7 @@ def checkInteraction(
     errors,
 ):
     if not isinstance(interaction, dict):
-        errors.append(
-            f"{definition_path} must be a dictionary."
-        )
+        errors.append(f"{definition_path} must be a dictionary.")
         return
 
     for response_key in [
@@ -548,7 +502,10 @@ def checkInteraction(
                     "equipped, or currentLocation."
                 )
 
-        if "targetPlacement" in requirements and requirements["targetPlacement"] != "loose":
+        if (
+            "targetPlacement" in requirements
+            and requirements["targetPlacement"] != "loose"
+        ):
             errors.append(
                 f"{definition_path}.requires.targetPlacement must be 'loose'."
             )
@@ -559,16 +516,12 @@ def checkInteraction(
     )
 
     if not isinstance(effects, dict):
-        errors.append(
-            f"{definition_path}.effects must be a dictionary."
-        )
+        errors.append(f"{definition_path}.effects must be a dictionary.")
         return
 
     for key in effects:
         if key not in ITEM_INTERACTION_EFFECT_KEYS:
-            errors.append(
-                f"{definition_path}.effects uses unsupported effect {key!r}."
-            )
+            errors.append(f"{definition_path}.effects uses unsupported effect {key!r}.")
 
     for state_key in [
         "sourceItemState",
@@ -602,6 +555,4 @@ def checkInteraction(
             effects[boolean_key],
             bool,
         ):
-            errors.append(
-                f"{definition_path}.effects.{boolean_key} must be a boolean."
-            )
+            errors.append(f"{definition_path}.effects.{boolean_key} must be a boolean.")

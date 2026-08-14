@@ -8,6 +8,7 @@ a1_house_1 = {
     ],
     "description": ("red house"),
     "items": [],
+    "scenery": {},
     "exits": {
         "north": False,
         "south": False,

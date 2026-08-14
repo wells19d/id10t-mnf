@@ -7,9 +7,8 @@ a1_lake_east = {
         },
     ],
     "description": ("lake east"),
-    "items": [
-        "a1_disposable_lighter",
-    ],
+    "items": [],
+    "scenery": {},
     "exits": {
         "north": False,
         "south": "a1_lake_south",

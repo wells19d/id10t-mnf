@@ -54,10 +54,14 @@ def findItems(
             "aliases",
             [],
         )
-        item_display_name = item.get(
-            "name",
-            "",
-        ).strip().lower()
+        item_display_name = (
+            item.get(
+                "name",
+                "",
+            )
+            .strip()
+            .lower()
+        )
 
         if (
             item_name == item_id
@@ -98,15 +102,9 @@ def resolveItem(
                     match_names,
                 )
             else:
-                choices = (
-                    ", ".join(match_names[:-1])
-                    + f", or {match_names[-1]}"
-                )
+                choices = ", ".join(match_names[:-1]) + f", or {match_names[-1]}"
 
-            return None, (
-                f"Which {item_name} do you mean: "
-                f"{choices}?"
-            )
+            return None, (f"Which {item_name} do you mean: " f"{choices}?")
 
         return None, f"Which {item_name} do you mean?"
 

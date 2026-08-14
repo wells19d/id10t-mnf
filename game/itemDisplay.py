@@ -82,9 +82,7 @@ def quantityText(
         return None
 
     label = (
-        quantity_display["singular"]
-        if quantity == 1
-        else quantity_display["plural"]
+        quantity_display["singular"] if quantity == 1 else quantity_display["plural"]
     )
 
     return f"It contains {quantity} {label}."

@@ -15,7 +15,6 @@ from game.validators.common import (
 from items.registry import itemRegistry
 from states.game import GAME_STATE_REQUIREMENT_KEYS
 
-
 DIRECTIONS = {
     "north",
     "south",
@@ -70,14 +69,10 @@ def checkScenery(
         scenery_path = f"{location_path}.scenery[{scenery_id!r}]"
 
         if not isinstance(scenery_id, str) or not scenery_id:
-            errors.append(
-                f"{scenery_path} must use a non-empty string ID."
-            )
+            errors.append(f"{scenery_path} must use a non-empty string ID.")
 
         if not isinstance(scenery_data, dict):
-            errors.append(
-                f"{scenery_path} must be a dictionary."
-            )
+            errors.append(f"{scenery_path} must be a dictionary.")
             continue
 
         aliases = scenery_data.get(
@@ -86,9 +81,7 @@ def checkScenery(
         )
 
         if not isinstance(aliases, list) or not all(
-            isinstance(alias, str)
-            and alias.strip()
-            and alias == alias.lower()
+            isinstance(alias, str) and alias.strip() and alias == alias.lower()
             for alias in aliases
         ):
             errors.append(
@@ -99,9 +92,7 @@ def checkScenery(
             not isinstance(scenery_data["description"], str)
             or not scenery_data["description"].strip()
         ):
-            errors.append(
-                f"{scenery_path}.description must be a non-empty string."
-            )
+            errors.append(f"{scenery_path}.description must be a non-empty string.")
 
         for boolean_key in [
             "searchable",
@@ -112,9 +103,7 @@ def checkScenery(
                 scenery_data[boolean_key],
                 bool,
             ):
-                errors.append(
-                    f"{scenery_path}.{boolean_key} must be a boolean."
-                )
+                errors.append(f"{scenery_path}.{boolean_key} must be a boolean.")
 
         for response_key in SCENERY_RESPONSE_KEYS.intersection(scenery_data):
             checkResponse(
@@ -127,9 +116,7 @@ def checkScenery(
             scenery_data["state"],
             dict,
         ):
-            errors.append(
-                f"{scenery_path}.state must be a dictionary."
-            )
+            errors.append(f"{scenery_path}.state must be a dictionary.")
 
         if "stateDescriptions" in scenery_data:
             checkLocalStateText(
@@ -147,9 +134,7 @@ def checkScenery(
                 scenery_data[state_key],
                 dict,
             ):
-                errors.append(
-                    f"{scenery_path}.{state_key} must be a dictionary."
-                )
+                errors.append(f"{scenery_path}.{state_key} must be a dictionary.")
 
         item_descriptions = scenery_data.get(
             "itemDescriptions",
@@ -157,14 +142,10 @@ def checkScenery(
         )
 
         if not isinstance(item_descriptions, dict):
-            errors.append(
-                f"{scenery_path}.itemDescriptions must be a dictionary."
-            )
+            errors.append(f"{scenery_path}.itemDescriptions must be a dictionary.")
         else:
             for item_id, description in item_descriptions.items():
-                description_path = (
-                    f"{scenery_path}.itemDescriptions[{item_id!r}]"
-                )
+                description_path = f"{scenery_path}.itemDescriptions[{item_id!r}]"
 
                 if not isinstance(item_id, str) or item_id not in itemRegistry:
                     errors.append(
@@ -173,9 +154,7 @@ def checkScenery(
                     )
 
                 if not isinstance(description, str) or not description.strip():
-                    errors.append(
-                        f"{description_path} must be a non-empty string."
-                    )
+                    errors.append(f"{description_path} must be a non-empty string.")
 
         scenery_items = scenery_data.get(
             "items",
@@ -194,9 +173,7 @@ def checkScenery(
                     initial_item_placements.setdefault(
                         item_id,
                         [],
-                    ).append(
-                        item_path
-                    )
+                    ).append(item_path)
 
         for interaction_key in [
             "interactions",
@@ -208,15 +185,11 @@ def checkScenery(
             )
 
             if not isinstance(interactions, dict):
-                errors.append(
-                    f"{scenery_path}.{interaction_key} must be a dictionary."
-                )
+                errors.append(f"{scenery_path}.{interaction_key} must be a dictionary.")
                 continue
 
             for item_id, interaction in interactions.items():
-                interaction_path = (
-                    f"{scenery_path}.{interaction_key}[{item_id!r}]"
-                )
+                interaction_path = f"{scenery_path}.{interaction_key}[{item_id!r}]"
 
                 if not isinstance(item_id, str) or item_id not in itemRegistry:
                     errors.append(
@@ -224,9 +197,7 @@ def checkScenery(
                     )
 
                 if not isinstance(interaction, dict):
-                    errors.append(
-                        f"{interaction_path} must be a dictionary."
-                    )
+                    errors.append(f"{interaction_path} must be a dictionary.")
                     continue
 
                 if interaction_key == "interactions":
@@ -282,9 +253,7 @@ def checkExit(
     errors,
 ):
     if not isinstance(exits, dict):
-        errors.append(
-            f"{location_path}.exits must be a dictionary."
-        )
+        errors.append(f"{location_path}.exits must be a dictionary.")
         return
 
     exit_requirement_keys = {
@@ -304,9 +273,7 @@ def checkExit(
         exit_path = f"{location_path}.exits[{direction!r}]"
 
         if direction not in DIRECTIONS:
-            errors.append(
-                f"{exit_path} uses an unsupported direction."
-            )
+            errors.append(f"{exit_path} uses an unsupported direction.")
 
         if exit_data is False or exit_data is None:
             continue
@@ -316,9 +283,7 @@ def checkExit(
         elif isinstance(exit_data, dict):
             for key in exit_data:
                 if key not in exit_keys:
-                    errors.append(
-                        f"{exit_path} uses unsupported exit field {key!r}."
-                    )
+                    errors.append(f"{exit_path} uses unsupported exit field {key!r}.")
 
             destination = exit_data.get(
                 "location",
@@ -341,15 +306,10 @@ def checkExit(
                     errors,
                 )
         else:
-            errors.append(
-                f"{exit_path} must be a location ID, dictionary, or False."
-            )
+            errors.append(f"{exit_path} must be a location ID, dictionary, or False.")
             continue
 
-        if (
-            not isinstance(destination, str)
-            or destination not in locationRegistry
-        ):
+        if not isinstance(destination, str) or destination not in locationRegistry:
             errors.append(
                 f"{exit_path} references unknown location ID {destination!r}."
             )
@@ -361,26 +321,18 @@ def checkRoomExit(
     errors,
 ):
     if not isinstance(room_exits, dict):
-        errors.append(
-            f"{location_path}.roomExits must be a dictionary."
-        )
+        errors.append(f"{location_path}.roomExits must be a dictionary.")
         return
 
     for room_name, destination in room_exits.items():
         room_exit_path = f"{location_path}.roomExits[{room_name!r}]"
 
         if not isinstance(room_name, str) or not room_name.strip():
-            errors.append(
-                f"{room_exit_path} must use a non-empty string room name."
-            )
+            errors.append(f"{room_exit_path} must use a non-empty string room name.")
 
-        if (
-            not isinstance(destination, str)
-            or destination not in locationRegistry
-        ):
+        if not isinstance(destination, str) or destination not in locationRegistry:
             errors.append(
-                f"{room_exit_path} references unknown location ID "
-                f"{destination!r}."
+                f"{room_exit_path} references unknown location ID " f"{destination!r}."
             )
 
 
@@ -391,18 +343,14 @@ def checkStateText(
     errors,
 ):
     if not isinstance(state_descriptions, list):
-        errors.append(
-            f"{location_path}.stateDescriptions must be a list."
-        )
+        errors.append(f"{location_path}.stateDescriptions must be a list.")
         return
 
     for index, state_description in enumerate(state_descriptions):
         state_path = f"{location_path}.stateDescriptions[{index}]"
 
         if not isinstance(state_description, dict):
-            errors.append(
-                f"{state_path} must be a dictionary."
-            )
+            errors.append(f"{state_path} must be a dictionary.")
             continue
 
         description = state_description.get(
@@ -410,9 +358,7 @@ def checkStateText(
         )
 
         if not isinstance(description, str) or not description.strip():
-            errors.append(
-                f"{state_path}.description must be a non-empty string."
-            )
+            errors.append(f"{state_path}.description must be a non-empty string.")
 
         checkRequirements(
             state_description.get(
@@ -442,14 +388,10 @@ def getErrors():
         location_path = f"locationRegistry[{location_id!r}]"
 
         if not isinstance(location_id, str) or not location_id:
-            errors.append(
-                f"{location_path} must use a non-empty string ID."
-            )
+            errors.append(f"{location_path} must use a non-empty string ID.")
 
         if not isinstance(location_data, dict):
-            errors.append(
-                f"{location_path} must be a dictionary."
-            )
+            errors.append(f"{location_path} must be a dictionary.")
             continue
 
         for text_key in [
@@ -461,9 +403,7 @@ def getErrors():
             )
 
             if not isinstance(text, str) or not text.strip():
-                errors.append(
-                    f"{location_path}.{text_key} must be a non-empty string."
-                )
+                errors.append(f"{location_path}.{text_key} must be a non-empty string.")
 
         if "intro" in location_data:
             checkIntroResponse(
@@ -496,9 +436,7 @@ def getErrors():
                     initial_item_placements.setdefault(
                         item_id,
                         [],
-                    ).append(
-                        item_path
-                    )
+                    ).append(item_path)
 
         scenery = location_data.get(
             "scenery",
@@ -506,9 +444,7 @@ def getErrors():
         )
 
         if not isinstance(scenery, dict):
-            errors.append(
-                f"{location_path}.scenery must be a dictionary."
-            )
+            errors.append(f"{location_path}.scenery must be a dictionary.")
             scenery = {}
 
         scenery_ids = set(
@@ -517,9 +453,7 @@ def getErrors():
 
         initially_placed_item_ids = {
             item_id
-            for item_id in (
-                location_items if isinstance(location_items, list) else []
-            )
+            for item_id in (location_items if isinstance(location_items, list) else [])
             if isinstance(item_id, str)
         }
 
@@ -543,14 +477,10 @@ def getErrors():
         )
 
         if not isinstance(item_contents, dict):
-            errors.append(
-                f"{location_path}.itemContents must be a dictionary."
-            )
+            errors.append(f"{location_path}.itemContents must be a dictionary.")
         else:
             for container_item_id, contained_item_ids in item_contents.items():
-                contents_path = (
-                    f"{location_path}.itemContents[{container_item_id!r}]"
-                )
+                contents_path = f"{location_path}.itemContents[{container_item_id!r}]"
                 container_item = itemRegistry.get(
                     container_item_id,
                 )
@@ -572,9 +502,8 @@ def getErrors():
                 if (
                     container_item
                     and container_item.get("transferContentsOnTake", False)
-                    and container_item_id not in (
-                        location_items if isinstance(location_items, list) else []
-                    )
+                    and container_item_id
+                    not in (location_items if isinstance(location_items, list) else [])
                 ):
                     errors.append(
                         f"{contents_path} requires transfer-on-TAKE containers to be "
@@ -589,18 +518,13 @@ def getErrors():
 
                 if isinstance(contained_item_ids, list):
                     if all(
-                        isinstance(item_id, str)
-                        for item_id in contained_item_ids
+                        isinstance(item_id, str) for item_id in contained_item_ids
                     ) and len(contained_item_ids) != len(set(contained_item_ids)):
-                        errors.append(
-                            f"{contents_path} contains duplicate item IDs."
-                        )
+                        errors.append(f"{contents_path} contains duplicate item IDs.")
 
                     for item_id in contained_item_ids:
                         if item_id == container_item_id:
-                            errors.append(
-                                f"{contents_path} cannot contain itself."
-                            )
+                            errors.append(f"{contents_path} cannot contain itself.")
 
                         contained_item = itemRegistry.get(
                             item_id,
@@ -627,9 +551,7 @@ def getErrors():
                             initial_item_placements.setdefault(
                                 item_id,
                                 [],
-                            ).append(
-                                contents_path
-                            )
+                            ).append(contents_path)
 
         checkScenery(
             location_path,
@@ -667,14 +589,10 @@ def getErrors():
         )
 
         if not isinstance(location_interactions, dict):
-            errors.append(
-                f"{location_path}.interactions must be a dictionary."
-            )
+            errors.append(f"{location_path}.interactions must be a dictionary.")
         else:
             for scenery_id, interaction in location_interactions.items():
-                interaction_path = (
-                    f"{location_path}.interactions[{scenery_id!r}]"
-                )
+                interaction_path = f"{location_path}.interactions[{scenery_id!r}]"
 
                 if scenery_id not in scenery_ids:
                     errors.append(
@@ -683,9 +601,7 @@ def getErrors():
                     )
 
                 if not isinstance(interaction, dict):
-                    errors.append(
-                        f"{interaction_path} must be a dictionary."
-                    )
+                    errors.append(f"{interaction_path} must be a dictionary.")
                     continue
 
                 interaction_type = interaction.get(
@@ -693,9 +609,7 @@ def getErrors():
                 )
 
                 if interaction_type != "combination":
-                    errors.append(
-                        f"{interaction_path}.type must be 'combination'."
-                    )
+                    errors.append(f"{interaction_path}.type must be 'combination'.")
                     continue
 
                 if interaction_type == "combination":
@@ -744,10 +658,7 @@ def getErrors():
                             "sceneryState",
                         )
 
-                        if (
-                            not isinstance(scenery_effects, dict)
-                            or not scenery_effects
-                        ):
+                        if not isinstance(scenery_effects, dict) or not scenery_effects:
                             errors.append(
                                 f"{interaction_path}.effects.sceneryState "
                                 "must be a non-empty dictionary."
