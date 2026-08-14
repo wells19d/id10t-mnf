@@ -60,7 +60,7 @@ a1_clearing = {
         "sword": {
             "aliases": ["sword", "old sword", "stuck sword"],
             "description": (
-                "A sword is buried to the hilt in the ground near the tree roots, blade down. "
+                "The sword is driven straight down into the stone, blade first, up to the hilt. "
                 "The metal is dull and pitted with rust. It hasn't moved in a long time."
             ),
             "takeFail": [
