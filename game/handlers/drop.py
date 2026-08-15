@@ -14,6 +14,7 @@ def resolveDropItem(item_name, player_state):
         item_name,
         player_state["inventory"],
         include_match_names=True,
+        allow_interchangeable=True,
     )
 
     if item_id or clarification:

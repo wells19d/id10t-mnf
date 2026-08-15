@@ -2,6 +2,7 @@ from html import escape
 
 from game.handlers.common import (
     displayName,
+    getItemStateSnapshot,
     normalizeResponseMessages,
 )
 from items.registry import itemRegistry
@@ -9,6 +10,78 @@ from states.game import (
     EQUIPMENT_SLOT_ORDER,
     carryLimit,
 )
+
+
+def inventoryDisplayNames(
+    inventory,
+    game_state,
+):
+    display_entries = []
+    group_indexes = {}
+
+    for item_id in inventory:
+        item = itemRegistry.get(item_id)
+
+        if not item:
+            continue
+
+        item_name = displayName(
+            item,
+        )
+        quantity_display = item.get(
+            "quantityDisplay",
+            {},
+        )
+
+        if quantity_display.get(
+            "showInInventory",
+            False,
+        ):
+            item_state = getItemStateSnapshot(
+                game_state,
+                item_id,
+            )
+            quantity = item_state.get(
+                quantity_display["stateKey"],
+            )
+
+            if type(quantity) is int and quantity >= 0:
+                item_name = item_name.replace(
+                    "</span></em>",
+                    f" ({quantity})</span></em>",
+                    1,
+                )
+
+        group = item.get(
+            "interchangeableGroup",
+        )
+
+        if group and group in group_indexes:
+            display_entries[group_indexes[group]]["count"] += 1
+            continue
+
+        if group:
+            group_indexes[group] = len(display_entries)
+
+        display_entries.append(
+            {
+                "name": item_name,
+                "count": 1,
+            }
+        )
+
+    return [
+        (
+            entry["name"].replace(
+                "</span></em>",
+                f" (x{entry['count']})</span></em>",
+                1,
+            )
+            if entry["count"] > 1
+            else entry["name"]
+        )
+        for entry in display_entries
+    ]
 
 
 def handleInventory(game_state):
@@ -31,13 +104,10 @@ def handleInventory(game_state):
 
         return f"{empty_response}{capacity_text}"
 
-    item_names = []
-
-    for item_id in inventory:
-        item = itemRegistry.get(item_id)
-
-        if item:
-            item_names.append(displayName(item))
+    item_names = inventoryDisplayNames(
+        inventory,
+        game_state,
+    )
 
     inventory_items = "".join(
         f"<div class='inventory-item'>{item_name}</div>" for item_name in item_names
@@ -107,7 +177,7 @@ def handlePlayerStatus(game_state):
         equipment_rows.append(
             "<div class='player-equipment-row'>"
             f"<span class='player-equipment-slot'>{slot.title()}:</span> "
-            f"{item_name}"
+            f"<span>{item_name}</span>"
             "</div>"
         )
 

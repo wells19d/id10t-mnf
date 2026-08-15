@@ -1,5 +1,6 @@
 from areas.registry import locationRegistry
 from game.handlers.drop import resolveDropItem
+from game.handlers.take import findMergeInventoryItem
 from game.itemAccess import (
     visibleItemIds,
     resolveItem,
@@ -124,6 +125,12 @@ def aggregateCandidate(
 
     item = itemRegistry[item_id]
 
+    if findMergeInventoryItem(
+        item_id,
+        game_state["player"]["inventory"],
+    ):
+        return None
+
     # Preserve custom TAKE responses.
     if item.get("takeResponse"):
         return None
@@ -144,12 +151,42 @@ def aggregateCandidate(
     }
 
 
+def isTakeWearPair(commands):
+    if len(commands) != 2:
+        return False
+
+    take_command = parseParts(
+        commands[0],
+    )
+    wear_command = parseParts(
+        commands[1],
+    )
+
+    return (
+        take_command["verb"] == "take"
+        and wear_command["verb"] == "wear"
+        and bool(take_command["object"])
+        and take_command["object"] == wear_command["object"]
+        and take_command["target"] is None
+        and wear_command["target"] is None
+        and take_command["preposition"] is None
+        and wear_command["preposition"] is None
+    )
+
+
 def runCompound(
     commands,
     game_state,
     runOne,
 ):
     responses = []
+    take_wear_pair = isTakeWearPair(
+        commands,
+    )
+    initially_equipped = set(
+        game_state["player"]["equipped"],
+    )
+    completed_commands = 0
 
     # Successful TAKE/DROP commands can be buffered
     # and combined into one natural narrator response.
@@ -232,6 +269,8 @@ def runCompound(
 
             break
 
+        completed_commands += 1
+
         if aggregate_candidate:
             candidate_verb = aggregate_candidate["verb"]
 
@@ -262,5 +301,24 @@ def runCompound(
         )
 
     flushAggregate()
+
+    if take_wear_pair and completed_commands == len(commands):
+        newly_equipped = [
+            item_id
+            for item_id in game_state["player"]["equipped"]
+            if item_id not in initially_equipped
+        ]
+
+        if len(newly_equipped) == 1:
+            item = itemRegistry[newly_equipped[0]]
+
+            take_wear_response = item.get(
+                "takeWearResponse",
+            )
+
+            if take_wear_response is not None:
+                return normalizeResponseMessages(
+                    take_wear_response,
+                )
 
     return responses

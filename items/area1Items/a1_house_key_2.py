@@ -1,5 +1,5 @@
-a1_house_key = (
-    "a1_house_key",
+a1_house_key_2 = (
+    "a1_house_key_2",
     {
         "name": "House Key",
         "aliases": [
@@ -24,6 +24,8 @@ a1_house_key = (
         ),
         "takeable": True,
         "wearable": False,
+        "flammable": False,
+        "interchangeableGroup": "house_key",
         "onThrow": {
             "default": {
                 "response": "You toss the house key onto the ground.",

@@ -86,6 +86,7 @@ def handleUse(command, location_definition, game_state):
     source_item_id, clarification = resolveItem(
         item_name,
         inventory,
+        allow_interchangeable=True,
     )
     provider_use = None
 

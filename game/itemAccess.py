@@ -79,6 +79,7 @@ def resolveItem(
     item_name,
     item_ids,
     include_match_names=False,
+    allow_interchangeable=False,
 ):
     matches = findItems(
         item_name,
@@ -89,6 +90,24 @@ def resolveItem(
         return None, None
 
     if len(matches) > 1:
+        if allow_interchangeable:
+            interchangeable_group = None
+
+            for item_id in matches:
+                group = itemRegistry[item_id].get(
+                    "interchangeableGroup",
+                )
+
+                if not isinstance(group, str) or not group.strip():
+                    break
+
+                if interchangeable_group is None:
+                    interchangeable_group = group
+                elif group != interchangeable_group:
+                    break
+            else:
+                return matches[0], None
+
         if include_match_names:
             match_names = [
                 displayName(

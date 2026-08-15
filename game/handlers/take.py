@@ -17,6 +17,78 @@ from game.handlers.common import (
 from items.registry import itemRegistry
 
 
+def findMergeInventoryItem(item_id, inventory):
+    item = itemRegistry[item_id]
+    merge_config = item.get(
+        "mergeOnTake",
+    )
+
+    if not merge_config:
+        return None
+
+    for carried_item_id in inventory:
+        if carried_item_id == item_id:
+            continue
+
+        carried_item = itemRegistry[carried_item_id]
+        carried_merge_config = carried_item.get(
+            "mergeOnTake",
+        )
+
+        if not carried_merge_config:
+            continue
+
+        if (
+            carried_merge_config.get("group") == merge_config.get("group")
+            and carried_merge_config.get("stateKey")
+            == merge_config.get("stateKey")
+        ):
+            return carried_item_id
+
+    return None
+
+
+def mergeTakenItem(
+    item_id,
+    retained_item_id,
+    location_state,
+    game_state,
+):
+    item = itemRegistry[item_id]
+    merge_config = item["mergeOnTake"]
+    state_key = merge_config["stateKey"]
+
+    retained_state = getItemStateSnapshot(
+        game_state,
+        retained_item_id,
+    )
+    incoming_state = getItemStateSnapshot(
+        game_state,
+        item_id,
+    )
+
+    retained_state[state_key] += incoming_state[state_key]
+
+    game_state["itemStates"][retained_item_id] = retained_state
+    location_state["items"].pop(
+        item_id,
+        None,
+    )
+    game_state["itemStates"].pop(
+        item_id,
+        None,
+    )
+
+    display_name = displayName(
+        item,
+    )
+
+    return item.get(
+        "mergeResponse",
+        f"You combine the {display_name} with the one you are carrying.",
+    )
+
+
 def handleTake(command, location_definition, game_state):
     item_name = command["object"]
     source_name = command["target"]
@@ -176,6 +248,20 @@ def handleTake(command, location_definition, game_state):
 
     player_state = game_state["player"]
     inventory = player_state["inventory"]
+
+    retained_item_id = findMergeInventoryItem(
+        item_id,
+        inventory,
+    )
+
+    if retained_item_id:
+        return mergeTakenItem(
+            item_id,
+            retained_item_id,
+            location_state,
+            game_state,
+        )
+
     contained_item_ids = []
 
     if item.get(

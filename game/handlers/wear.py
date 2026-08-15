@@ -22,6 +22,7 @@ def handleWear(command, game_state):
     item_id, clarification = resolveItem(
         item_name,
         inventory,
+        allow_interchangeable=True,
     )
 
     if clarification:
@@ -31,7 +32,7 @@ def handleWear(command, game_state):
 
     if not item_id:
         return commandFailure(
-            f"You aren't carrying {item_name}.",
+            f"You need to take the {item_name} before you can wear it.",
         )
 
     item = itemRegistry[item_id]
@@ -166,9 +167,7 @@ def handleRemove(command, game_state):
         item_id,
     ]
     final_equipped = [
-        equipped_item_id
-        for equipped_item_id in equipped
-        if equipped_item_id != item_id
+        equipped_item_id for equipped_item_id in equipped if equipped_item_id != item_id
     ]
     overflow_count = overflowCount(
         game_state["player"],

@@ -7,9 +7,22 @@ a1_disposable_lighter = (
             "lighter",
         ],
         "description": (
-            "A cheap plastic lighter. Its translucent body reveals very little "
-            "fuel, though there is no reliable way to judge how much remains."
+            "A cheap plastic lighter. It might still have some fuel left..."
         ),
+        "inspect": [
+            {
+                "speaker": "narrator",
+                "text": (
+                    "A cheap plastic lighter. "
+                    "Its translucent body reveals very little "
+                    "fuel, though there is no reliable way to judge how much remains."
+                ),
+            },
+            {
+                "speaker": "voice",
+                "text": "Nice... a lighter. This should help me start a fire if I need to...",
+            },
+        ],
         "worldDescription": (
             "a scratched <em><span class='item-highlight'>disposable lighter</span></em> "
             "lying near the water's edge."
@@ -20,6 +33,7 @@ a1_disposable_lighter = (
         ),
         "takeable": True,
         "wearable": False,
+        "flammable": False,
         "state": {
             "usesRemaining": 5,
         },

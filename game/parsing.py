@@ -76,6 +76,14 @@ carryPreviousObjectVerbs = {
 }
 
 
+sharedTrailingObjectPairs = {
+    (
+        "take",
+        "wear",
+    ),
+}
+
+
 pronouns = {
     "it",
     "them",
@@ -274,6 +282,41 @@ def normalizeItemSeparators(player_command):
     )
 
 
+def applySharedTrailingObject(segments):
+    if len(segments) != 2:
+        return segments
+
+    first_command = parseParts(
+        segments[0],
+    )
+    second_command = parseParts(
+        segments[1],
+    )
+
+    verb_pair = (
+        first_command["verb"],
+        second_command["verb"],
+    )
+
+    if verb_pair not in sharedTrailingObjectPairs:
+        return segments
+
+    if first_command["object"] or first_command["target"]:
+        return segments
+
+    if not second_command["object"] or second_command["target"]:
+        return segments
+
+    first_command["object"] = second_command["object"]
+
+    return [
+        rebuildCommand(
+            first_command,
+        ),
+        segments[1],
+    ]
+
+
 def parseCompound(player_command):
     player_command = normalizeItemSeparators(
         player_command,
@@ -298,6 +341,10 @@ def parseCompound(player_command):
 
     if not segments:
         return []
+
+    segments = applySharedTrailingObject(
+        segments,
+    )
 
     parsed_commands = []
 

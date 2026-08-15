@@ -1,5 +1,5 @@
-a1_matchbox = (
-    "a1_matchbox",
+a1_matchbox_1 = (
+    "a1_matchbox_1",
     {
         "name": "Matchbox",
         "aliases": [
@@ -10,6 +10,19 @@ a1_matchbox = (
         "description": (
             "A small cardboard matchbox with a worn striking strip along one side."
         ),
+        "inspect": [
+            {
+                "speaker": "narrator",
+                "text": (
+                    "The small cardboard matchbox is worn around the edges, "
+                    "with a faded striking strip along one side."
+                ),
+            },
+            {
+                "speaker": "voice",
+                "text": "Still has a few matches left. Could be useful.",
+            },
+        ],
         "worldDescription": (
             "a small <em><span class='item-highlight'>matchbox</span></em> "
             "lying between two stones."
@@ -23,6 +36,14 @@ a1_matchbox = (
         "searchable": True,
         "openable": True,
         "closeable": True,
+        "mergeOnTake": {
+            "group": "matchbox",
+            "stateKey": "matches",
+        },
+        "mergeResponse": (
+            "You combine the matches into one box and discard the empty one "
+            "to save space."
+        ),
         "state": {
             "isOpen": False,
             "matches": 3,
@@ -52,6 +73,7 @@ a1_matchbox = (
             "stateKey": "matches",
             "singular": "match",
             "plural": "matches",
+            "showInInventory": True,
             "requiresState": {
                 "isOpen": True,
             },
@@ -59,7 +81,7 @@ a1_matchbox = (
         "openResponse": "You slide the matchbox open.",
         "closeResponse": "You slide the matchbox closed.",
         "searchClosedResponse": "The matchbox is closed.",
-        "searchEmptyResponse": "You inspect the open matchbox.",
+        "searchEmptyResponse": "You inspect the open matchbox, but find it empty.",
         "onThrow": {
             "default": {
                 "response": "You toss the matchbox onto the ground.",

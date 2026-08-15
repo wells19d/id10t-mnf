@@ -22,6 +22,7 @@ def handleThrow(command, location_definition, game_state):
     item_id, clarification = resolveItem(
         item_name,
         inventory,
+        allow_interchangeable=True,
     )
 
     if clarification:

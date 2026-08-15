@@ -40,6 +40,8 @@ ITEM_RESPONSE_KEYS = {
     "inspect",
     "takeFail",
     "takeResponse",
+    "takeWearResponse",
+    "mergeResponse",
     "dropResponse",
     "wearFailResponse",
     "alreadyWearingResponse",
@@ -64,6 +66,7 @@ ITEM_RESPONSE_KEYS = {
 
 def getErrors():
     errors = []
+    merge_group_state_keys = {}
 
     checkDefSource(
         itemDefinitionsByArea,
@@ -106,6 +109,17 @@ def getErrors():
 
         if not isinstance(name, str) or not name.strip():
             errors.append(f"{item_path}.name must be a non-empty string.")
+
+        if "interchangeableGroup" in item_data:
+            interchangeable_group = item_data["interchangeableGroup"]
+
+            if (
+                not isinstance(interchangeable_group, str)
+                or not interchangeable_group.strip()
+            ):
+                errors.append(
+                    f"{item_path}.interchangeableGroup must be a non-empty string."
+                )
 
         aliases = item_data.get(
             "aliases",
@@ -208,6 +222,89 @@ def getErrors():
             dict,
         ):
             errors.append(f"{item_path}.state must be a dictionary.")
+
+        merge_config = item_data.get(
+            "mergeOnTake",
+        )
+
+        if "mergeOnTake" in item_data:
+            merge_path = f"{item_path}.mergeOnTake"
+
+            if not isinstance(merge_config, dict):
+                errors.append(f"{merge_path} must be a dictionary.")
+            else:
+                if set(merge_config) != {
+                    "group",
+                    "stateKey",
+                }:
+                    errors.append(
+                        f"{merge_path} must contain exactly group and stateKey."
+                    )
+
+                group = merge_config.get(
+                    "group",
+                )
+                state_key = merge_config.get(
+                    "stateKey",
+                )
+
+                if not isinstance(group, str) or not group.strip():
+                    errors.append(f"{merge_path}.group must be a non-empty string.")
+
+                if not isinstance(state_key, str) or not state_key.strip():
+                    errors.append(
+                        f"{merge_path}.stateKey must be a non-empty string."
+                    )
+                else:
+                    initial_state = item_data.get(
+                        "state",
+                        {},
+                    )
+
+                    if not isinstance(initial_state, dict):
+                        initial_state = {}
+
+                    quantity = initial_state.get(
+                        state_key,
+                    )
+
+                    if type(quantity) is not int or quantity < 0:
+                        errors.append(
+                            f"{merge_path}.stateKey must reference a non-negative "
+                            "integer in the item state."
+                        )
+
+                if isinstance(group, str) and group.strip() and isinstance(
+                    state_key,
+                    str,
+                ) and state_key.strip():
+                    existing_state_key = merge_group_state_keys.setdefault(
+                        group,
+                        state_key,
+                    )
+
+                    if existing_state_key != state_key:
+                        errors.append(
+                            f"{merge_path}.stateKey must match the other items in "
+                            f"merge group {group!r}."
+                        )
+
+            if not item_data.get(
+                "takeable",
+                False,
+            ):
+                errors.append(f"{merge_path} requires takeable=True.")
+
+            if item_data.get(
+                "transferContentsOnTake",
+                False,
+            ):
+                errors.append(
+                    f"{merge_path} cannot be used with transferContentsOnTake."
+                )
+
+        if "mergeResponse" in item_data and "mergeOnTake" not in item_data:
+            errors.append(f"{item_path}.mergeResponse requires mergeOnTake.")
 
         if "stateDescriptions" in item_data:
             checkLocalStateText(
@@ -377,6 +474,14 @@ def getErrors():
                 ):
                     errors.append(
                         f"{quantity_path}.requiresState must be a dictionary."
+                    )
+
+                if "showInInventory" in quantity_display and not isinstance(
+                    quantity_display["showInInventory"],
+                    bool,
+                ):
+                    errors.append(
+                        f"{quantity_path}.showInInventory must be a boolean."
                     )
 
         item_interactions = item_data.get(
