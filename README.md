@@ -1,14 +1,14 @@
 # Project ID10T: Memory Not Found
 
-A browser-based, Zork-inspired text adventure built with Python, Flask, HTML, CSS, and JavaScript.
+A browser-based, Zork-inspired text adventure.
 
 ~~This is a self-directed final project focused on learning Python through a complete application rather than isolated exercises.~~
 
 This project began as a self-directed way to practice Python fundamentals through a complete application rather than isolated exercises.
 
-After learning and practicing the basics of Python, I decided to expand the original idea into a much larger game. As the project grew, the code moved beyond the concepts I had originally studied and began incorporating more advanced Python, Flask, JavaScript, state management, and application architecture.
+As the project expanded, its state management, interactions, and application architecture grew well beyond the original Python-learning scope. The existing Python/Flask version remains in the repository as a working reference, but active development is now restarting the game in **React and JavaScript using Redux, reducers, and Redux Saga**.
 
-At that point, I began relying more heavily on documentation, researched code examples, and adapted implementation patterns while continuing to use the project as a way to understand how those pieces work together in a real application.
+The goal of the shift is to build a stronger, cleaner state-management system that better fits the growing complexity of the game while keeping the same text-based interface, world design, and data-driven gameplay direction.
 
 ---
 
@@ -29,7 +29,9 @@ The interface is styled like a simple terminal and separates responses into:
 
 ## Current Gameplay
 
-The game currently supports movement, exploration, inventory management, item interactions, equipment, containers, environmental state, compound commands, and browser-based save recovery.
+The completed Python reference implementation supports movement, exploration, inventory management, item interactions, equipment, containers, environmental state, compound commands, and browser-based save recovery.
+
+The React/Redux version is now being rebuilt from that gameplay foundation rather than directly translated from the Python architecture.
 
 Example commands include:
 
@@ -110,7 +112,7 @@ The goal is for most future game content to be created through location and item
 
 ## Runtime State
 
-The game tracks persistent runtime state for:
+The Python reference implementation tracks persistent runtime state for:
 
 - Current location
 - Visited locations
@@ -171,96 +173,71 @@ quit
 ## Project Structure
 
 ```text
-areas/
-├── a1_clearing.py
-├── a1_fallen_nursery.py
-├── a1_house_1.py
-├── ...
-└── registry.py
+python/
+├── areas/
+├── game/
+├── items/
+├── states/
+├── static/
+├── templates/
+├── app.py
+└── start.py
 
-game/
-├── commands.py
-├── compCommands.py
-├── failedActions.py
-├── invActions.py
-├── itemAccess.py
-├── itemDisplay.py
-├── movement.py
-├── parsing.py
-├── useActions.py
-├── validators/
-└── handlers/
-    ├── common.py
-    ├── drop.py
-    ├── inventory.py
-    ├── look.py
-    ├── open_close.py
-    ├── search.py
-    ├── take.py
-    ├── throw.py
-    ├── use.py
-    └── wear.py
+react/
+├── src/
+├── public/
+├── package.json
+└── ...
 
-items/
-├── area1.py
-└── registry.py
-
-states/
-├── game.py
-├── model.py
-└── validator.py
-
-static/
-├── game.js
-└── style.css
+images/
+maps/
+ss/
+z-sandbox/
 ```
 
-The engine separates command parsing, movement, validation, action handlers, content definitions, and runtime state so new areas can reuse the same underlying systems.
+`python/` contains the previous Flask/Python implementation and is retained primarily as a working gameplay and architecture reference.
 
----
+`react/` is the active project. It will use React, JavaScript, Redux reducers, and Redux Saga for application and game-state management.
+
+Shared design/reference material remains at the repository root.
+
 
 ## Development
 
-Run the project with:
+The active React project runs from:
 
 ```bash
-python start.py
+cd react
+yarn start
 ```
 
-or:
+The previous Python implementation can still be run independently for reference:
 
 ```bash
+cd python
 python3 start.py
 ```
 
-The launcher starts Flask in debug mode, opens the browser, and supports development reloads.
+or on Windows:
 
-Definition validation runs at startup so malformed location or item data can fail early during development instead of causing errors later during gameplay.
+```bash
+cd python
+python start.py
+```
 
----
+The two implementations are independent. The React version will use its own browser `localStorage` save data and will not overwrite the Python save.
+
 
 ## Current Progress
 
-The underlying game engine and state systems are largely in place.
+**Area 1: The Forest is mechanically complete in the Python reference implementation.**
 
-Current development is focused on **Area 1: The Forest**, including its narrative, locations, scenery, items, puzzles, and progression into Area 2.
+Active development has shifted to rebuilding the project in React/JavaScript with Redux state management. The Python version is no longer the active development target and will be used mainly to reference established gameplay behavior, content, puzzles, and interaction rules.
 
-Implemented systems currently include:
+The React version is being rebuilt deliberately rather than mechanically ported. State shape, reducers, sagas, actions, selectors, and interaction flow may change where a cleaner Redux-based design better fits the project.
 
-- Terminal-style browser UI
-- Flask backend
-- Location movement and conditional exits
-- Command parsing, aliases, and compound commands
-- Inventory and equipment
-- Item/scenery interactions
-- Persistent item and scenery state
-- Searchable and openable scenery
-- State-dependent descriptions
-- Automatic browser saving and recovery
-- Definition validation
-- Development hot reload
+The overall goal remains the same: a reusable, data-driven text-adventure engine where future areas and items can be created primarily through definitions rather than one-off engine logic.
 
----
 
 ## Screenshots
 
