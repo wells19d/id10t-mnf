@@ -17,6 +17,19 @@ a1_watering_can = (
                 "text": "I could use this to carry water... probably not safe to drink from it though.",
             },
         ],
+        "inspectState": [
+            {
+                "requiresState": {
+                    "liquidType": "water",
+                },
+                "description": [
+                    {
+                        "speaker": "narrator",
+                        "text": "A rusty watering can filled with water.",
+                    },
+                ],
+            },
+        ],
         "worldDescription": (
             "a <em><span class='item-highlight'>watering can</span></em> "
             "lying next to the tree."
@@ -28,6 +41,29 @@ a1_watering_can = (
         "takeable": True,
         "wearable": False,
         "flammable": False,
+        "state": {
+            "liquidType": "empty",
+        },
+        "emptyActions": [
+            {
+                "requiresState": {
+                    "liquidType": "water",
+                },
+                "effects": {
+                    "liquidType": "empty",
+                },
+                "response": [
+                    {
+                        "speaker": "narrator",
+                        "text": (
+                            "You tip the watering can over and spill its water onto "
+                            "the ground."
+                        ),
+                    },
+                ],
+            },
+        ],
+        "emptyFailResponse": "The watering can is already empty.",
         "interactions": {},
         "onThrow": {
             "default": {

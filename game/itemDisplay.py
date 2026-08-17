@@ -3,6 +3,31 @@ from game.worldState import stateMatches
 from items.registry import itemRegistry
 
 
+def getStateDescription(
+    data,
+    current_state,
+    state_description_key="stateDescriptions",
+):
+    for state_description in data.get(
+        state_description_key,
+        [],
+    ):
+        required_state = state_description.get(
+            "requiresState",
+            {},
+        )
+
+        if stateMatches(
+            current_state,
+            required_state,
+        ):
+            return state_description.get(
+                "description",
+            )
+
+    return None
+
+
 def itemName(item):
     return item.get(
         "name",

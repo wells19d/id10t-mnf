@@ -32,7 +32,7 @@ def handleWear(command, game_state):
 
     if not item_id:
         return commandFailure(
-            f"You need to take the {item_name} before you can wear it.",
+            f"You need to take the <em><span class='equipment-highlight'>{item_name}</span></em> before you can wear it.",
         )
 
     item = itemRegistry[item_id]
@@ -42,7 +42,7 @@ def handleWear(command, game_state):
         return commandFailure(
             item.get(
                 "wearFailResponse",
-                f"You can't wear the {display_name}.",
+                f"You can't wear the <em><span class='item-highlight'>{display_name}</span></em>.",
             )
         )
 
@@ -73,7 +73,7 @@ def handleWear(command, game_state):
             )
 
             return commandFailure(
-                f"You are already wearing the {equipped_display_name}.",
+                f"You are already wearing the <em><span class='equipment-highlight'>{equipped_display_name}</span></em>.",
             )
 
         final_inventory = [
@@ -115,7 +115,7 @@ def handleWear(command, game_state):
 
         return item.get(
             "wearResponse",
-            f"You equip the {display_name}.",
+            f"You equip the <em><span class='equipment-highlight'>{display_name}</span></em>.",
         )
 
     inventory.remove(
@@ -127,7 +127,7 @@ def handleWear(command, game_state):
 
     return item.get(
         "wearResponse",
-        f"You put on the {display_name}.",
+        f"You put on the <em><span class='equipment-highlight'>{display_name}</span></em>.",
     )
 
 
@@ -200,7 +200,7 @@ def handleRemove(command, game_state):
         )
 
         return (
-            f"You removed the {display_name}, but you don't have room to "
+            f"You removed the <em><span class='equipment-highlight'>{display_name}</span></em>, but you don't have room to "
             "carry it, so you drop it on the ground."
         )
 

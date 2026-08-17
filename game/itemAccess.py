@@ -3,6 +3,7 @@ from game.worldState import (
     currentLocation,
     getItemStateSnapshot,
     getSceneryState,
+    itemsAtPlacement,
     stateMatches,
 )
 from items.registry import itemRegistry
@@ -134,22 +135,20 @@ def sceneryItems(
     location_state,
     scenery_id,
 ):
-    return [
-        item_id
-        for item_id, placement in location_state["items"].items()
-        if placement == scenery_id
-    ]
+    return itemsAtPlacement(
+        location_state,
+        scenery_id,
+    )
 
 
 def containerItems(
     location_state,
     container_item_id,
 ):
-    return [
-        item_id
-        for item_id, placement in location_state["items"].items()
-        if placement == container_item_id
-    ]
+    return itemsAtPlacement(
+        location_state,
+        container_item_id,
+    )
 
 
 def canAccessItemContents(

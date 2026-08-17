@@ -9,6 +9,8 @@ verbAliases = {
     "unequip": "remove",
     "inspect": "look",
     "examine": "look",
+    "fill": "use",
+    "spill": "empty",
 }
 
 
@@ -26,6 +28,7 @@ prepositions = [
 commandVerbs = {
     "look",
     "search",
+    "hint",
     "open",
     "close",
     "inventory",
@@ -37,6 +40,7 @@ commandVerbs = {
     "throw",
     "wear",
     "remove",
+    "empty",
     "use",
     "go",
     "help",
@@ -73,6 +77,7 @@ carryPreviousObjectVerbs = {
     "drop",
     "wear",
     "remove",
+    "empty",
 }
 
 

@@ -91,6 +91,20 @@ def currentLocation(game_state):
     )
 
 
+def itemsAtPlacement(
+    location_state,
+    placement_id,
+):
+    return [
+        item_id
+        for item_id, placement in location_state.get(
+            "items",
+            {},
+        ).items()
+        if placement == placement_id
+    ]
+
+
 def getSceneryState(
     location_state,
     scenery_id,
@@ -231,6 +245,38 @@ def requirementsMet(
     location_state = currentLocation(
         game_state,
     )
+
+    valid_placement_ids = set(
+        current_location_definition.get(
+            "scenery",
+            {},
+        )
+    ) | set(
+        current_location_definition.get(
+            "itemContents",
+            {},
+        )
+    )
+
+    for placement_id, required_item_ids in requirements.get(
+        "itemsAt",
+        {},
+    ).items():
+        if placement_id not in valid_placement_ids:
+            return False
+
+        if not isinstance(required_item_ids, list) or any(
+            item_id not in itemRegistry for item_id in required_item_ids
+        ):
+            return False
+
+        current_item_ids = itemsAtPlacement(
+            location_state,
+            placement_id,
+        )
+
+        if set(current_item_ids) != set(required_item_ids):
+            return False
 
     for scenery_id, required_state in requirements.get(
         "sceneryState",

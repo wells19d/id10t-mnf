@@ -40,7 +40,7 @@ a1_old_backpack = (
         "wearable": True,
         "flammable": False,
         "slot": "back",
-        "carryCapacity": 10,
+        "carryCapacity": 15,
         "container": True,
         "searchable": True,
         "contentsRequireSearch": True,
@@ -49,8 +49,7 @@ a1_old_backpack = (
             "isSearched": False,
         },
         "takeResponse": (
-            "You take the <em><span class='equipment-highlight'>FSS Backpack</span></em> "
-            "and move everything still inside it into your general inventory."
+            "You take the <em><span class='equipment-highlight'>FSS Backpack</span></em>."
         ),
         "wearResponse": [
             {
@@ -63,7 +62,11 @@ a1_old_backpack = (
             },
             {
                 "speaker": "voice",
-                "text": '*Sings* "<em>Lay your world on me... I can take the weight.</em>"',
+                "text": (
+                    "*Sings* "
+                    "<em>I'll lay my world on you... "
+                    "Yeah, that's right, backpack. You can take the weight.</em>"
+                ),
             },
         ],
         "takeWearResponse": [

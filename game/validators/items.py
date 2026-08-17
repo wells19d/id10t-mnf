@@ -22,6 +22,7 @@ ITEM_INTERACTION_REQUIREMENT_KEYS = {
     "inventory",
     "equipped",
     "flags",
+    "player",
 }
 
 
@@ -31,8 +32,15 @@ ITEM_INTERACTION_EFFECT_KEYS = {
     "targetItemState",
     "targetItemStateDeltas",
     "flags",
+    "player",
     "destroySource",
     "destroyTarget",
+}
+
+
+PLAYER_INTERACTION_STATE_KEYS = {
+    "health",
+    "healthStatus",
 }
 
 
@@ -61,7 +69,111 @@ ITEM_RESPONSE_KEYS = {
     "closeBlockedResponse",
     "closeResponse",
     "takeBlockedResponse",
+    "emptyFailResponse",
 }
+
+
+def checkEmptyStateMap(
+    values,
+    initial_state,
+    definition_path,
+    errors,
+):
+    if not isinstance(values, dict):
+        errors.append(f"{definition_path} must be a dictionary.")
+        return
+
+    for state_key, value in values.items():
+        if state_key not in initial_state:
+            errors.append(
+                f"{definition_path} references unknown item state key "
+                f"{state_key!r}."
+            )
+            continue
+
+        if type(value) is not type(initial_state[state_key]):
+            errors.append(
+                f"{definition_path}[{state_key!r}] must match the initial "
+                "item state value type."
+            )
+
+        if (
+            type(initial_state[state_key]) is int
+            and initial_state[state_key] >= 0
+            and type(value) is int
+            and value < 0
+        ):
+            errors.append(
+                f"{definition_path}[{state_key!r}] must not be negative."
+            )
+
+
+def checkEmptyActions(
+    empty_actions,
+    item_data,
+    item_path,
+    errors,
+):
+    actions_path = f"{item_path}.emptyActions"
+
+    if not isinstance(empty_actions, list) or not empty_actions:
+        errors.append(f"{actions_path} must be a non-empty list.")
+        return
+
+    initial_state = item_data.get(
+        "state",
+        {},
+    )
+
+    if not isinstance(initial_state, dict):
+        initial_state = {}
+
+    for index, empty_action in enumerate(empty_actions):
+        action_path = f"{actions_path}[{index}]"
+
+        if not isinstance(empty_action, dict):
+            errors.append(f"{action_path} must be a dictionary.")
+            continue
+
+        if set(empty_action) != {
+            "requiresState",
+            "effects",
+            "response",
+        }:
+            errors.append(
+                f"{action_path} must contain exactly requiresState, effects, "
+                "and response."
+            )
+
+        checkEmptyStateMap(
+            empty_action.get(
+                "requiresState",
+            ),
+            initial_state,
+            f"{action_path}.requiresState",
+            errors,
+        )
+        effects = empty_action.get(
+            "effects",
+        )
+
+        checkEmptyStateMap(
+            effects,
+            initial_state,
+            f"{action_path}.effects",
+            errors,
+        )
+
+        if isinstance(effects, dict) and not effects:
+            errors.append(f"{action_path}.effects must not be empty.")
+
+        checkResponse(
+            empty_action.get(
+                "response",
+            ),
+            f"{action_path}.response",
+            errors,
+        )
 
 
 def getErrors():
@@ -222,6 +334,17 @@ def getErrors():
             dict,
         ):
             errors.append(f"{item_path}.state must be a dictionary.")
+
+        if "emptyActions" in item_data:
+            checkEmptyActions(
+                item_data["emptyActions"],
+                item_data,
+                item_path,
+                errors,
+            )
+
+        if "emptyFailResponse" in item_data and "emptyActions" not in item_data:
+            errors.append(f"{item_path}.emptyFailResponse requires emptyActions.")
 
         merge_config = item_data.get(
             "mergeOnTake",
@@ -573,6 +696,7 @@ def checkInteraction(
         for state_key in [
             "sourceItemState",
             "targetItemState",
+            "player",
         ]:
             if state_key in requirements and not isinstance(
                 requirements[state_key],
@@ -615,6 +739,25 @@ def checkInteraction(
                 f"{definition_path}.requires.targetPlacement must be 'loose'."
             )
 
+        player_requirements = requirements.get(
+            "player",
+            {},
+        )
+
+        if isinstance(player_requirements, dict):
+            for key, value in player_requirements.items():
+                if key not in PLAYER_INTERACTION_STATE_KEYS:
+                    errors.append(
+                        f"{definition_path}.requires.player uses unsupported "
+                        f"player field {key!r}."
+                    )
+
+                if not isinstance(value, str) or not value.strip():
+                    errors.append(
+                        f"{definition_path}.requires.player[{key!r}] must be "
+                        "a non-empty string."
+                    )
+
     effects = interaction.get(
         "effects",
         {},
@@ -632,6 +775,7 @@ def checkInteraction(
         "sourceItemState",
         "targetItemState",
         "flags",
+        "player",
     ]:
         if state_key in effects and not isinstance(
             effects[state_key],
@@ -661,3 +805,22 @@ def checkInteraction(
             bool,
         ):
             errors.append(f"{definition_path}.effects.{boolean_key} must be a boolean.")
+
+    player_effects = effects.get(
+        "player",
+        {},
+    )
+
+    if isinstance(player_effects, dict):
+        for key, value in player_effects.items():
+            if key not in PLAYER_INTERACTION_STATE_KEYS:
+                errors.append(
+                    f"{definition_path}.effects.player uses unsupported "
+                    f"player field {key!r}."
+                )
+
+            if not isinstance(value, str) or not value.strip():
+                errors.append(
+                    f"{definition_path}.effects.player[{key!r}] must be "
+                    "a non-empty string."
+                )

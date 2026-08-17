@@ -23,6 +23,8 @@ from game.handlers.common import (
     normalizeResponseMessages,
 )
 from game.handlers.drop import handleDrop
+from game.handlers.empty import handleEmpty
+from game.handlers.hint import handleHint
 from game.handlers.inventory import (
     handleInventory,
     handlePlayerStatus,
@@ -144,6 +146,7 @@ def runOne(player_command, game_state):
                 room_name,
                 location_definition,
                 player_state,
+                game_state,
             )
 
         return movementResponse(
@@ -161,6 +164,12 @@ def runOne(player_command, game_state):
     if command_verb == "search":
         return handleSearch(
             command,
+            location_definition,
+            game_state,
+        )
+
+    if command_verb == "hint":
+        return handleHint(
             location_definition,
             game_state,
         )
@@ -206,6 +215,12 @@ def runOne(player_command, game_state):
         return handleThrow(
             command,
             location_definition,
+            game_state,
+        )
+
+    if command_verb == "empty":
+        return handleEmpty(
+            command,
             game_state,
         )
 

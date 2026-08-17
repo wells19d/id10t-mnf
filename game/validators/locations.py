@@ -34,6 +34,7 @@ ACTION_REQUIREMENT_KEYS = {
 
 COMBINATION_EFFECT_KEYS = {
     "sceneryState",
+    "destroyInventoryItems",
 }
 
 
@@ -191,7 +192,14 @@ def checkScenery(
             for item_id, interaction in interactions.items():
                 interaction_path = f"{scenery_path}.{interaction_key}[{item_id!r}]"
 
-                if not isinstance(item_id, str) or item_id not in itemRegistry:
+                is_environment = (
+                    interaction_key == "interactions"
+                    and item_id == "environment"
+                )
+
+                if not isinstance(item_id, str) or (
+                    not is_environment and item_id not in itemRegistry
+                ):
                     errors.append(
                         f"{interaction_path} references unknown item ID {item_id!r}."
                     )
@@ -267,6 +275,7 @@ def checkExit(
         "location",
         "requires",
         "blockedResponse",
+        "effects",
     }
 
     for direction, exit_data in exits.items():
@@ -305,6 +314,14 @@ def checkExit(
                     f"{exit_path}.blockedResponse",
                     errors,
                 )
+
+            if "effects" in exit_data:
+                checkEffects(
+                    exit_data["effects"],
+                    f"{exit_path}.effects",
+                    errors,
+                    {"flags"},
+                )
         else:
             errors.append(f"{exit_path} must be a location ID, dictionary, or False.")
             continue
@@ -318,17 +335,56 @@ def checkExit(
 def checkRoomExit(
     location_path,
     room_exits,
+    scenery_ids,
     errors,
 ):
     if not isinstance(room_exits, dict):
         errors.append(f"{location_path}.roomExits must be a dictionary.")
         return
 
-    for room_name, destination in room_exits.items():
+    for room_name, exit_data in room_exits.items():
         room_exit_path = f"{location_path}.roomExits[{room_name!r}]"
 
         if not isinstance(room_name, str) or not room_name.strip():
             errors.append(f"{room_exit_path} must use a non-empty string room name.")
+
+        if isinstance(exit_data, str):
+            destination = exit_data
+        elif isinstance(exit_data, dict):
+            destination = exit_data.get("location")
+
+            for key in exit_data:
+                if key not in {"location", "requires", "blockedResponse", "effects"}:
+                    errors.append(
+                        f"{room_exit_path} uses unsupported exit field {key!r}."
+                    )
+
+            if "requires" in exit_data:
+                checkRequirements(
+                    exit_data["requires"],
+                    f"{room_exit_path}.requires",
+                    errors,
+                    {"inventory", "equipped", "flags", "sceneryState"},
+                    scenery_ids,
+                    True,
+                )
+
+            if "blockedResponse" in exit_data:
+                checkResponse(
+                    exit_data["blockedResponse"],
+                    f"{room_exit_path}.blockedResponse",
+                    errors,
+                )
+
+            if "effects" in exit_data:
+                checkEffects(
+                    exit_data["effects"],
+                    f"{room_exit_path}.effects",
+                    errors,
+                    {"flags"},
+                )
+        else:
+            destination = None
 
         if not isinstance(destination, str) or destination not in locationRegistry:
             errors.append(
@@ -340,6 +396,7 @@ def checkStateText(
     location_path,
     state_descriptions,
     scenery_ids,
+    placement_ids,
     errors,
 ):
     if not isinstance(state_descriptions, list):
@@ -370,6 +427,142 @@ def checkStateText(
             GAME_STATE_REQUIREMENT_KEYS,
             scenery_ids,
             True,
+            placement_ids,
+        )
+
+
+def checkHintStateRequirements(
+    requirements,
+    location_data,
+    definition_path,
+    errors,
+):
+    if not isinstance(requirements, dict):
+        return
+
+    item_states = requirements.get(
+        "itemStates",
+        {},
+    )
+
+    if isinstance(item_states, dict):
+        for item_id, required_state in item_states.items():
+            item = itemRegistry.get(
+                item_id,
+            )
+
+            if not item or not isinstance(required_state, dict):
+                continue
+
+            initial_state = item.get(
+                "state",
+                {},
+            )
+
+            for state_key, required_value in required_state.items():
+                state_path = (
+                    f"{definition_path}.itemStates[{item_id!r}]"
+                    f"[{state_key!r}]"
+                )
+
+                if state_key not in initial_state:
+                    errors.append(f"{state_path} references an unknown item state key.")
+                elif type(required_value) is not type(initial_state[state_key]):
+                    errors.append(
+                        f"{state_path} must match the initial item state value type."
+                    )
+
+    scenery_states = requirements.get(
+        "sceneryState",
+        {},
+    )
+    scenery = location_data.get(
+        "scenery",
+        {},
+    )
+
+    if isinstance(scenery_states, dict):
+        for scenery_id, required_state in scenery_states.items():
+            scenery_data = scenery.get(
+                scenery_id,
+            )
+
+            if not scenery_data or not isinstance(required_state, dict):
+                continue
+
+            initial_state = scenery_data.get(
+                "state",
+                {},
+            )
+
+            for state_key, required_value in required_state.items():
+                state_path = (
+                    f"{definition_path}.sceneryState[{scenery_id!r}]"
+                    f"[{state_key!r}]"
+                )
+
+                if state_key not in initial_state:
+                    errors.append(
+                        f"{state_path} references an unknown scenery state key."
+                    )
+                elif type(required_value) is not type(initial_state[state_key]):
+                    errors.append(
+                        f"{state_path} must match the initial scenery state value type."
+                    )
+
+
+def checkHints(
+    location_path,
+    hints,
+    location_data,
+    scenery_ids,
+    placement_ids,
+    errors,
+):
+    hints_path = f"{location_path}.hints"
+
+    if not isinstance(hints, list) or not hints:
+        errors.append(f"{hints_path} must be a non-empty list.")
+        return
+
+    for index, hint in enumerate(hints):
+        hint_path = f"{hints_path}[{index}]"
+
+        if not isinstance(hint, dict):
+            errors.append(f"{hint_path} must be a dictionary.")
+            continue
+
+        if set(hint) != {
+            "requires",
+            "response",
+        }:
+            errors.append(f"{hint_path} must contain exactly requires and response.")
+
+        requirements = hint.get(
+            "requires",
+        )
+
+        checkRequirements(
+            requirements,
+            f"{hint_path}.requires",
+            errors,
+            GAME_STATE_REQUIREMENT_KEYS,
+            scenery_ids,
+            True,
+            placement_ids,
+        )
+        checkHintStateRequirements(
+            requirements,
+            location_data,
+            f"{hint_path}.requires",
+            errors,
+        )
+        checkResponse(
+            hint.get(
+                "response",
+            ),
+            f"{hint_path}.response",
+            errors,
         )
 
 
@@ -553,6 +746,10 @@ def getErrors():
                                 [],
                             ).append(contents_path)
 
+        placement_ids = scenery_ids | set(
+            item_contents if isinstance(item_contents, dict) else {}
+        )
+
         checkScenery(
             location_path,
             scenery,
@@ -571,6 +768,7 @@ def getErrors():
             checkRoomExit(
                 location_path,
                 location_data["roomExits"],
+                scenery_ids,
                 errors,
             )
         checkStateText(
@@ -580,8 +778,18 @@ def getErrors():
                 [],
             ),
             scenery_ids,
+            placement_ids,
             errors,
         )
+        if "hints" in location_data:
+            checkHints(
+                location_path,
+                location_data["hints"],
+                location_data,
+                scenery_ids,
+                placement_ids,
+                errors,
+            )
 
         location_interactions = location_data.get(
             "interactions",
@@ -662,6 +870,13 @@ def getErrors():
                             errors.append(
                                 f"{interaction_path}.effects.sceneryState "
                                 "must be a non-empty dictionary."
+                            )
+
+                        if "destroyInventoryItems" in effects:
+                            checkItemRefs(
+                                effects["destroyInventoryItems"],
+                                f"{interaction_path}.effects.destroyInventoryItems",
+                                errors,
                             )
 
     for item_id, placements in initial_item_placements.items():

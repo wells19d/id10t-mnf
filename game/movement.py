@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from game.handlers.common import (
+    applyChanges,
     currentLocation,
     getSceneryState,
     stateMatches,
@@ -123,6 +124,17 @@ def exitRequirementsMet(
     return True
 
 
+def applyExitEffects(exit_data, game_state):
+    if not isinstance(exit_data, dict) or game_state is None:
+        return
+
+    effects = exit_data.get("effects", {})
+    applyChanges(
+        game_state["flags"],
+        effects.get("flags"),
+    )
+
+
 def movePlayer(
     direction,
     location_definition,
@@ -185,6 +197,11 @@ def movePlayer(
     else:
         return MovementResult.blocked(f"I can't go {full_direction} from here.")
 
+    applyExitEffects(
+        exit_data,
+        game_state,
+    )
+
     player_state["currentLocation"] = next_location
     player_state["lastDirection"] = full_direction
     player_state["lastShortDirection"] = full_direction[0]
@@ -198,6 +215,7 @@ def movePlayerToRoom(
     room_name,
     location_definition,
     player_state,
+    game_state=None,
 ):
     if not room_name:
         return MovementResult.blocked(
@@ -212,16 +230,45 @@ def movePlayerToRoom(
     )
 
     next_location = None
+    matching_exit = None
 
-    for exit_name, destination in room_exits.items():
+    for exit_name, exit_data in room_exits.items():
         if exit_name.strip().lower() == normalized_room_name:
-            next_location = destination
+            matching_exit = exit_data
             break
 
-    if not next_location:
+    if matching_exit is None:
         return MovementResult.blocked(
             f"I can't go to the {room_name} from here.",
         )
+
+    if isinstance(matching_exit, str):
+        next_location = matching_exit
+    elif isinstance(matching_exit, dict):
+        next_location = matching_exit.get("location")
+
+        if not next_location or (
+            game_state is not None
+            and not exitRequirementsMet(
+                matching_exit,
+                game_state,
+            )
+        ):
+            return MovementResult.blocked(
+                matching_exit.get(
+                    "blockedResponse",
+                    f"I can't go to the {room_name} from here.",
+                )
+            )
+    else:
+        return MovementResult.blocked(
+            f"I can't go to the {room_name} from here.",
+        )
+
+    applyExitEffects(
+        matching_exit,
+        game_state,
+    )
 
     player_state["currentLocation"] = next_location
 

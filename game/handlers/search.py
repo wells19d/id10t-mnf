@@ -15,6 +15,7 @@ from game.handlers.common import (
     resolveItem,
     stateMatches,
 )
+from game.itemDisplay import getStateDescription
 from items.registry import itemRegistry
 
 
@@ -59,19 +60,32 @@ def _searchItem(
     location_state,
     game_state,
 ):
-    if not item.get(
-        "searchable",
-        False,
-    ):
-        return item.get(
-            "searchResponse",
-            f"You don't find anything useful in the {target}.",
-        )
-
     item_state = getItemStateSnapshot(
         game_state,
         item_id,
     )
+
+    if not item.get(
+        "searchable",
+        False,
+    ):
+        inspect_state_response = getStateDescription(
+            item,
+            item_state,
+            "inspectState",
+        )
+
+        if inspect_state_response:
+            return addQuantityText(
+                inspect_state_response,
+                item,
+                item_state,
+            )
+
+        return item.get(
+            "searchResponse",
+            f"You don't find anything useful in the {target}.",
+        )
 
     if item.get("openable") and not item_state.get(
         "isOpen",

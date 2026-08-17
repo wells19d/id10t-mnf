@@ -7,33 +7,9 @@ from game.handlers.common import (
     getSceneryState,
     visibleItemIds,
     resolveItem,
-    stateMatches,
 )
+from game.itemDisplay import getStateDescription
 from items.registry import itemRegistry
-
-
-def getStateDescription(
-    data,
-    current_state,
-):
-    for state_description in data.get(
-        "stateDescriptions",
-        [],
-    ):
-        required_state = state_description.get(
-            "requiresState",
-            {},
-        )
-
-        if stateMatches(
-            current_state,
-            required_state,
-        ):
-            return state_description.get(
-                "description",
-            )
-
-    return None
 
 
 def handleLook(command, location_definition, game_state):
@@ -105,6 +81,19 @@ def handleLook(command, location_definition, game_state):
             game_state,
             item_id,
         )
+
+        inspect_state_response = getStateDescription(
+            item,
+            item_state,
+            "inspectState",
+        )
+
+        if inspect_state_response:
+            return addQuantityText(
+                inspect_state_response,
+                item,
+                item_state,
+            )
 
         if item_id in game_state["player"]["inventory"]:
             inspect_response = item.get(

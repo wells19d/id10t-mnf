@@ -230,6 +230,7 @@ def checkRequirements(
     allowed_keys,
     scenery_ids=None,
     scenery_state_is_map=False,
+    placement_ids=None,
 ):
     if not isinstance(requirements, dict):
         errors.append(f"{definition_path} must be a dictionary.")
@@ -256,6 +257,7 @@ def checkRequirements(
         "itemState",
         "sceneryState",
         "itemStates",
+        "itemsAt",
     }
 
     for key in dictionary_keys.intersection(requirements):
@@ -303,6 +305,38 @@ def checkRequirements(
                     f"{definition_path}.sceneryState[{scenery_id!r}] "
                     "must be a dictionary."
                 )
+
+    items_at = requirements.get(
+        "itemsAt",
+        {},
+    )
+
+    if isinstance(items_at, dict):
+        for placement_id, required_item_ids in items_at.items():
+            placement_path = f"{definition_path}.itemsAt[{placement_id!r}]"
+
+            if not isinstance(placement_id, str) or not placement_id:
+                errors.append(
+                    f"{definition_path}.itemsAt must use non-empty string placement IDs."
+                )
+            elif placement_ids is not None and placement_id not in placement_ids:
+                errors.append(
+                    f"{definition_path}.itemsAt references unknown placement ID "
+                    f"{placement_id!r}."
+                )
+
+            checkItemRefs(
+                required_item_ids,
+                placement_path,
+                errors,
+            )
+
+            if (
+                isinstance(required_item_ids, list)
+                and all(isinstance(item_id, str) for item_id in required_item_ids)
+                and len(required_item_ids) != len(set(required_item_ids))
+            ):
+                errors.append(f"{placement_path} contains duplicate item IDs.")
 
 
 def checkEffects(

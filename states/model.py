@@ -34,6 +34,7 @@ GAME_STATE_REQUIREMENT_KEYS = frozenset(
         "flags",
         "sceneryState",
         "itemStates",
+        "itemsAt",
     }
 )
 

@@ -123,6 +123,15 @@ def requirementsMet(
 ):
     player_state = game_state["player"]
 
+    if not stateMatches(
+        player_state,
+        requirements.get(
+            "player",
+            {},
+        ),
+    ):
+        return False
+
     for item_id in requirements.get(
         "inventory",
         [],
@@ -408,6 +417,12 @@ def useItem(
             "flags",
         ),
     )
+    applyChanges(
+        game_state["player"],
+        effects.get(
+            "player",
+        ),
+    )
 
     if (
         effects.get(
@@ -523,7 +538,8 @@ def useScenery(
             fail_response,
         )
 
-    game_state["itemStates"][source_state_item_id] = final_source_state
+    if source_state_item_id is not None:
+        game_state["itemStates"][source_state_item_id] = final_source_state
     applyChanges(
         scenery_state,
         effects.get(

@@ -52,7 +52,9 @@ def handleUse(command, location_definition, game_state):
                 [],
             )
 
-            if values == correct_combination:
+            compact_combination = "".join(correct_combination)
+
+            if values == correct_combination or values == [compact_combination]:
                 location_state = currentLocation(
                     game_state,
                 )
@@ -69,6 +71,15 @@ def handleUse(command, location_definition, game_state):
                     effects["sceneryState"],
                 )
 
+                inventory = game_state["player"]["inventory"]
+
+                for item_id in effects.get(
+                    "destroyInventoryItems",
+                    [],
+                ):
+                    if item_id in inventory:
+                        inventory.remove(item_id)
+
                 return location_interaction["onSuccess"]
 
             return commandFailure(
@@ -81,6 +92,27 @@ def handleUse(command, location_definition, game_state):
         return commandFailure(
             "I don't know what I want to use.",
         )
+
+    if not target:
+        scenery_id, scenery_data = findScenery(
+            item_name,
+            location_definition,
+        )
+
+        if scenery_data and "environment" in scenery_data.get(
+            "interactions",
+            {},
+        ):
+            return useScenery(
+                "environment",
+                None,
+                None,
+                {},
+                None,
+                scenery_id,
+                scenery_data,
+                game_state,
+            )
 
     inventory = game_state["player"]["inventory"]
     source_item_id, clarification = resolveItem(
@@ -153,9 +185,20 @@ def handleUse(command, location_definition, game_state):
             )
 
     if not target:
-        return commandFailure(
-            f"I don't know what I want to use the {source_name} on.",
+        source_item = itemRegistry.get(
+            source_item_id,
+            {},
         )
+
+        if source_item_id and source_item_id in source_item.get(
+            "interactions",
+            {},
+        ):
+            target = source_item_id
+        else:
+            return commandFailure(
+                f"I don't know what I want to use the {source_name} on.",
+            )
 
     scenery_id, scenery_data = findScenery(
         target,
