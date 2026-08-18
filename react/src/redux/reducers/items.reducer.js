@@ -1,6 +1,6 @@
-const initialState = {};
+import itemsInit from '../init/item.init';
 
-const itemsReducer = (state = initialState, action) => {
+const itemsReducer = (state = itemsInit, action) => {
   switch (action.type) {
     case 'SET_ITEMS':
       return {
