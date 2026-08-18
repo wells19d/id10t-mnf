@@ -1,6 +1,8 @@
 const massiveTree = {
   id: 'massiveTree',
   name: 'Massive Tree',
+  intro: [],
+  description: '',
   responses: {},
   exits: {
     north: false,

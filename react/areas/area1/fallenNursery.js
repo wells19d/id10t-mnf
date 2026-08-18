@@ -1,6 +1,8 @@
 const fallenNursery = {
   id: 'fallenNursery',
   name: 'Fallen Nursery',
+  intro: [],
+  description: '',
   responses: {},
   exits: {
     north: 'lakeSouth',

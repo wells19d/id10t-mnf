@@ -1,6 +1,8 @@
 const outerCompound = {
   id: 'outerCompound',
   name: 'Beyond the Security Gate',
+  intro: [],
+  description: '',
   responses: {},
   exits: {
     north: false,

@@ -1,6 +1,8 @@
 const lakeEast = {
   id: 'lakeEast',
   name: 'Lake (East)',
+  intro: [],
+  description: '',
   responses: {},
   exits: {
     north: false,

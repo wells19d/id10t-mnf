@@ -1,6 +1,8 @@
 const silentGrove = {
   id: 'silentGrove',
   name: 'Silent Grove',
+  intro: [],
+  description: '',
   responses: {},
   exits: {
     north: 'clearing',

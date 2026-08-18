@@ -1,6 +1,8 @@
 const clearing = {
   id: 'clearing',
   name: 'Grassy Clearing',
+  intro: [],
+  description: '',
   responses: {},
   exits: {
     north: 'massiveTree',

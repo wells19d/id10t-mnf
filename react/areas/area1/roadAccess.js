@@ -1,6 +1,8 @@
 const roadAccess = {
   id: 'roadAccess',
   name: 'Road Access',
+  intro: [],
+  description: '',
   responses: {},
   exits: {
     north: 'sgSouth',

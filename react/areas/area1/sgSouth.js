@@ -1,6 +1,8 @@
 const sgSouth = {
   id: 'sgSouth',
   name: 'Security Gate (South Side)',
+  intro: [],
+  description: '',
   responses: {},
   exits: {
     north: false,

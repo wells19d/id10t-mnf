@@ -1,6 +1,8 @@
 const stoneRing = {
   id: 'stoneRing',
   name: 'Stone Ring',
+  intro: [],
+  description: '',
   responses: {},
   exits: {
     north: false,
