@@ -1,24 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 import CommandInput from './display/CommandInput';
 import { usePlayerState, useWorldState, useItemState } from './hooks/useHooks';
-import StartupMessage, { STARTUP_MESSAGE } from './display/onLoads/startMsg';
-import { StartPrompt, useStartup } from './display/onLoads/startup';
-import QuitMessage from './display/onLoads/quit';
+import {
+  QUIT_MESSAGE,
+  START_PROMPT_MESSAGE,
+  STARTUP_MESSAGE,
+  StartupMessage,
+  useStartup,
+} from './display/startup';
 import MsgDisplay from './display/MsgDisplay';
 import { HELP_MESSAGE } from './display/help';
 import { routeCommand } from './game/commands';
 
 function App() {
   const terminalOutputRef = useRef(null);
-  const [terminalMessages, setTerminalMessages] = useState([]);
-  const { waitingForStartChoice, gameEnded, startNewGame, loadGame, endGame } =
+  const [terminalMessages, setTerminalMessages] =
+    useState(START_PROMPT_MESSAGE);
+  const { waitingForStartChoice, startNewGame, loadGame, endGame } =
     useStartup();
 
+  const appendMessages = (messages) => {
+    setTerminalMessages((currentMessages) => [...currentMessages, ...messages]);
+  };
+
   const showHelp = () => {
-    setTerminalMessages((currentMessages) => [
-      ...currentMessages,
-      ...HELP_MESSAGE,
-    ]);
+    appendMessages(HELP_MESSAGE);
+  };
+
+  const quitGame = () => {
+    endGame();
+    appendMessages(QUIT_MESSAGE);
   };
 
   useEffect(() => {
@@ -27,14 +38,14 @@ function App() {
     if (terminalOutput) {
       terminalOutput.scrollTop = terminalOutput.scrollHeight;
     }
-  }, [terminalMessages, waitingForStartChoice, gameEnded]);
+  }, [terminalMessages]);
 
   const handleCommand = (command) => {
     const commandHandled = routeCommand(command, {
       waitingForStartChoice,
       startNewGame,
       loadGame,
-      endGame,
+      endGame: quitGame,
       showHelp,
     });
 
@@ -61,8 +72,6 @@ function App() {
       <div className="terminal">
         <div ref={terminalOutputRef} id="game-output" className="terminal-top">
           <StartupMessage messages={STARTUP_MESSAGE} />
-          <QuitMessage visible={gameEnded} />
-          <StartPrompt visible={waitingForStartChoice} />
           {terminalMessages.map((message, index) => (
             <MsgDisplay
               key={index}

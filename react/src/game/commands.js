@@ -8,11 +8,6 @@ export function routeCommand(command, commandHandlers) {
     showHelp,
   } = commandHandlers;
 
-  if (normalizedCommand === 'help' || normalizedCommand === 'h') {
-    showHelp();
-    return true;
-  }
-
   if (waitingForStartChoice) {
     if (normalizedCommand === 'new' || normalizedCommand === 'new game') {
       startNewGame();
@@ -25,6 +20,20 @@ export function routeCommand(command, commandHandlers) {
     }
 
     // Only NEW and LOAD commands are accepted while the game is inactive.
+    return true;
+  }
+
+  if (normalizedCommand === 'help' || normalizedCommand === 'h') {
+    showHelp();
+    return true;
+  }
+
+  if (
+    normalizedCommand === 'new' ||
+    normalizedCommand === 'new game' ||
+    normalizedCommand === 'load' ||
+    normalizedCommand === 'load save'
+  ) {
     return true;
   }
 
