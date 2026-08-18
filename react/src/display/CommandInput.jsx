@@ -6,7 +6,9 @@ function CommandInput({ onCommand }) {
 
   useEffect(() => {
     const focusInput = () => {
-      inputRef.current?.focus();
+      if (!document.hidden) {
+        inputRef.current?.focus();
+      }
     };
 
     const handleVisibilityChange = () => {
@@ -15,20 +17,28 @@ function CommandInput({ onCommand }) {
       }
     };
 
+    const handlePagePointerDown = () => {
+      setTimeout(focusInput, 0);
+    };
+
     focusInput();
 
     window.addEventListener('focus', focusInput);
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('pointerdown', handlePagePointerDown);
 
     return () => {
       window.removeEventListener('focus', focusInput);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('pointerdown', handlePagePointerDown);
     };
   }, []);
 
   const handleBlur = () => {
     setTimeout(() => {
-      inputRef.current?.focus();
+      if (!document.hidden) {
+        inputRef.current?.focus();
+      }
     }, 0);
   };
 

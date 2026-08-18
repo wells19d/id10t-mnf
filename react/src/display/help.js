@@ -1,0 +1,75 @@
+export const HELP_MESSAGE = [
+  {
+    speaker: 'system',
+    text: `
+      <div class="help-section">
+        <h3>Movement</h3>
+        <ul>
+          <li>north or n</li>
+          <li>south or s</li>
+          <li>east or e</li>
+          <li>west or w</li>
+        </ul>
+
+        <h3>Looking</h3>
+        <p>Describes the area or target.</p>
+        <ul>
+          <li>look</li>
+          <li>look at &lt;target&gt;</li>
+        </ul>
+
+        <h3>Searching</h3>
+        <p>Finds viewable items or items inside a target.</p>
+        <ul>
+          <li>search</li>
+          <li>search &lt;target&gt;</li>
+        </ul>
+
+        <h3>Hints</h3>
+        <p>Offers a hint based on your current situation.</p>
+        <ul>
+          <li>hint</li>
+        </ul>
+
+        <h3>Player Status</h3>
+        <p>Shows the Health, Status, and Equipped Items.</p>
+        <ul>
+          <li>player or p</li>
+        </ul>
+
+        <h3>Inventory</h3>
+        <p>Shows the items you are currently carrying.</p>
+        <ul>
+          <li>inventory, inv, i</li>
+          <li>bag</li>
+        </ul>
+
+        <h3>Interactions</h3>
+        <ul>
+          <li>open &lt;target&gt;</li>
+          <li>close &lt;target&gt;</li>
+          <li>use &lt;item&gt; on &lt;target&gt;</li>
+          <li>fill &lt;item&gt; with &lt;target&gt;</li>
+          <li>fill &lt;item&gt; at &lt;target&gt;</li>
+          <li>empty &lt;item&gt;</li>
+          <li>throw &lt;item&gt;</li>
+          <li>throw &lt;item&gt; at &lt;target&gt;</li>
+          <li>wear &lt;item&gt;</li>
+          <li>remove &lt;item&gt;</li>
+        </ul>
+
+        <h3>Aliases</h3>
+        <ul>
+          <li>grab</li>
+          <li>get</li>
+          <li>pick up</li>
+          <li>inspect</li>
+          <li>examine</li>
+          <li>equip</li>
+          <li>unequip</li>
+          <li>spill</li>
+        </ul>
+      </div>
+    `,
+  },
+];
