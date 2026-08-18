@@ -2,7 +2,7 @@ const sgEast = {
   id: 'sgEast',
   name: 'Security Gate (East Side)',
   intro: [],
-  description: '',
+  description: 'A security card reader controls access to the guard station.',
   responses: {},
   exits: {
     north: 'outerCompound',

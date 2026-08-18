@@ -2,7 +2,8 @@ const sgWest = {
   id: 'sgWest',
   name: 'Security Gate (West Side)',
   intro: [],
-  description: '',
+  description:
+    'An exterior fuse box on the west wall contains a burned-out fuse socket.',
   responses: {},
   exits: {
     north: false,

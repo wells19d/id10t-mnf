@@ -17,29 +17,29 @@ const worldInit = {
 
     house1_livingRoom: {
       visited: false,
-      drawerOpen: false,
+      drawersOpen: false,
     },
 
     house1_kitchen: {
       visited: false,
-      drawerOpen: false,
-      cabinetOpen: false,
+      drawersOpen: false,
+      cabinetsOpen: false,
     },
 
     house1_bathroom: {
       visited: false,
-      medicineCabinetOpen: false,
+      medCabinetOpen: false,
     },
 
     house1_bedroom1: {
       visited: false,
-      drawerOpen: false,
+      drawersOpen: false,
       closetOpen: false,
     },
 
     house1_bedroom2: {
       visited: false,
-      drawerOpen: false,
+      drawersOpen: false,
       closetOpen: false,
     },
 
@@ -52,23 +52,23 @@ const worldInit = {
 
     house2_livingRoom: {
       visited: false,
-      drawerOpen: false,
+      drawersOpen: false,
     },
 
     house2_kitchen: {
       visited: false,
-      drawerOpen: false,
-      cabinetOpen: false,
+      drawersOpen: false,
+      cabinetsOpen: false,
     },
 
     house2_bathroom: {
       visited: false,
-      medicineCabinetOpen: false,
+      medCabinetOpen: false,
     },
 
     house2_bedroom: {
       visited: false,
-      drawerOpen: false,
+      drawersOpen: false,
       closetOpen: false,
     },
 
@@ -81,29 +81,29 @@ const worldInit = {
 
     house3_livingRoom: {
       visited: false,
-      drawerOpen: false,
+      drawersOpen: false,
     },
 
     house3_kitchen: {
       visited: false,
-      drawerOpen: false,
-      cabinetOpen: false,
+      drawersOpen: false,
+      cabinetsOpen: false,
     },
 
     house3_bathroom: {
       visited: false,
-      medicineCabinetOpen: false,
+      medCabinetOpen: false,
     },
 
     house3_bedroom1: {
       visited: false,
-      drawerOpen: false,
+      drawersOpen: false,
       closetOpen: false,
     },
 
     house3_bedroom2: {
       visited: false,
-      drawerOpen: false,
+      drawersOpen: false,
       closetOpen: false,
       safeUnlocked: false,
       safeOpen: false,
@@ -125,29 +125,20 @@ const worldInit = {
       visited: false,
     },
 
-    securityGate: {
-      visited: false,
-      gateOpen: false,
-      gateJammed: false,
-    },
-
-    guardStation: {
-      fuseReplaced: false,
-      stationPowered: false,
-      stationUnlocked: false,
-    },
-
-    guardStation_south: {
+    sgSouth: {
       visited: false,
     },
 
-    guardStation_west: {
+    sgWest: {
       visited: false,
       fuseBoxOpen: false,
+      fuseReplaced: false,
     },
 
-    guardStation_east: {
+    sgEast: {
       visited: false,
+      powerRestored: false,
+      gateOpen: false,
     },
 
     silentGrove: {
